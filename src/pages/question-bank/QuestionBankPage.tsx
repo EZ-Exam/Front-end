@@ -5,13 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Plus, Search, Edit, Trash2, Eye, AlertTriangle } from 'lucide-react';
 import { mockQuestionSets } from '@/data/mockData';
 
 export function QuestionBankPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('all');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [questionSetToDelete, setQuestionSetToDelete] = useState<{id: string, title: string} | null>(null);
 
   const filteredQuestionSets = mockQuestionSets.filter(questionSet => {
     const matchesSearch = questionSet.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -38,6 +41,26 @@ export function QuestionBankPage() {
       case 'Chemistry': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleDeleteClick = (questionSet: {id: string, title: string}) => {
+    setQuestionSetToDelete(questionSet);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (questionSetToDelete) {
+      console.log('Deleting question set:', questionSetToDelete.id);
+      // Here you would implement the actual deletion logic
+      // For now, just close the dialog
+      setShowDeleteDialog(false);
+      setQuestionSetToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteDialog(false);
+    setQuestionSetToDelete(null);
   };
 
   return (
@@ -152,18 +175,23 @@ export function QuestionBankPage() {
                 
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" asChild className="flex-1">
-                    <Link to={`/question-bank/${questionSet.id}`}>
+                    <Link to={`/question-bank/${questionSet.id}/view`}>
                       <Eye className="mr-2 h-3 w-3" />
                       View
                     </Link>
                   </Button>
                   <Button variant="outline" size="sm" asChild className="flex-1">
-                    <Link to={`/edit-question-set/${questionSet.id}`}>
+                    <Link to={`/question-bank/${questionSet.id}/edit`}>
                       <Edit className="mr-2 h-3 w-3" />
                       Edit
                     </Link>
                   </Button>
-                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-red-600 hover:text-red-700"
+                    onClick={() => handleDeleteClick({id: questionSet.id, title: questionSet.title})}
+                  >
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
@@ -172,6 +200,31 @@ export function QuestionBankPage() {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              Delete Question Set
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the question set "{questionSetToDelete?.title}"? 
+              This action cannot be undone and will permanently remove all questions in this set.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={handleDeleteCancel}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Delete Question Set
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

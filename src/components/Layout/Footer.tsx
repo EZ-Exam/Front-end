@@ -54,19 +54,22 @@ export function Footer() {
 
           {/* Subjects */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Subjects</h3>
+            <h3 className="font-semibold text-lg">Member</h3>
             <div className="space-y-2">
               <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                Mathematics
+                Phạm Hải Quân-SE183086
               </a>
               <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                Physics
+                Nguyễn Trần Khánh Kiên-SE183010
               </a>
               <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                Chemistry
+                Nguyễn Minh Trí-SE183033
               </a>
               <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
-                All Subjects
+                Nguyễn Bùi Bảo Long-SE183111
+              </a>
+              <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
+                Trần Minh Cường-SE183024
               </a>
             </div>
           </div>
