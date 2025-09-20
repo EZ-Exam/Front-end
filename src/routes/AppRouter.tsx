@@ -8,11 +8,13 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { HelpPage } from '@/pages/HelpPage';
 import { LessonsPage } from '@/pages/lessons/LessonsPage';
 import { LessonDetailPage } from '@/pages/lessons/LessonDetailPage';
-import { ExercisesPage } from '@/pages/exercises/ExercisesPage';
-import { ExerciseDetailPage } from '@/pages/exercises/ExerciseDetailPage';
+import { CreateLessonPage } from '@/pages/lessons/CreateLessonPage';
 import { MockTestsPage } from '@/pages/mock-tests/MockTestsPage';
 import { MockTestDetailPage } from '@/pages/mock-tests/MockTestDetailPage';
-import { AnalyticsPage } from '@/pages/AnalyticsPage';
+import { CreateMockTestPage } from '@/pages/mock-tests/CreateMockTestPage';
+import { QuestionBankPage } from '@/pages/question-bank/QuestionBankPage';
+import { CreateQuestionSetPage } from '@/pages/question-bank/CreateQuestionSetPage';
+import { NotificationsPage } from '@/pages/NotificationPage';
 
 export function AppRouter() {
   return (
@@ -28,19 +30,21 @@ export function AppRouter() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="help" element={<HelpPage />} />
-          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
           
           {/* Lessons Routes */}
           <Route path="lessons" element={<LessonsPage />} />
           <Route path="lessons/:id" element={<LessonDetailPage />} />
+          <Route path="create-lesson" element={<CreateLessonPage />} />
           
-          {/* Exercises Routes */}
-          <Route path="exercises" element={<ExercisesPage />} />
-          <Route path="exercises/:id" element={<ExerciseDetailPage />} />
+          {/* Question Bank Routes */}
+          <Route path="question-bank" element={<QuestionBankPage />} />
+          <Route path="create-question-set" element={<CreateQuestionSetPage />} />
           
           {/* Mock Tests Routes */}
           <Route path="mock-tests" element={<MockTestsPage />} />
           <Route path="mock-tests/:id" element={<MockTestDetailPage />} />
+          <Route path="create-mock-test" element={<CreateMockTestPage />} />
         </Route>
         
         {/* Catch all - redirect to home */}

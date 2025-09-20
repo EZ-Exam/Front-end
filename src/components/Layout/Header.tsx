@@ -8,10 +8,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bell, Search, Settings, User, LogOut, Menu } from 'lucide-react';
-import { mockUser } from '@/data/mockData';
+import { Bell, Search, Settings, User, LogOut, Menu,Crown } from 'lucide-react';
+import { mockUser,mockUserAccount } from '@/data/mockData';
 import EZEXAMLogo from '@/assest/EZEXAM_Icon.png';
-
+import {NotificationDropdown} from '@/components/Layout/NotificationDropdown';
+import { CreateContentDropdown } from './CreateContentDropdown';
+import { AccountDropdown } from './AccountDropdown';
 interface HeaderProps {
   onMenuToggle: () => void;
 }
@@ -49,48 +51,23 @@ export function Header({ onMenuToggle }: HeaderProps) {
           />
         </div>
 
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-            3
-          </span>
-        </Button>
+        <NotificationDropdown />
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 px-2">
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={mockUser.avatar} />
-                <AvatarFallback>{mockUser.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <span className="hidden md:block font-medium">{mockUser.name}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <div className="p-2">
-              <p className="font-medium">{mockUser.name}</p>
-              <p className="text-sm text-gray-500">{mockUser.email}</p>
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/profile">
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/settings">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <CreateContentDropdown />
+
+        {/* Account Balance & Package */}
+        <div className="hidden md:flex items-center gap-3 px-3 py-1 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-1">
+            <Crown className="h-4 w-4 text-blue-600" />
+            <span className="text-sm font-medium capitalize">{mockUserAccount.packageType}</span>
+          </div>
+          <div className="text-sm font-medium text-green-600">
+            ${mockUserAccount.balance.toFixed(2)}
+          </div>
+        </div>
+
+        <AccountDropdown />
+
       </div>
     </header>
   );

@@ -18,7 +18,7 @@ import {
   AlertTriangle,
   Trophy
 } from 'lucide-react';
-import { mockTests } from '@/data/mockData';
+import { mockTests, mockQuestionSets } from '@/data/mockData';
 import { BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
@@ -34,6 +34,11 @@ export function MockTestDetailPage() {
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   
   const test = mockTests.find(t => t.id === id);
+  
+  // Get all questions from the question sets
+  const allQuestions = test?.questionSets.flatMap(qsId => 
+    mockQuestionSets.find(qs => qs.id === qsId)?.questions || []
+  ) || [];
   
   useEffect(() => {
     if (hasStarted && test && !submitted) {
@@ -155,8 +160,8 @@ export function MockTestDetailPage() {
     );
   }
 
-  const currentQuestion = test.questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / test.questions.length) * 100;
+  const currentQuestion = allQuestions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / allQuestions.length) * 100;
   const answeredCount = Object.keys(answers).length;
   const flaggedCount = flagged.size;
 
@@ -180,7 +185,7 @@ export function MockTestDetailPage() {
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex < test.questions.length - 1) {
+    if (currentQuestionIndex < allQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
@@ -198,15 +203,19 @@ export function MockTestDetailPage() {
   };
 
   const getScore = () => {
-    const correct = test.questions.filter(q => 
-      answers[q.id] === q.correctAnswer
-    ).length;
-    return Math.round((correct / test.questions.length) * 100);
+    const correct = allQuestions.filter(q => {
+      const selectedAnswer = answers[q.id];
+      return q.answers.find(a => a.text === selectedAnswer && a.isCorrect);
+    }).length;
+    return Math.round((correct / allQuestions.length) * 100);
   };
 
   if (showResults) {
     const score = getScore();
-    const correctCount = test.questions.filter(q => answers[q.id] === q.correctAnswer).length;
+    const correctCount = allQuestions.filter(q => {
+      const selectedAnswer = answers[q.id];
+      return q.answers.find(a => a.text === selectedAnswer && a.isCorrect);
+    }).length;
     const timeSpent = (test.duration * 60) - timeLeft;
     
     return (
@@ -239,7 +248,7 @@ export function MockTestDetailPage() {
               {score >= 70 ? 'Excellent!' : score >= 50 ? 'Good Job!' : 'Keep Practicing!'}
             </p>
             <p className="text-gray-600">
-              You scored {correctCount} out of {test.questions.length} questions correct
+              You scored {correctCount} out of {allQuestions.length} questions correct
             </p>
           </CardHeader>
         </Card>
@@ -315,7 +324,7 @@ export function MockTestDetailPage() {
         <CardContent className="pt-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium">
-              Question {currentQuestionIndex + 1} of {test.questions.length}
+              Question {currentQuestionIndex + 1} of {allQuestions.length}
             </span>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span>Answered: {answeredCount}</span>
@@ -346,52 +355,25 @@ export function MockTestDetailPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <p className="text-lg mb-4">{currentQuestion.text}</p>
-                
-                {currentQuestion.formula && (
-                  <div className="my-4 p-4 bg-gray-50 rounded-lg">
-                    <BlockMath math={currentQuestion.formula} />
-                  </div>
-                )}
+                <p className="text-lg mb-4">{currentQuestion.questionText}</p>
               </div>
 
               {/* Answer Options */}
-              {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
-                <RadioGroup
-                  value={answers[currentQuestion.id] || ''}
-                  onValueChange={handleAnswerChange}
-                >
-                  <div className="space-y-3">
-                    {currentQuestion.options.map((option, index) => (
-                      <div key={index} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value={option} id={`option-${index}`} />
-                        <Label htmlFor={`option-${index}`} className="cursor-pointer flex-1">
-                          {option}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </RadioGroup>
-              )}
-
-              {currentQuestion.type === 'text' && (
-                <Input
-                  placeholder="Enter your answer..."
-                  value={answers[currentQuestion.id] || ''}
-                  onChange={(e) => handleAnswerChange(e.target.value)}
-                  className="text-lg"
-                />
-              )}
-
-              {currentQuestion.type === 'numerical' && (
-                <Input
-                  type="number"
-                  placeholder="Enter numerical answer..."
-                  value={answers[currentQuestion.id] || ''}
-                  onChange={(e) => handleAnswerChange(e.target.value)}
-                  className="text-lg"
-                />
-              )}
+              <RadioGroup
+                value={answers[currentQuestion.id] || ''}
+                onValueChange={handleAnswerChange}
+              >
+                <div className="space-y-3">
+                  {currentQuestion.answers.map((answer, index) => (
+                    <div key={index} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                      <RadioGroupItem value={answer.text} id={`option-${index}`} />
+                      <Label htmlFor={`option-${index}`} className="cursor-pointer flex-1">
+                        {answer.text}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </RadioGroup>
 
               {/* Navigation */}
               <div className="flex items-center justify-between pt-4">
@@ -406,7 +388,7 @@ export function MockTestDetailPage() {
 
                 <Button
                   onClick={handleNext}
-                  disabled={currentQuestionIndex === test.questions.length - 1}
+                  disabled={currentQuestionIndex === allQuestions.length - 1}
                 >
                   Next
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -424,7 +406,7 @@ export function MockTestDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-5 gap-2">
-                {test.questions.map((question, index) => (
+                {allQuestions.map((question, index) => (
                   <Button
                     key={index}
                     variant={index === currentQuestionIndex ? 'default' : 'outline'}
@@ -480,7 +462,7 @@ export function MockTestDetailPage() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-500">Questions answered:</span>
-                <span className="font-medium ml-2">{answeredCount} / {test.questions.length}</span>
+                <span className="font-medium ml-2">{answeredCount} / {allQuestions.length}</span>
               </div>
               <div>
                 <span className="text-gray-500">Time remaining:</span>

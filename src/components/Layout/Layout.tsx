@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import { Footer } from './Footer';
+import { SupportChat } from './SupportChat';
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -17,6 +19,8 @@ export function Layout() {
           <Outlet />
         </main>
       </div>
+      <Footer />
+      <SupportChat />
     </div>
   );
 }

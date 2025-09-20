@@ -3,12 +3,10 @@ import { cn } from '@/lib/utils';
 import {
   Home,
   BookOpen,
-  PenTool,
   FileText,
-  BarChart3,
   User,
   Settings,
-  HelpCircle,
+  HelpCircle, PenTool,
   X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,9 +19,8 @@ interface SidebarProps {
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Lessons', href: '/lessons', icon: BookOpen },
-  { name: 'Exercises', href: '/exercises', icon: PenTool },
+  { name: 'Question Bank', href: '/question-bank', icon: PenTool },
   { name: 'Mock Tests', href: '/mock-tests', icon: FileText },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Profile', href: '/profile', icon: User },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Help & Support', href: '/help', icon: HelpCircle },

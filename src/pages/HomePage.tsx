@@ -58,11 +58,11 @@ export function HomePage() {
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <BarChart3 className="h-6 w-6 text-green-600" />
               </div>
-              <CardTitle className="text-xl">Progress Analytics</CardTitle>
+              <CardTitle className="text-xl">Practice Mock Testing</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 text-center">
-                Detailed insights into your performance with visual progress tracking.
+                Practice knowledge with test-taking skills with real exam simulation
               </p>
             </CardContent>
           </Card>
@@ -94,52 +94,6 @@ export function HomePage() {
               </p>
             </CardContent>
           </Card>
-        </div>
-      </section>
-
-      {/* Progress Overview */}
-      <section>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Your Progress</h2>
-          <Button variant="outline" asChild>
-            <Link to="/analytics">
-              View Detailed Analytics
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-        
-        <div className="grid md:grid-cols-3 gap-6">
-          {mockProgressData.map((subject) => (
-            <Card key={subject.subject} className="hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">{subject.subject}</CardTitle>
-                <Badge variant={subject.score >= 80 ? 'default' : 'secondary'}>
-                  {subject.score}%
-                </Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Completed</span>
-                    <span>{subject.completed}/{subject.total}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(subject.completed / subject.total) * 100}%` }}
-                    />
-                  </div>
-                  {subject.score >= 80 && (
-                    <div className="flex items-center text-green-600 text-sm">
-                      <Star className="h-4 w-4 mr-1 fill-current" />
-                      Excellent Progress!
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
       </section>
 

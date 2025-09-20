@@ -7,25 +7,35 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { 
-  Play, 
+  FileText, 
   Clock, 
   ArrowLeft, 
   MessageSquare, 
   BookOpen,
-  FileText,
+  Download,
   CheckCircle,
-  RotateCcw
+  RotateCcw,
+  ExternalLink
 } from 'lucide-react';
-import { mockLessons, mockComments } from '@/data/mockData';
+import { mockLessons, mockComments, mockQuestionSets } from '@/data/mockData';
+import { QuestionResult } from '@/components/ui/QuestionResult';
+import { MultipleChoiceQuestion, QuestionResult as QuestionResultType } from '@/types';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function LessonDetailPage() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('video');
   const [userNote, setUserNote] = useState('');
   const [newComment, setNewComment] = useState('');
+  const [quizAnswers, setQuizAnswers] = useState<Record<string, string[]>>({});
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [questionResults, setQuestionResults] = useState<Record<string, QuestionResultType>>({});
   
   const lesson = mockLessons.find(l => l.id === id);
+  const questionSet = lesson ? mockQuestionSets.find(qs => qs.id === lesson.questionSetId) : null;
   
   if (!lesson) {
     return (
@@ -69,6 +79,47 @@ export function LessonDetailPage() {
     console.log('New comment:', newComment);
     setNewComment('');
     // Would submit to backend
+  };
+
+  const handleAnswerChange = (questionId: string, answerId: string, checked: boolean) => {
+    setQuizAnswers(prev => {
+      const currentAnswers = prev[questionId] || [];
+      if (checked) {
+        return { ...prev, [questionId]: [...currentAnswers, answerId] };
+      } else {
+        return { ...prev, [questionId]: currentAnswers.filter(id => id !== answerId) };
+      }
+    });
+  };
+
+  const handleQuizSubmit = () => {
+    if (!questionSet) return;
+    
+    const results: Record<string, QuestionResultType> = {};
+    
+    questionSet.questions.forEach(question => {
+      const selectedAnswers = quizAnswers[question.id] || [];
+      const correctAnswers = question.answers.filter(a => a.isCorrect).map(a => a.id);
+      
+      const isCorrect = selectedAnswers.length === correctAnswers.length &&
+                       selectedAnswers.every(id => correctAnswers.includes(id));
+      
+      results[question.id] = {
+        questionId: question.id,
+        selectedAnswers,
+        isCorrect,
+        correctAnswers
+      };
+    });
+    
+    setQuestionResults(results);
+    setQuizSubmitted(true);
+  };
+
+  const handleQuizReset = () => {
+    setQuizAnswers({});
+    setQuestionResults({});
+    setQuizSubmitted(false);
   };
 
   return (
@@ -118,9 +169,9 @@ export function LessonDetailPage() {
       {/* Lesson Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="video" className="flex items-center gap-2">
-            <Play className="h-4 w-4" />
-            Video
+          <TabsTrigger value="pdf" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            PDF Lesson
           </TabsTrigger>
           <TabsTrigger value="quiz" className="flex items-center gap-2">
             <RotateCcw className="h-4 w-4" />
@@ -131,36 +182,47 @@ export function LessonDetailPage() {
             Comments ({mockComments.length})
           </TabsTrigger>
           <TabsTrigger value="notes" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
+            <BookOpen className="h-4 w-4" />
             My Notes
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="video" className="space-y-6">
+        <TabsContent value="pdf" className="space-y-6">
           <Card>
             <CardContent className="p-0">
-              <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden">
-                <iframe
-                  src={lesson.videoUrl}
-                  title={lesson.title}
-                  className="w-full h-full"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
+              <div className="aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                <div className="text-center space-y-4">
+                  <FileText className="h-16 w-16 text-gray-400 mx-auto" />
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">PDF Lesson Content</h3>
+                    <p className="text-gray-600 mb-4">
+                      View the complete lesson material in PDF format
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <Button>
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Open PDF
+                      </Button>
+                      <Button variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader>
-              <CardTitle>Video Description</CardTitle>
+              <CardTitle>Lesson Description</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 leading-relaxed">
                 {lesson.description} This comprehensive lesson covers all the essential concepts 
-                you need to understand. Take your time to watch through the entire video and 
-                don't hesitate to pause and replay sections as needed.
+                you need to understand. Take your time to read through the entire PDF and 
+                don't hesitate to review sections as needed.
               </p>
               
               <div className="mt-6 flex gap-4">
@@ -170,7 +232,7 @@ export function LessonDetailPage() {
                 </Button>
                 <Button variant="outline">
                   <BookOpen className="mr-2 h-4 w-4" />
-                  Download Transcript
+                  Download PDF
                 </Button>
               </div>
             </CardContent>
@@ -180,27 +242,75 @@ export function LessonDetailPage() {
         <TabsContent value="quiz" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Quick Quiz</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                Quick Quiz
+                {quizSubmitted && (
+                  <Button variant="outline" size="sm" onClick={handleQuizReset}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Reset Quiz
+                  </Button>
+                )}
+              </CardTitle>
               <p className="text-gray-600">
                 Test your understanding of the lesson with these practice questions.
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="p-6 border rounded-lg">
-                <h3 className="font-medium mb-3">
-                  Question 1: What is the main topic covered in this lesson?
-                </h3>
-                <div className="space-y-2">
-                  {['Quadratic Equations', 'Linear Equations', 'Exponential Functions', 'Trigonometry'].map((option, index) => (
-                    <label key={index} className="flex items-center space-x-3 cursor-pointer">
-                      <input type="radio" name="q1" value={option} className="text-blue-600" />
-                      <span>{option}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+              {questionSet?.questions.map((question, questionIndex) => {
+                const userAnswers = quizAnswers[question.id] || [];
+                const result = questionResults[question.id];
+
+                return (
+                  <div key={question.id} className="space-y-4">
+                    <div className="p-6 border rounded-lg">
+                      <h3 className="font-medium mb-4">
+                        Question {questionIndex + 1}: {question.questionText}
+                      </h3>
+                      
+                      <div className="space-y-3">
+                        {question.answers.map((answer) => (
+                          <div key={answer.id} className="flex items-center space-x-3">
+                            <Checkbox
+                              checked={userAnswers.includes(answer.id)}
+                              onCheckedChange={(checked) => {
+                                if (!quizSubmitted) {
+                                  handleAnswerChange(question.id, answer.id, checked === true);
+                                }
+                              }}
+                              disabled={quizSubmitted}
+                            />
+                            <Label className="cursor-pointer flex-1">
+                              {answer.text}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {quizSubmitted && result && (
+                      <QuestionResult
+                        result={result}
+                        explanation={question.explanation}
+                        correctAnswerTexts={question.answers.filter(a => a.isCorrect).map(a => a.text)}
+                        selectedAnswerTexts={question.answers.filter(a => userAnswers.includes(a.id)).map(a => a.text)}
+                      />
+                    )}
+                  </div>
+                );
+              })}
               
-              <Button>Submit Quiz</Button>
+              {!quizSubmitted ? (
+                <Button onClick={handleQuizSubmit} disabled={!questionSet || Object.keys(quizAnswers).length < questionSet.questions.length}>
+                  Submit Quiz
+                </Button>
+              ) : (
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <h3 className="font-medium mb-2">Quiz Complete!</h3>
+                  <p className="text-sm text-gray-600">
+                    You got {Object.values(questionResults).filter(r => r.isCorrect).length} out of {questionSet?.questions.length || 0} questions correct.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
