@@ -128,25 +128,25 @@ export const mockLessons: Lesson[] = [
   }
 ];
 
-export const mockQuestions: Question[] = [
-  {
-    id: '1',
-    text: 'Solve for x in the equation x² - 5x + 6 = 0',
-    formula: 'x^2 - 5x + 6 = 0',
-    options: ['x = 2, 3', 'x = 1, 6', 'x = -2, -3', 'x = 0, 5'],
-    correctAnswer: 'x = 2, 3',
-    explanation: 'Factor the quadratic: (x-2)(x-3) = 0, so x = 2 or x = 3',
-    type: 'multiple-choice'
-  },
-  {
-    id: '2',
-    text: 'What is the acceleration due to gravity on Earth?',
-    options: ['9.8 m/s²', '10 m/s²', '8.9 m/s²', '11.2 m/s²'],
-    correctAnswer: '9.8 m/s²',
-    explanation: 'The standard acceleration due to gravity is approximately 9.8 m/s²',
-    type: 'multiple-choice'
-  }
-];
+  export const mockQuestions: Question[] = [
+    {
+      id: '1',
+      text: 'Solve for x in the equation x² - 5x + 6 = 0',
+      formula: 'x^2 - 5x + 6 = 0',
+      options: ['x = 2, 3', 'x = 1, 6', 'x = -2, -3', 'x = 0, 5'],
+      correctAnswer: 'x = 2, 3',
+      explanation: 'Factor the quadratic: (x-2)(x-3) = 0, so x = 2 or x = 3',
+      type: 'multiple-choice'
+    },
+    {
+      id: '2',
+      text: 'What is the acceleration due to gravity on Earth?',
+      options: ['9.8 m/s²', '10 m/s²', '8.9 m/s²', '11.2 m/s²'],
+      correctAnswer: '9.8 m/s²',
+      explanation: 'The standard acceleration due to gravity is approximately 9.8 m/s²',
+      type: 'multiple-choice'
+    }
+  ];
 
 export const mockExercises: Exercise[] = [
   {

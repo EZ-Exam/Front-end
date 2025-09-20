@@ -6,33 +6,30 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { 
   FileText, 
   Clock, 
   ArrowLeft, 
   MessageSquare, 
-  BookOpen,
   Download,
   CheckCircle,
-  RotateCcw,
-  ExternalLink
+  RotateCcw
 } from 'lucide-react';
 import { mockLessons, mockComments, mockQuestionSets } from '@/data/mockData';
 import { QuestionResult } from '@/components/ui/QuestionResult';
-import { MultipleChoiceQuestion, QuestionResult as QuestionResultType } from '@/types';
+import { QuestionResult as QuestionResultType } from '@/types';
 import { Checkbox } from '@/components/ui/checkbox';
+import { PDFViewer } from '@/components/ui/pdf-viewer';
 
 export function LessonDetailPage() {
   const { id } = useParams();
-  const [activeTab, setActiveTab] = useState('video');
-  const [userNote, setUserNote] = useState('');
+  const [activeTab, setActiveTab] = useState('pdf');
   const [newComment, setNewComment] = useState('');
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string[]>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [questionResults, setQuestionResults] = useState<Record<string, QuestionResultType>>({});
+  
   
   const lesson = mockLessons.find(l => l.id === id);
   const questionSet = lesson ? mockQuestionSets.find(qs => qs.id === lesson.questionSetId) : null;
@@ -69,10 +66,6 @@ export function LessonDetailPage() {
     }
   };
 
-  const handleSaveNote = () => {
-    console.log('Saving note:', userNote);
-    // Would save to backend
-  };
 
   const handleSubmitComment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,7 +161,7 @@ export function LessonDetailPage() {
 
       {/* Lesson Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pdf" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             PDF Lesson
@@ -181,36 +174,22 @@ export function LessonDetailPage() {
             <MessageSquare className="h-4 w-4" />
             Comments ({mockComments.length})
           </TabsTrigger>
-          <TabsTrigger value="notes" className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            My Notes
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="pdf" className="space-y-6">
-          <Card>
+          {/* PDF Viewer */}
+          <Card className="min-h-[1600px]">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                PDF Viewer
+              </CardTitle>
+            </CardHeader>
             <CardContent className="p-0">
-              <div className="aspect-[4/5] bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <FileText className="h-16 w-16 text-gray-400 mx-auto" />
-                  <div>
-                    <h3 className="font-medium text-lg mb-2">PDF Lesson Content</h3>
-                    <p className="text-gray-600 mb-4">
-                      View the complete lesson material in PDF format
-                    </p>
-                    <div className="flex gap-3 justify-center">
-                      <Button>
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Open PDF
-                      </Button>
-                      <Button variant="outline">
-                        <Download className="mr-2 h-4 w-4" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <PDFViewer 
+                src="/thuvienhoclieu.com-SGK-Vat-Li-11-KNTT.pdf"
+                title="Lesson PDF"
+              />
             </CardContent>
           </Card>
           
@@ -231,7 +210,7 @@ export function LessonDetailPage() {
                   Mark as Complete
                 </Button>
                 <Button variant="outline">
-                  <BookOpen className="mr-2 h-4 w-4" />
+                  <Download className="mr-2 h-4 w-4" />
                   Download PDF
                 </Button>
               </div>
@@ -391,36 +370,6 @@ export function LessonDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="notes" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Notes</CardTitle>
-              <p className="text-gray-600">
-                Write down your thoughts, key concepts, and questions while learning.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Textarea
-                  placeholder="Start taking notes..."
-                  value={userNote}
-                  onChange={(e) => setUserNote(e.target.value)}
-                  className="min-h-[200px] resize-none"
-                />
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">
-                    Auto-saved {new Date().toLocaleTimeString()}
-                  </span>
-                  <Button onClick={handleSaveNote}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Save Notes
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );
