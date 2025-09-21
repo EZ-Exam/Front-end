@@ -33,18 +33,18 @@ export function CreateLessonPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="space-y-6 flex flex-col items-center">
+      <div className="flex items-center gap-4 w-full">
         <Button variant="ghost" size="sm" asChild>
           <Link to="/lessons">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Lessons
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold">Create New Lesson</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
+      <form onSubmit={handleSubmit} className="max-w-2xl w-full space-y-6">
+      <h1 className="text-3xl font-bold ">Create New Lesson</h1>
         <Card>
           <CardHeader>
             <CardTitle>Lesson Details</CardTitle>
@@ -73,33 +73,6 @@ export function CreateLessonPage() {
                     <SelectItem value="Chemistry">Chemistry</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-            
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="difficulty">Difficulty *</Label>
-                <Select value={lessonForm.difficulty} onValueChange={(value) => setLessonForm(prev => ({ ...prev, difficulty: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select difficulty" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Easy">Easy</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="Hard">Hard</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes) *</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={lessonForm.duration}
-                  onChange={(e) => setLessonForm(prev => ({ ...prev, duration: e.target.value }))}
-                  placeholder="30"
-                  required
-                />
               </div>
             </div>
             

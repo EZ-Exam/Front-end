@@ -148,25 +148,6 @@ export const mockLessons: Lesson[] = [
     }
   ];
 
-export const mockExercises: Exercise[] = [
-  {
-    id: '1',
-    title: 'Algebra Basics',
-    subject: 'Math',
-    difficulty: 'Easy',
-    questions: mockQuestions,
-    timeLimit: 30
-  },
-  {
-    id: '2',
-    title: 'Mechanics Problems',
-    subject: 'Physics',
-    difficulty: 'Hard',
-    questions: mockQuestions,
-    timeLimit: 45
-  }
-];
-
 export const mockTests: MockTest[] = [
   {
     id: '1',

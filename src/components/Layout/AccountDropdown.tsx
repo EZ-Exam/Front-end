@@ -23,7 +23,8 @@ import {
   MinusCircle, 
   TrendingUp,
   Building2,
-  Calendar
+  Calendar,
+  Link
 } from 'lucide-react';
 import { mockUser, mockUserAccount, mockBankAccounts, mockTransactions } from '@/data/mockData';
 
