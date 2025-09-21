@@ -9,7 +9,7 @@ export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Fixed Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
@@ -25,16 +25,18 @@ export function Layout() {
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       </div>
       
-      {/* Main Content with proper spacing */}
-      <div className="flex">
-        <main className="flex-1 lg:ml-64 p-6 pt-24" >
+      {/* Main Content with proper spacing - flex-1 to push footer down */}
+      <div className="flex flex-1">
+        <main className="flex-1 lg:ml-64 p-6 pt-24 pb-6" >
           <Outlet />
         </main>
       </div>
       
-      {/* Footer */}
-      <Footer />
-      <SupportChat />
+      {/* Footer - always at bottom of viewport */}
+      <div className="mt-auto">
+        <Footer />
+        <SupportChat />
+      </div>
     </div>
   );
 }

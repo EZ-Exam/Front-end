@@ -15,12 +15,14 @@ import {
   X, 
   Plus, 
   Trash2,
-  Eye,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  BookOpen,
+  List
 } from 'lucide-react';
 import { mockQuestionSets } from '@/data/mockData';
 import { QuestionSet, MultipleChoiceQuestion, Answer } from '@/types';
+import { Flashcard } from '@/components/ui/flashcard';
 
 export function QuestionBankDetailPage() {
   const { id, mode } = useParams<{ id: string; mode: 'view' | 'edit' }>();
@@ -29,6 +31,7 @@ export function QuestionBankDetailPage() {
   const [questionSet, setQuestionSet] = useState<QuestionSet | null>(null);
   const [editedQuestionSet, setEditedQuestionSet] = useState<QuestionSet | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'flashcard'>('list');
 
   useEffect(() => {
     const foundQuestionSet = mockQuestionSets.find(qs => qs.id === id);
@@ -196,7 +199,7 @@ export function QuestionBankDetailPage() {
   const currentData = isEditing ? editedQuestionSet : questionSet;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -211,6 +214,27 @@ export function QuestionBankDetailPage() {
           </div>
           
           <div className="flex items-center gap-2">
+            {!isEditing && (
+              <div className="flex items-center gap-1 mr-4">
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                >
+                  <List className="mr-2 h-4 w-4" />
+                  List View
+                </Button>
+                <Button
+                  variant={viewMode === 'flashcard' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('flashcard')}
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Flashcard
+                </Button>
+              </div>
+            )}
+            
             {isEditing ? (
               <>
                 <Button variant="outline" onClick={handleCancel}>
@@ -320,18 +344,34 @@ export function QuestionBankDetailPage() {
         </Card>
 
         {/* Questions */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Questions</h2>
-            {isEditing && (
-              <Button onClick={addQuestion} variant="outline">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Question
-              </Button>
-            )}
+        {viewMode === 'flashcard' ? (
+          <div className="bg-gray-50 rounded-lg p-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-semibold mb-2">Flashcard Study Mode</h2>
+              <p className="text-gray-600">Study your questions in an interactive flashcard format</p>
+            </div>
+            <Flashcard 
+              questions={currentData.questions}
+              showCorrectAnswers={true}
+              onComplete={(results) => {
+                console.log('Flashcard completed:', results);
+                // You can add completion logic here
+              }}
+            />
           </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold">Questions</h2>
+              {isEditing && (
+                <Button onClick={addQuestion} variant="outline">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Question
+                </Button>
+              )}
+            </div>
 
-          {currentData.questions.map((question, questionIndex) => (
+            {currentData.questions.map((question, questionIndex) => (
             <Card key={question.id} className="relative">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -460,7 +500,8 @@ export function QuestionBankDetailPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
+          </div>
+        )}
 
         {/* Bottom Actions */}
         {isEditing && (
