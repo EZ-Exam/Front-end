@@ -157,7 +157,23 @@ export function CreateQuestionSetPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subject">Class *</Label>
+                <Select value={questionSetForm.subject} onValueChange={(value) => setQuestionSetForm(prev => ({ ...prev, subject: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Math">10</SelectItem>
+                    <SelectItem value="Physics">11</SelectItem>
+                    <SelectItem value="Chemistry">12</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+
             
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>

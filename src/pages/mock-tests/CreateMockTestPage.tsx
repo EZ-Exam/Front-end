@@ -47,18 +47,18 @@ export function CreateMockTestPage() {
   }, 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="space-y-6 flex flex-col items-center">
+      <div className="flex items-center gap-4 w-full">
         <Button variant="ghost" size="sm" asChild>
           <Link to="/mock-tests">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Mock Tests
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold">Create Mock Test</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
+      <form onSubmit={handleSubmit} className="max-w-2xl w-full space-y-6">
+      <h1 className="text-3xl font-bold">Create Mock Test</h1>
         <Card>
           <CardHeader>
             <CardTitle>Mock Test Details</CardTitle>
