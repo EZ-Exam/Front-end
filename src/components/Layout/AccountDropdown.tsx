@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,20 +19,32 @@ import {
   User, 
   LogOut, 
   Settings, 
-  CreditCard, 
   PlusCircle, 
   MinusCircle, 
   TrendingUp,
-  Building2,
-  Calendar
+  Building2
 } from 'lucide-react';
-import { mockUser, mockUserAccount, mockBankAccounts, mockTransactions } from '@/data/mockData';
+import { mockUserAccount, mockBankAccounts } from '@/data/mockData';
+import { useAuth } from '@/pages/auth/AuthContext';
 
 export function AccountDropdown() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeDialog, setActiveDialog] = useState<'bank' | 'deposit' | 'withdrawal' | 'upgrade' | null>(null);
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [selectedBank, setSelectedBank] = useState('');
+
+  // User data is now managed by AuthContext, no need to fetch here
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
 
   const handleDeposit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,16 +76,20 @@ export function AccountDropdown() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="flex items-center gap-2 px-2">
             <Avatar className="w-8 h-8">
-              <AvatarImage src={mockUser.avatar} />
-              <AvatarFallback>{mockUser.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={user?.avatarUrl || ''} />
+              <AvatarFallback>
+                {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+              </AvatarFallback>
             </Avatar>
-            <span className="hidden md:block font-medium">{mockUser.name}</span>
+            <span className="hidden md:block font-medium">
+              {user?.fullName || 'User'}
+            </span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
           <div className="p-3">
-            <p className="font-medium">{mockUser.name}</p>
-            <p className="text-sm text-gray-500">{mockUser.email}</p>
+            <p className="font-medium">{user?.fullName || 'User'}</p>
+            <p className="text-sm text-gray-500">{user?.email || 'No email'}</p>
             <div className="flex items-center justify-between mt-2">
               <Badge className={getPackageBadgeColor(mockUserAccount.packageType)}>
                 {mockUserAccount.packageType.toUpperCase()}
@@ -98,7 +115,7 @@ export function AccountDropdown() {
             Upgrade Package
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={handleProfileClick}>
             <User className="mr-2 h-4 w-4" />
             Profile
           </DropdownMenuItem>
@@ -107,7 +124,7 @@ export function AccountDropdown() {
             Settings
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             Logout
           </DropdownMenuItem>

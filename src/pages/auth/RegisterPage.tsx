@@ -10,9 +10,7 @@ import { User, Mail, Lock, Eye, EyeOff} from 'lucide-react';
 import EZEXAMLogo from '@/assest/EZEXAM_Icon.png';
 import axios from 'axios';
 import api from '@/services/axios';
-import { jwtDecode } from 'jwt-decode';
 import { useAuth } from '@/pages/auth/AuthContext';
-import type { DecodedToken } from '@/pages/auth/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 
 declare global {
@@ -32,7 +30,7 @@ export function RegisterPage() {
     agreeToTerms: false
   });
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,12 +154,8 @@ export function RegisterPage() {
       console.log('Backend response:', loginResponse);
       
       if (loginResponse.status === 200) {
-        localStorage.setItem('token', loginResponse.data.token);
-        
-        // Decode token và set user
-        const decodedToken = jwtDecode<DecodedToken>(loginResponse.data.token);
-        console.log('Decoded token after Google login:', decodedToken);
-        setUser(decodedToken);
+        // Store token and update auth state
+        login(loginResponse.data.token);
         
         toast.success(loginResponse.data.message || "Registration Successful", {
           position: "top-center",
@@ -169,11 +163,9 @@ export function RegisterPage() {
           autoClose: 2000
         });
         
+        // Navigate to home page (role-based navigation will be handled by backend API)
         setTimeout(() => {
-          if (decodedToken.roleId === "1") navigate('/');
-          else if (decodedToken.roleId === "2") navigate('/admin');
-          else if (decodedToken.roleId === "3") navigate('/mod');
-          else navigate('/');
+          navigate('/');
         }, 2000);
       }
     } catch (error : any) {
