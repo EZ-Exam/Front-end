@@ -179,7 +179,7 @@ export function LoginPage() {
           <div className="w-20 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <img src={EZEXAMLogo} alt='Logo'/>
           </div>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardTitle className="text-2xl">Welcome to EZEXAM</CardTitle>
           <CardDescription>
             Sign in to continue your exam preparation
           </CardDescription>

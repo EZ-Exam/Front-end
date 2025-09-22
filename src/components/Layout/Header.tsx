@@ -1,24 +1,24 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bell, Search, Settings, User, LogOut, Menu,Crown } from 'lucide-react';
-import { mockUser,mockUserAccount } from '@/data/mockData';
+import { Search, Menu, Crown } from 'lucide-react';
+import { mockUserAccount } from '@/data/mockData';
 import EZEXAMLogo from '@/assest/EZEXAM_Icon.png';
 import {NotificationDropdown} from '@/components/Layout/NotificationDropdown';
 import { CreateContentDropdown } from './CreateContentDropdown';
 import { AccountDropdown } from './AccountDropdown';
+import { useAuth } from '@/pages/auth/AuthContext';
 interface HeaderProps {
   onMenuToggle: () => void;
 }
 
 export function Header({ onMenuToggle }: HeaderProps) {
+  const { isAuthenticated } = useAuth();
+
+  // Function to check if user is authenticated
+  const checkUserAuthentication = (): boolean => {
+    return isAuthenticated;
+  };
+
   return (
     <header className="bg-white border-b border-gray-200 px-4 lg:px-6 h-16 flex items-center justify-between">
       <div className="flex items-center gap-4">
@@ -51,20 +51,22 @@ export function Header({ onMenuToggle }: HeaderProps) {
           />
         </div>
 
-        <NotificationDropdown />
+        {checkUserAuthentication() && <NotificationDropdown />}
 
-        <CreateContentDropdown />
+        {checkUserAuthentication() && <CreateContentDropdown />}
 
-        {/* Account Balance & Package */}
-        <div className="hidden md:flex items-center gap-3 px-3 py-1 bg-gray-50 rounded-lg">
-          <div className="flex items-center gap-1">
-            <Crown className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-medium capitalize">{mockUserAccount.packageType}</span>
+        {/* Account Balance & Package - Only show when authenticated */}
+        {checkUserAuthentication() && (
+          <div className="hidden md:flex items-center gap-3 px-3 py-1 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-1">
+              <Crown className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium capitalize">{mockUserAccount.packageType}</span>
+            </div>
+            <div className="text-sm font-medium text-green-600">
+              ${mockUserAccount.balance.toFixed(2)}
+            </div>
           </div>
-          <div className="text-sm font-medium text-green-600">
-            ${mockUserAccount.balance.toFixed(2)}
-          </div>
-        </div>
+        )}
 
         <AccountDropdown />
 

@@ -28,7 +28,7 @@ import { mockUserAccount, mockBankAccounts } from '@/data/mockData';
 import { useAuth } from '@/pages/auth/AuthContext';
 
 export function AccountDropdown() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [activeDialog, setActiveDialog] = useState<'bank' | 'deposit' | 'withdrawal' | 'upgrade' | null>(null);
   const [depositAmount, setDepositAmount] = useState('');
@@ -37,6 +37,10 @@ export function AccountDropdown() {
 
   // User data is now managed by AuthContext, no need to fetch here
 
+  const handleLogin = () => {
+    navigate('/login');
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -44,6 +48,10 @@ export function AccountDropdown() {
 
   const handleProfileClick = () => {
     navigate('/profile');
+  };
+
+  const handleSettingsClick = () => {
+    navigate('/settings');
   };
 
   const handleDeposit = (e: React.FormEvent) => {
@@ -72,64 +80,70 @@ export function AccountDropdown() {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex items-center gap-2 px-2">
-            <Avatar className="w-8 h-8">
-              <AvatarImage src={user?.avatarUrl || ''} />
-              <AvatarFallback>
-                {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <span className="hidden md:block font-medium">
-              {user?.fullName || 'User'}
-            </span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64">
-          <div className="p-3">
-            <p className="font-medium">{user?.fullName || 'User'}</p>
-            <p className="text-sm text-gray-500">{user?.email || 'No email'}</p>
-            <div className="flex items-center justify-between mt-2">
-              <Badge className={getPackageBadgeColor(mockUserAccount.packageType)}>
-                {mockUserAccount.packageType.toUpperCase()}
-              </Badge>
-              <span className="text-sm font-medium">${mockUserAccount.balance.toFixed(2)}</span>
+      {isAuthenticated ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="flex items-center gap-2 px-2">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={user?.avatarUrl || ''} />
+                <AvatarFallback>
+                  {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden md:block font-medium">
+                {user?.fullName || 'User'}
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <div className="p-3">
+              <p className="font-medium">{user?.fullName || 'User'}</p>
+              <p className="text-sm text-gray-500">{user?.email || 'No email'}</p>
+              <div className="flex items-center justify-between mt-2">
+                <Badge className={getPackageBadgeColor(mockUserAccount.packageType)}>
+                  {mockUserAccount.packageType.toUpperCase()}
+                </Badge>
+                <span className="text-sm font-medium">${mockUserAccount.balance.toFixed(2)}</span>
+              </div>
             </div>
-          </div>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setActiveDialog('bank')}>
-            <Building2 className="mr-2 h-4 w-4" />
-            Bank Accounts
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setActiveDialog('deposit')}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Deposit Funds
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setActiveDialog('withdrawal')}>
-            <MinusCircle className="mr-2 h-4 w-4" />
-            Withdraw Funds
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setActiveDialog('upgrade')}>
-            <TrendingUp className="mr-2 h-4 w-4" />
-            Upgrade Package
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleProfileClick}>
-            <User className="mr-2 h-4 w-4" />
-            Profile
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setActiveDialog('bank')}>
+              <Building2 className="mr-2 h-4 w-4" />
+              Bank Accounts
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setActiveDialog('deposit')}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Deposit Funds
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setActiveDialog('withdrawal')}>
+              <MinusCircle className="mr-2 h-4 w-4" />
+              Withdraw Funds
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setActiveDialog('upgrade')}>
+              <TrendingUp className="mr-2 h-4 w-4" />
+              Upgrade Package
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleProfileClick}>
+              <User className="mr-2 h-4 w-4" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSettingsClick}>
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <Button onClick={handleLogin} variant="outline">
+          Login
+        </Button>
+      )}
 
       {/* Bank Accounts Dialog */}
       <Dialog open={activeDialog === 'bank'} onOpenChange={() => setActiveDialog(null)}>
