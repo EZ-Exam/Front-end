@@ -9,9 +9,7 @@ import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import EZEXAMLogo from '@/assest/EZEXAM_Icon.png';
 import axios from 'axios';
 import api from '@/services/axios';
-import { jwtDecode } from 'jwt-decode';
 import { useAuth } from '@/pages/auth/AuthContext';
-import type { DecodedToken } from '@/pages/auth/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 declare global {
   interface Window {
@@ -20,19 +18,17 @@ declare global {
 }
 
 export function LoginPage() {
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
   });
   const navigate = useNavigate();
-  const { user, setUser } = useAuth();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setIsLoading(true);
     console.log('Login attempt:', formData);
 
@@ -55,25 +51,16 @@ export function LoginPage() {
       console.log('Data being sent to server:', loginData);
       const response = await api.post('/login', loginData);
       console.log('response', response);
-      localStorage.setItem('token', response.data.token);
-      console.log("token của tôi", response.data.token)
+      
       if(response.status === 200) {
-// Decode token and set user
-        const decodedToken = jwtDecode<DecodedToken>(response.data.token);
-        console.log('Decoded token after login:', decodedToken);
-        setUser(decodedToken);
+        // Use AuthContext login method with navigation
+        login(response.data.token, navigate);
         
         toast.success(response.data.message, {
           position: "top-center",
           theme: "light",
           autoClose: 2000
         });
-        setTimeout(() => {
-          if (decodedToken.roleId === "1") navigate('/');
-          else if (decodedToken.roleId === "2") navigate('/admin');
-          else if (decodedToken.roleId === "3") navigate('/mod');
-          else navigate('/');
-        }, 2000);
       }
     } catch (error:any) {
       console.error('Lỗi đăng nhập:', error);
@@ -125,7 +112,6 @@ export function LoginPage() {
   const handleGoogleCallback = async (response: any) => {
     try {
       setIsLoading(true);
-      setError("");
 
       console.log("Google login response:", response);
 
@@ -150,25 +136,14 @@ export function LoginPage() {
       console.log('Backend response:', loginResponse);
       
       if (loginResponse.status === 200) {
-        localStorage.setItem('token', loginResponse.data.token);
-        
-        // Decode token và set user
-        const decodedToken = jwtDecode<DecodedToken>(loginResponse.data.token);
-        console.log('Decoded token after Google login:', decodedToken);
-        setUser(decodedToken);
+        // Use AuthContext login method with navigation
+        login(loginResponse.data.token, navigate);
         
         toast.success(loginResponse.data.message || "Login Successfully", {
           position: "top-center",
           theme: "light",
           autoClose: 2000
         });
-        
-        setTimeout(() => {
-          if (decodedToken.roleId === "1") navigate('/');
-          else if (decodedToken.roleId === "2") navigate('/admin');
-          else if (decodedToken.roleId === "3") navigate('/mod');
-          else navigate('/');
-        }, 2000);
       }
     } catch (error : any) {
       console.error('Google login error:', error);
@@ -204,7 +179,7 @@ export function LoginPage() {
           <div className="w-20 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <img src={EZEXAMLogo} alt='Logo'/>
           </div>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardTitle className="text-2xl">Welcome to EZEXAM</CardTitle>
           <CardDescription>
             Sign in to continue your exam preparation
           </CardDescription>

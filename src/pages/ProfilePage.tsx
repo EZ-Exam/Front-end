@@ -1,40 +1,270 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Camera, Mail, Calendar, GraduationCap, Target } from 'lucide-react';
-import { mockUser, mockProgressData } from '@/data/mockData';
+import { Camera, Mail, Calendar, Target, Phone } from 'lucide-react';
+import { mockProgressData } from '@/data/mockData';
+import { useAuth } from '@/pages/auth/AuthContext';
+import api from '@/services/axios';
+import { toast, ToastContainer } from 'react-toastify';
+import { uploadImgBBOneFile } from '@/services/imgBB';
 
 export function ProfilePage() {
+  const { user, setUser, isAuthenticated } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: mockUser.name,
-    email: mockUser.email,
-    grade: mockUser.grade.toString(),
-    bio: 'Passionate student preparing for university entrance exams.',
-    subjects: mockUser.subjects
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    avatarUrl: '',
   });
+  const [originalData, setOriginalData] = useState({
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    avatarUrl: '',
+  });
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string>('');
 
-  const handleSave = () => {
-    console.log('Saving profile:', formData);
+  // Lấy thông tin user từ API
+  const fetchUserData = async () => {
+    try {
+      setIsLoading(true);
+      console.log('Fetching user profile data...');
+      
+      const response = await api.get('/users/my-profile');
+      console.log('User profile response:', response);
+      
+      if (response.status === 200) {
+        const userData = response.data;
+        const newFormData = {
+          fullName: userData.fullName || '',
+          email: userData.email || '',
+          phoneNumber: userData.phoneNumber || '',
+          avatarUrl: userData.avatarUrl || '',
+        };
+        
+        setFormData(newFormData);
+        setOriginalData(newFormData);
+        setUserProfile(userData); // Lưu toàn bộ user data để sử dụng createdAt
+        
+        // Update AuthContext with fresh data
+        setUser({
+          id: userData.id || userData._id || '',
+          fullName: userData.fullName || '',
+          email: userData.email || '',
+          phoneNumber: userData.phoneNumber || '',
+          avatarUrl: userData.avatarUrl || '',
+          roleId: userData.roleId || '',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error fetching user data:', error);
+      toast.error(error.response?.data?.message || "Failed to load profile data", {
+        position: "top-center",
+        theme: "light",
+        autoClose: 2000
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load user profile data when component mounts
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUserData();
+    }
+  }, [isAuthenticated]); // Only depend on authentication status
+
+  const handleSave = async () => {
+    try {
+      setIsLoading(true);
+      console.log('Saving profile:', formData);
+  
+      // Lấy userId từ user context
+      const userId = user?.id;
+      if (!userId) {
+        toast.error("User ID not found", {
+          position: "top-center",
+          theme: "light",
+          autoClose: 2000
+        });
+        return;
+      }
+  
+      let avatarUrlToSave = formData.avatarUrl;
+  
+      // Nếu có ảnh mới được chọn thì upload lên ImgBB
+      if (selectedImage) {
+        try {
+          avatarUrlToSave = await uploadImgBBOneFile(selectedImage);
+          console.log("Uploaded ImgBB URL:", avatarUrlToSave);
+        } catch (uploadError) {
+          console.error("Image upload failed:", uploadError);
+          toast.error("Failed to upload image", {
+            position: "top-center",
+            theme: "light",
+            autoClose: 2000
+          });
+          return;
+        }
+      }
+  
+      // Gọi API update profile với URL direct của ImgBB
+      const response = await api.put(`/users/${userId}/profile`, {
+        fullName: formData.fullName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        avatarUrl: avatarUrlToSave
+      });
+  
+      if (response.status === 200) {
+        setOriginalData({ ...formData, avatarUrl: avatarUrlToSave });
+        setSelectedImage(null);
+        setPreviewImage('');
+        setIsEditing(false);
+  
+        // 👉 Update lại AuthContext để UI (Header, Profile, Avatar) sync theo
+        setUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                fullName: formData.fullName,
+                email: formData.email,
+                phoneNumber: formData.phoneNumber,
+                avatarUrl: avatarUrlToSave,
+              }
+            : null
+        );
+  
+        toast.success("Profile updated successfully", {
+          position: "top-center",
+          theme: "light",
+          autoClose: 2000
+        });
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+
+      }
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast.error(error.response?.data?.message || "Failed to update profile", {
+        position: "top-center",
+        theme: "light",
+        autoClose: 2000
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    // Khôi phục dữ liệu gốc
+    setFormData(originalData);
+    setSelectedImage(null);
+    setPreviewImage('');
     setIsEditing(false);
+    
+  };
+
+  // Xử lý chọn ảnh
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Kiểm tra loại file
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select an image file", {
+          position: "top-center",
+          theme: "light",
+          autoClose: 2000
+        });
+        return;
+      }
+
+      // Kiểm tra kích thước file (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB", {
+          position: "top-center",
+          theme: "light",
+          autoClose: 2000
+        });
+        return;
+      }
+
+      setSelectedImage(file);
+      
+      // Tạo preview URL
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+    }
+  };
+
+  // Trigger file input
+  const triggerFileInput = () => {
+    const fileInput = document.getElementById('avatar-upload') as HTMLInputElement;
+    fileInput?.click();
+  };
+
+  // Format date from API
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Unknown';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Unknown';
+    }
   };
 
   return (
     <div className="space-y-6">
+      <ToastContainer />
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Profile</h1>
-        <Button 
-          onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-          variant={isEditing ? "default" : "outline"}
-        >
-          {isEditing ? "Save Changes" : "Edit Profile"}
-        </Button>
+        <div className="flex gap-2">
+          {isEditing ? (
+            <>
+              <Button 
+                onClick={handleCancel}
+                variant="outline"
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSave}
+                disabled={isLoading}
+              >
+                {isLoading ? "Saving..." : "Save Changes"}
+              </Button>
+            </>
+          ) : (
+            <Button 
+              onClick={() => setIsEditing(true)}
+              variant="outline"
+            >
+              Edit Profile
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -51,35 +281,52 @@ export function ProfilePage() {
               {/* Avatar Section */}
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <Avatar className="w-20 h-20">
-                    <AvatarImage src={mockUser.avatar} />
-                    <AvatarFallback className="text-lg">{mockUser.name.charAt(0)}</AvatarFallback>
+                  <Avatar className="w-20 h-20 border-2 border-gray-300">
+                    <AvatarImage src={previewImage || formData.avatarUrl || ''} />
+                    <AvatarFallback className="text-lg">
+                      {formData.fullName ? formData.fullName.charAt(0).toUpperCase() : 'U'}
+                    </AvatarFallback>
                   </Avatar>
                   {isEditing && (
                     <button 
                       type="button"
-                      className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700"
+                      className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
                       aria-label="Change profile picture"
                       title="Change profile picture"
+                      onClick={triggerFileInput}
                     >
                       <Camera className="h-3 w-3" />
                     </button>
                   )}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">{mockUser.name}</h3>
-                  <p className="text-gray-500">Grade {mockUser.grade} Student</p>
+                  <h3 className="font-semibold text-lg">{formData.fullName || 'User'}</h3>
+                  <p className="text-gray-500">Student</p>
+                  {selectedImage && (
+                    <p className="text-sm text-green-600 mt-1">
+                      New image selected: {selectedImage.name}
+                    </p>
+                  )}
                 </div>
               </div>
+
+              {/* Hidden file input */}
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
 
               {/* Form Fields */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="fullName">Full Name</Label>
                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    id="fullName"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
                     disabled={!isEditing}
                   />
                 </div>
@@ -90,6 +337,7 @@ export function ProfilePage() {
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="email"
+                      type="email"
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                       disabled={!isEditing}
@@ -100,16 +348,21 @@ export function ProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  placeholder="Tell us about yourself..."
-                  value={formData.bio}
-                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                  disabled={!isEditing}
-                  className="resize-none"
-                />
+                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    placeholder="Enter your phone number"
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                    disabled={!isEditing}
+                    className="pl-10"
+                  />
+                </div>
               </div>
+
             </CardContent>
           </Card>
         </div>
@@ -126,21 +379,22 @@ export function ProfilePage() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm text-gray-500">Member since</p>
-                <p className="font-medium">January 15, 2024</p>
+                <p className="font-medium">
+                  {userProfile?.createdAt ? formatDate(userProfile.createdAt) : 'Unknown'}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Current Grade</p>
+                <p className="text-sm text-gray-500">Email</p>
                 <div className="flex items-center gap-2">
-                  <GraduationCap className="h-4 w-4" />
-                  <span className="font-medium">Grade {mockUser.grade}</span>
+                  <Mail className="h-4 w-4" />
+                  <span className="font-medium">{formData.email || 'Not provided'}</span>
                 </div>
               </div>
               <div>
-                <p className="text-sm text-gray-500 mb-2">Subjects</p>
-                <div className="flex flex-wrap gap-2">
-                  {mockUser.subjects.map(subject => (
-                    <Badge key={subject} variant="secondary">{subject}</Badge>
-                  ))}
+                <p className="text-sm text-gray-500">Phone Number</p>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  <span className="font-medium">{formData.phoneNumber || 'Not provided'}</span>
                 </div>
               </div>
             </CardContent>

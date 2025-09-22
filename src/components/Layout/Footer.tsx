@@ -62,7 +62,7 @@ export function Footer() {
               <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
                 Nguyễn Trần Khánh Kiên-SE183010
               </a>
-              <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
+              <a className="block text-gray-400 hover:text-white transition-colors text-sm">
                 Nguyễn Minh Trí-SE183033
               </a>
               <a href="#" className="block text-gray-400 hover:text-white transition-colors text-sm">
