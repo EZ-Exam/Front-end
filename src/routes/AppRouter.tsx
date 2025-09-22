@@ -15,7 +15,7 @@ import { CreateMockTestPage } from '@/pages/mock-tests/CreateMockTestPage';
 import { QuestionBankPage } from '@/pages/question-bank/QuestionBankPage';
 import { CreateQuestionSetPage } from '@/pages/question-bank/CreateQuestionSetPage';
 import { NotificationsPage } from '@/pages/NotificationPage';
-import { QuestionBankDetailPage } from '@/pages/question-bank/QuestionBankDetailPagr';
+import { QuestionBankDetailPage } from '@/pages/question-bank/QuestionBankDetailPage';
 
 export function AppRouter() {
   return (
