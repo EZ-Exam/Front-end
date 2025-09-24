@@ -16,7 +16,7 @@ import api from '@/services/axios';
 import { uploadImgBBMultipleFile } from '@/services/imgBB';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { addStyles, EditableMathField } from 'react-mathquill';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 addStyles();
 
 export function CreateContentDropdown() {
@@ -109,18 +109,27 @@ export function CreateContentDropdown() {
         content: singleQuestionForm.content,
         difficultyLevelId: singleQuestionForm.difficultyLevelId,
         subjectId: singleQuestionForm.subjectId,
+        gradeId: singleQuestionForm.gradeId,
+        semesterId: singleQuestionForm.semesterId,
         chapterId: singleQuestionForm.chapterId,
         lessonId: singleQuestionForm.lessonId,
         image: imageUrl,
         createdByUserId: user?.id ? Number(user.id) : undefined,
+        // Commonly required by APIs handling question creation
+        questionSource: 'manual',
+        questionType: 'multiple-choice',
         formula: singleQuestionForm.formula && singleQuestionForm.formula.trim() !== '' ? singleQuestionForm.formula : null,
         explanation: singleQuestionForm.explanation,
         options: nonEmptyOptions,
         correctAnswer: selectedOptionValue,
       };
 
+      console.log("Dữ liệu gửi đi",payload);
+
       const response = await api.post('/questions', payload);
-      if(response.status == 200)  toast.success('Question created successfully');
+      if (response.status >= 200 && response.status < 300) {
+        toast.success('Question created successfully');
+      }
      
 
       setActiveDialog(null);
@@ -142,9 +151,10 @@ export function CreateContentDropdown() {
       setSemesterOptions([]);
       setChapterOptions([]);
       setLessonOptions([]);
-    } catch (error) {
-      console.error('Failed to create question', error);
-      toast.error('Failed to create question');
+    } catch (error: any) {
+      const message = error?.response?.data?.message || error?.response?.data || error?.message || 'Failed to create question';
+      console.error('Failed to create question', message);
+      toast.error(typeof message === 'string' ? message : 'Failed to create question');
     }
   };
 
@@ -208,6 +218,7 @@ export function CreateContentDropdown() {
 
   return (
     <>
+      <ToastContainer />
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="relative">
