@@ -187,7 +187,7 @@ export function LessonDetailPage() {
             </CardHeader>
             <CardContent className="p-0">
               <PDFViewer 
-                src="/thuvienhoclieu.com-SGK-Vat-Li-11-KNTT.pdf"
+                src="https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fthuvienhoclieu%2Ecom%3A443%2Fwp%2Dcontent%2Fuploads%2F2025%2F09%2Fthuvienhoclieu%2Ecom%2D50%2DBai%2Dtap%2Dtra%2Dloi%2Dngan%2Dchuong%2DKhao%2Dsat%2Dva%2Dve%2Ddo%2Dthi%2Dlop%2D12%2Edocx&wdAccPdf=0&wdEmbedFS=1"
                 title="Lesson PDF"
               />
             </CardContent>

@@ -126,13 +126,13 @@ export function CreateLessonPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="questionSet">Select Question Set *</Label>
+              <Label htmlFor="questionSet">Select Question*</Label>
               <Select 
                 value={lessonForm.questionSetId} 
                 onValueChange={(value) => setLessonForm(prev => ({ ...prev, questionSetId: value }))}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a question set for this lesson" />
+                  <SelectValue placeholder="Choose a question for this lesson" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableQuestionSets.map((questionSet) => (
