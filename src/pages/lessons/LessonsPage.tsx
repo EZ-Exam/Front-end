@@ -130,29 +130,16 @@ export function LessonsPage() {
                       {lesson.description}
                     </p>
                   </div>
-                  {lesson.completed && (
-                    <CheckCircle className="h-5 w-5 text-green-600 ml-2 flex-shrink-0" />
-                  )}
                 </div>
                 
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge className={getSubjectColor(lesson.subject)}>
                     {lesson.subject}
                   </Badge>
-                  <Badge className={getDifficultyColor(lesson.difficulty)} variant="outline">
-                    {lesson.difficulty}
-                  </Badge>
                 </div>
               </CardHeader>
               
               <CardContent>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <Clock className="h-4 w-4 mr-1" />
-                    {lesson.duration} min
-                  </div>
-                </div>
-                
                 <Button asChild className="w-full">
                   <Link to={`/lessons/${lesson.id}`}>
                     <Play className="mr-2 h-4 w-4" />
