@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { 
   FileText, 
   ArrowLeft, 
@@ -113,6 +115,7 @@ export function LessonDetailPage() {
         
         const responses = await Promise.all(questionPromises);
         const questionsData = responses.map(response => response.data);
+        console.log("questionsData",questionsData);
         setQuestions(questionsData);
       } catch (err: any) {
         console.error('Failed to fetch questions:', err);
@@ -363,33 +366,34 @@ export function LessonDetailPage() {
                           </div>
                         )}
                         
-                        <div className="space-y-3">
+                        <RadioGroup
+                          value={userAnswers[0] || ""}
+                          onValueChange={(value) => {
+                            if (!quizSubmitted) {
+                              setQuizAnswers(prev => ({
+                                ...prev,
+                                [question.id.toString()]: [value]
+                              }));
+                            }
+                          }}
+                          disabled={quizSubmitted}
+                          className="space-y-3"
+                        >
                           {question.options.map((option, optionIndex) => (
                             <div key={optionIndex} className="flex items-center space-x-3">
-                              <input
-                                type="radio"
+                              <RadioGroupItem 
+                                value={option} 
                                 id={`question-${question.id}-option-${optionIndex}`}
-                                name={`question-${question.id}`}
-                                checked={userAnswers.includes(option)}
-                                onChange={(e) => {
-                                  if (!quizSubmitted) {
-                                    if (e.target.checked) {
-                                      setQuizAnswers(prev => ({
-                                        ...prev,
-                                        [question.id.toString()]: [option]
-                                      }));
-                                    }
-                                  }
-                                }}
-                                disabled={quizSubmitted}
-                                className="h-4 w-4"
                               />
-                              <label className="cursor-pointer flex-1" htmlFor={`question-${question.id}-option-${optionIndex}`}>
+                              <Label 
+                                htmlFor={`question-${question.id}-option-${optionIndex}`}
+                                className="cursor-pointer flex-1"
+                              >
                                 {option}
-                              </label>
+                              </Label>
                             </div>
                           ))}
-                        </div>
+                        </RadioGroup>
                       </div>
                       
                       {quizSubmitted && result && (
