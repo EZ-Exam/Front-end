@@ -1,12 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { 
   ArrowLeft, 
@@ -18,8 +17,7 @@ import {
   AlertTriangle,
   Trophy
 } from 'lucide-react';
-import { mockTests, mockQuestionSets } from '@/data/mockData';
-import { BlockMath } from 'react-katex';
+import api from '@/services/axios';
 import 'katex/dist/katex.min.css';
 
 export function MockTestDetailPage() {
@@ -32,17 +30,90 @@ export function MockTestDetailPage() {
   const [showResults, setShowResults] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+  const [exam, setExam] = useState<any>(null);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  const test = mockTests.find(t => t.id === id);
+  const handleSubmit = useCallback(() => {
+    setSubmitted(true);
+    setShowResults(true);
+    setShowSubmitDialog(false);
+  }, []);
   
-  // Get all questions from the question sets
-  const allQuestions = test?.questionSets.flatMap(qsId => 
-    mockQuestionSets.find(qs => qs.id === qsId)?.questions || []
-  ) || [];
+  // Fetch exam and questions from API
+  useEffect(() => {
+    const fetchExamData = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch exam details
+        const examResponse = await api.get(`/exams/${id}`);
+        console.log('Exam data:', examResponse.data); // Debug log
+        setExam(examResponse.data);
+        
+        // Fetch exam questions with order
+        const questionsResponse = await api.get(`/exams/${id}/questions`);
+        const questionData = Array.isArray(questionsResponse?.data?.items) 
+          ? questionsResponse.data.items 
+          : (Array.isArray(questionsResponse?.data) ? questionsResponse.data : []);
+        
+        console.log('Questions data:', questionData); // Debug log
+        
+        // Sort questions by order field from exam_questions table
+        const sortedQuestions = questionData.sort((a: any, b: any) => {
+          const orderA = a.order || a.questionOrder || 0;
+          const orderB = b.order || b.questionOrder || 0;
+          return orderA - orderB;
+        });
+        
+        // Fetch full question details for each question
+        const questionsWithDetails = await Promise.all(
+          sortedQuestions.map(async (examQuestion: any) => {
+            try {
+              const questionResponse = await api.get(`/questions/${examQuestion.questionId}`);
+              const questionDetails = questionResponse.data;
+              
+              console.log(`Question ${examQuestion.questionId} details:`, questionDetails); // Debug each question
+              console.log(`Question ${examQuestion.questionId} options:`, questionDetails.options); // Debug options specifically
+              console.log(`Question ${examQuestion.questionId} type:`, questionDetails.type); // Debug type
+              
+              return {
+                ...examQuestion,
+                ...questionDetails,
+                // Ensure we have the essential fields
+                content: questionDetails.content || questionDetails.text || examQuestion.content,
+                options: questionDetails.options || questionDetails.answers || examQuestion.options,
+                CorrectAnswer: questionDetails.CorrectAnswer || questionDetails.correctAnswer || examQuestion.CorrectAnswer
+              };
+            } catch (err) {
+              console.error(`Failed to fetch question ${examQuestion.questionId}:`, err);
+              return examQuestion; // Return original if fetch fails
+            }
+          })
+        );
+        
+        console.log('Questions with details:', questionsWithDetails); // Debug log
+        setQuestions(questionsWithDetails);
+        
+      } catch (err: any) {
+        console.error('Failed to fetch exam data:', err);
+        setError(err?.response?.data?.message || 'Failed to load exam');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExamData();
+  }, [id]);
   
   useEffect(() => {
-    if (hasStarted && test && !submitted) {
-      setTimeLeft(test.duration * 60); // Convert to seconds
+    if (hasStarted && exam && !submitted) {
+      const duration = exam.duration || exam.timeLimit; 
+      setTimeLeft(duration * 60); // Convert to seconds
       
       const timer = setInterval(() => {
         setTimeLeft(prev => {
@@ -56,12 +127,21 @@ export function MockTestDetailPage() {
       
       return () => clearInterval(timer);
     }
-  }, [hasStarted, test, submitted]);
+  }, [hasStarted, exam, submitted, handleSubmit]);
   
-  if (!test) {
+  if (loading) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-bold mb-4">Mock test not found</h2>
+        <h2 className="text-2xl font-bold mb-4">Loading exam...</h2>
+      </div>
+    );
+  }
+
+  if (error || !exam) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold mb-4">Exam not found</h2>
+        <p className="text-red-600 mb-4">{error}</p>
         <Button asChild>
           <Link to="/mock-tests">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -100,13 +180,13 @@ export function MockTestDetailPage() {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Clock className="h-8 w-8 text-blue-600" />
             </div>
-            <CardTitle className="text-2xl">{test.title}</CardTitle>
+            <CardTitle className="text-2xl">{exam.name}</CardTitle>
             <div className="flex items-center justify-center gap-4 mt-4">
               <Badge className="bg-blue-100 text-blue-800">
-                {test.subject}
+                {exam.subjectName}
               </Badge>
               <Badge variant="outline" className="bg-orange-100 text-orange-800">
-                {test.difficulty}
+                {exam.difficultyLevel}
               </Badge>
             </div>
           </CardHeader>
@@ -114,11 +194,11 @@ export function MockTestDetailPage() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{test.duration}</div>
+                <div className="text-2xl font-bold text-blue-600">{exam.duration || exam.timeLimit || 60}</div>
                 <div className="text-sm text-gray-600">Minutes</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{test.totalQuestions}</div>
+                <div className="text-2xl font-bold text-blue-600">{questions.length}</div>
                 <div className="text-sm text-gray-600">Questions</div>
               </div>
             </div>
@@ -126,7 +206,7 @@ export function MockTestDetailPage() {
             <div className="space-y-4 text-sm">
               <h3 className="font-semibold text-base">Instructions:</h3>
               <div className="space-y-2 text-gray-600">
-                <p>• This is a timed test. You have {test.duration} minutes to complete all questions.</p>
+                <p>• This is a timed test. You have {exam.duration || exam.timeLimit || 60} minutes to complete all questions.</p>
                 <p>• You can navigate between questions and change your answers before submitting.</p>
                 <p>• Use the flag feature to mark questions you want to review later.</p>
                 <p>• The test will auto-submit when time runs out.</p>
@@ -160,10 +240,13 @@ export function MockTestDetailPage() {
     );
   }
 
-  const currentQuestion = allQuestions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / allQuestions.length) * 100;
+  const currentQuestion = questions[currentQuestionIndex];
+  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   const answeredCount = Object.keys(answers).length;
   const flaggedCount = flagged.size;
+
+  // Debug log for current question
+  console.log('Current question:', currentQuestion);
 
   const handleAnswerChange = (value: string) => {
     setAnswers(prev => ({
@@ -185,7 +268,7 @@ export function MockTestDetailPage() {
   };
 
   const handleNext = () => {
-    if (currentQuestionIndex < allQuestions.length - 1) {
+    if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
@@ -196,27 +279,26 @@ export function MockTestDetailPage() {
     }
   };
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-    setShowResults(true);
-    setShowSubmitDialog(false);
-  };
-
   const getScore = () => {
-    const correct = allQuestions.filter(q => {
+    const correct = questions.filter(q => {
       const selectedAnswer = answers[q.id];
-      return q.answers.find(a => a.text === selectedAnswer && a.isCorrect);
+      // Sử dụng CorrectAnswer từ database hoặc correctAnswer từ API
+      const correctAnswer = q.CorrectAnswer || q.correctAnswer;
+      return correctAnswer === selectedAnswer;
     }).length;
-    return Math.round((correct / allQuestions.length) * 100);
+    return Math.round((correct / questions.length) * 100);
   };
 
   if (showResults) {
     const score = getScore();
-    const correctCount = allQuestions.filter(q => {
+    const correctCount = questions.filter(q => {
       const selectedAnswer = answers[q.id];
-      return q.answers.find(a => a.text === selectedAnswer && a.isCorrect);
+      // Sử dụng CorrectAnswer từ database hoặc correctAnswer từ API
+      const correctAnswer = q.CorrectAnswer || q.correctAnswer;
+      return correctAnswer === selectedAnswer;
     }).length;
-    const timeSpent = (test.duration * 60) - timeLeft;
+    const duration = exam.duration || exam.timeLimit || 60;
+    const timeSpent = (duration * 60) - timeLeft;
     
     return (
       <div className="space-y-6">
@@ -248,7 +330,7 @@ export function MockTestDetailPage() {
               {score >= 70 ? 'Excellent!' : score >= 50 ? 'Good Job!' : 'Keep Practicing!'}
             </p>
             <p className="text-gray-600">
-              You scored {correctCount} out of {allQuestions.length} questions correct
+              You scored {correctCount} out of {questions.length} questions correct
             </p>
           </CardHeader>
         </Card>
@@ -298,8 +380,8 @@ export function MockTestDetailPage() {
       {/* Header */}
       <div className="flex items-center justify-between bg-white border rounded-lg p-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold">{test.title}</h1>
-          <Badge>{test.subject}</Badge>
+          <h1 className="text-xl font-bold">{exam.name}</h1>
+          <Badge>{exam.subjectName}</Badge>
         </div>
         
         <div className="flex items-center gap-6">
@@ -324,7 +406,7 @@ export function MockTestDetailPage() {
         <CardContent className="pt-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium">
-              Question {currentQuestionIndex + 1} of {allQuestions.length}
+              Question {currentQuestionIndex + 1} of {questions.length}
             </span>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               <span>Answered: {answeredCount}</span>
@@ -355,7 +437,7 @@ export function MockTestDetailPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <p className="text-lg mb-4">{currentQuestion.questionText}</p>
+                <p className="text-lg mb-4">{currentQuestion.content || currentQuestion.text || 'No question content available'}</p>
               </div>
 
               {/* Answer Options */}
@@ -364,14 +446,23 @@ export function MockTestDetailPage() {
                 onValueChange={handleAnswerChange}
               >
                 <div className="space-y-3">
-                  {currentQuestion.answers.map((answer, index) => (
-                    <div key={index} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                      <RadioGroupItem value={answer.text} id={`option-${index}`} />
-                      <Label htmlFor={`option-${index}`} className="cursor-pointer flex-1">
-                        {answer.text}
-                      </Label>
+                  {currentQuestion.options && currentQuestion.options.length > 0 ? (
+                    currentQuestion.options.map((option: string, index: number) => (
+                      <div key={index} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                        <RadioGroupItem value={option} id={`option-${index}`} />
+                        <Label htmlFor={`option-${index}`} className="cursor-pointer flex-1">
+                          {option}
+                        </Label>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>No answer options available for this question.</p>
+                      <p className="text-sm mt-2">Question ID: {currentQuestion.id}</p>
+                      <p className="text-xs mt-1">Available fields: {JSON.stringify(Object.keys(currentQuestion))}</p>
+                      <p className="text-xs mt-1">Options value: {JSON.stringify(currentQuestion.options)}</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </RadioGroup>
 
@@ -386,13 +477,22 @@ export function MockTestDetailPage() {
                   Previous
                 </Button>
 
-                <Button
-                  onClick={handleNext}
-                  disabled={currentQuestionIndex === allQuestions.length - 1}
-                >
-                  Next
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                {currentQuestionIndex === questions.length - 1 ? (
+                  <Button
+                    onClick={() => setShowSubmitDialog(true)}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Submit Test
+                    <CheckCircle className="ml-2 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleNext}
+                  >
+                    Next
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -406,7 +506,7 @@ export function MockTestDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-5 gap-2">
-                {allQuestions.map((question, index) => (
+                {questions.map((question, index) => (
                   <Button
                     key={index}
                     variant={index === currentQuestionIndex ? 'default' : 'outline'}
@@ -462,7 +562,7 @@ export function MockTestDetailPage() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="text-gray-500">Questions answered:</span>
-                <span className="font-medium ml-2">{answeredCount} / {allQuestions.length}</span>
+                <span className="font-medium ml-2">{answeredCount} / {questions.length}</span>
               </div>
               <div>
                 <span className="text-gray-500">Time remaining:</span>

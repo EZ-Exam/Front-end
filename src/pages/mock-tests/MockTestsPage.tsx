@@ -1,22 +1,75 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Clock, Users, Search, AlertTriangle } from 'lucide-react';
-import { mockTests } from '@/data/mockData';
+import api from '@/services/axios';
 
 export function MockTestsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('all');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [exams, setExams] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredTests = mockTests.filter(test => {
-    const matchesSearch = test.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSubject = subjectFilter === 'all' || test.subject === subjectFilter;
-    const matchesDifficulty = difficultyFilter === 'all' || test.difficulty === difficultyFilter;
+  // Fetch exams from API
+  useEffect(() => {
+    const fetchExams = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await api.get('/exams');
+        const examData = Array.isArray(response?.data?.items) ? response.data.items : (Array.isArray(response?.data) ? response.data : []);
+        
+        // Fetch question count and order info for each exam
+        const examsWithDetails = await Promise.all(
+          examData.map(async (exam: any) => {
+            try {
+              const questionsResponse = await api.get(`/exams/${exam.id}/questions`);
+              const questions = Array.isArray(questionsResponse?.data?.items) 
+                ? questionsResponse.data.items 
+                : (Array.isArray(questionsResponse?.data) ? questionsResponse.data : []);
+              
+              return {
+                ...exam,
+                questionCount: questions.length,
+                questions: questions.sort((a: any, b: any) => {
+                  const orderA = a.order || a.questionOrder || 0;
+                  const orderB = b.order || b.questionOrder || 0;
+                  return orderA - orderB;
+                })
+              };
+            } catch (err) {
+              console.error(`Failed to fetch questions for exam ${exam.id}:`, err);
+              return {
+                ...exam,
+                questionCount: 0,
+                questions: []
+              };
+            }
+          })
+        );
+        
+        setExams(examsWithDetails);
+      } catch (err: any) {
+        console.error('Failed to fetch exams:', err);
+        setError(err?.response?.data?.message || 'Failed to load exams');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExams();
+  }, []);
+
+  const filteredTests = exams.filter(test => {
+    const matchesSearch = test.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
+    const matchesSubject = subjectFilter === 'all' || test.subjectName === subjectFilter;
+    const matchesDifficulty = difficultyFilter === 'all' || test.difficultyLevel === difficultyFilter;
     
     return matchesSearch && matchesSubject && matchesDifficulty;
   });
@@ -32,12 +85,43 @@ export function MockTestsPage() {
 
   const getSubjectColor = (subject: string) => {
     switch (subject) {
-      case 'Math': return 'bg-blue-100 text-blue-800';
-      case 'Physics': return 'bg-purple-100 text-purple-800';
-      case 'Chemistry': return 'bg-green-100 text-green-800';
+      case 'Toán học': return 'bg-blue-100 text-blue-800';
+      case 'Vật lý': return 'bg-purple-100 text-purple-800';
+      case 'Hóa học': return 'bg-green-100 text-green-800';
+      case 'Sinh học': return 'bg-green-100 text-green-800';
+      case 'Ngữ văn': return 'bg-orange-100 text-orange-800';
+      case 'Tiếng Anh': return 'bg-pink-100 text-pink-800';
+      case 'Lịch sử': return 'bg-yellow-100 text-yellow-800';
+      case 'Địa lý': return 'bg-teal-100 text-teal-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Mock Tests</h1>
+        </div>
+        <div className="text-center py-12">
+          <p>Loading exams...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Mock Tests</h1>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-red-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -84,9 +168,14 @@ export function MockTestsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Subjects</SelectItem>
-                <SelectItem value="Math">Math</SelectItem>
-                <SelectItem value="Physics">Physics</SelectItem>
-                <SelectItem value="Chemistry">Chemistry</SelectItem>
+                <SelectItem value="Toán học">Toán học</SelectItem>
+                <SelectItem value="Vật lý">Vật lý</SelectItem>
+                <SelectItem value="Hóa học">Hóa học</SelectItem>
+                <SelectItem value="Sinh học">Sinh học</SelectItem>
+                <SelectItem value="Ngữ văn">Ngữ văn</SelectItem>
+                <SelectItem value="Tiếng Anh">Tiếng Anh</SelectItem>
+                <SelectItem value="Lịch sử">Lịch sử</SelectItem>
+                <SelectItem value="Địa lý">Địa lý</SelectItem>
               </SelectContent>
             </Select>
 
@@ -139,17 +228,17 @@ export function MockTestsPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-lg mb-2 group-hover:text-blue-600 transition-colors">
-                      {test.title}
+                      {test.name}
                     </CardTitle>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className={getSubjectColor(test.subject)}>
-                    {test.subject}
+                  <Badge className={getSubjectColor(test.subjectName)}>
+                    {test.subjectName}
                   </Badge>
-                  <Badge className={getDifficultyColor(test.difficulty)} variant="outline">
-                    {test.difficulty}
+                  <Badge className={getDifficultyColor(test.difficultyLevel)} variant="outline">
+                    {test.difficultyLevel}
                   </Badge>
                 </div>
               </CardHeader>
@@ -161,7 +250,7 @@ export function MockTestsPage() {
                       <Clock className="h-3 w-3 mr-1" />
                       Duration
                     </div>
-                    <p className="font-medium">{test.duration} min</p>
+                    <p className="font-medium">{test.duration || 'N/A'} min</p>
                   </div>
                   
                   <div>
@@ -169,7 +258,7 @@ export function MockTestsPage() {
                       <Users className="h-3 w-3 mr-1" />
                       Questions
                     </div>
-                    <p className="font-medium">{test.totalQuestions}</p>
+                    <p className="font-medium">{test.questionCount || 0}</p>
                   </div>
                 </div>
                 
