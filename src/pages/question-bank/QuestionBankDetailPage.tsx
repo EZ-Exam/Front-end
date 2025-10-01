@@ -117,13 +117,7 @@ export function QuestionBankDetailPage() {
                 <p className="text-gray-900">{question.content}</p>
               </div>
             </div>
-
-            {/* Question Source */}
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Question Source</h3>
-              <p className="text-gray-700">{question.questionSource}</p>
-            </div>
-
+            
             {/* Lesson and Chapter Info */}
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">

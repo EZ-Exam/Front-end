@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Plus, BookOpen, HelpCircle, FileText, MessageSquare} from 'lucide-react';
+import { Plus, BookOpen, FileText, MessageSquare} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '@/services/axios';
 import { uploadImgBBMultipleFile } from '@/services/imgBB';
@@ -31,6 +32,7 @@ export function CreateContentDropdown() {
     semesterId: undefined as number | undefined,
     chapterId: undefined as number | undefined,
     lessonId: undefined as number | undefined,
+    textbookId: undefined as number | undefined,
     imageFiles: [] as File[],
     image: '',
     formula: '',
@@ -42,10 +44,9 @@ export function CreateContentDropdown() {
   const [semesterOptions, setSemesterOptions] = useState<Array<{ id: number; name: string }>>([]);
   const [chapterOptions, setChapterOptions] = useState<Array<{ id: number; name: string }>>([]);
   const [lessonOptions, setLessonOptions] = useState<Array<{ id: number; name: string }>>([]);
+  const [textbookOptions, setTextbookOptions] = useState<Array<{ id: number; name: string }>>([]);
   // MathQuill refs for handling paste
-  const contentMQRef = useRef<any>(null);
   const formulaMQRef = useRef<any>(null);
-  const explanationMQRef = useRef<any>(null);
   const optionMQRefs = useRef<any[]>([]);
 
   const handleCreateSingleQuestion = async (e: React.FormEvent) => {
@@ -78,6 +79,10 @@ export function CreateContentDropdown() {
       }
       if (!singleQuestionForm.lessonId) {
         toast.error('Lesson is required');
+        return;
+      }
+      if (!singleQuestionForm.textbookId) {
+        toast.error('Textbook is required');
         return;
       }
 
@@ -113,6 +118,7 @@ export function CreateContentDropdown() {
         semesterId: singleQuestionForm.semesterId,
         chapterId: singleQuestionForm.chapterId,
         lessonId: singleQuestionForm.lessonId,
+        textbookId: singleQuestionForm.textbookId,
         image: imageUrl,
         createdByUserId: user?.id ? Number(user.id) : undefined,
         // Commonly required by APIs handling question creation
@@ -141,6 +147,7 @@ export function CreateContentDropdown() {
         semesterId: undefined,
         chapterId: undefined,
         lessonId: undefined,
+        textbookId: undefined,
         imageFiles: [],
         image: '',
         formula: '',
@@ -151,6 +158,7 @@ export function CreateContentDropdown() {
       setSemesterOptions([]);
       setChapterOptions([]);
       setLessonOptions([]);
+      setTextbookOptions([]);
     } catch (error: any) {
       const message = error?.response?.data?.message || error?.response?.data || error?.message || 'Failed to create question';
       console.error('Failed to create question', message);
@@ -216,6 +224,23 @@ export function CreateContentDropdown() {
     fetchLessons();
   }, [singleQuestionForm.chapterId]);
 
+  useEffect(() => {
+    const fetchTextbooks = async () => {
+      if (!singleQuestionForm.gradeId || !singleQuestionForm.subjectId) {
+        setTextbookOptions([]);
+        setSingleQuestionForm(prev => ({ ...prev, textbookId: undefined }));
+        return;
+      }
+      try {
+        const res = await api.get(`/text-books?gradeId=${singleQuestionForm.gradeId}&subjectId=${singleQuestionForm.subjectId}`);
+        setTextbookOptions(res.data || []);
+      } catch (err) {
+        setTextbookOptions([]);
+      }
+    };
+    fetchTextbooks();
+  }, [singleQuestionForm.gradeId, singleQuestionForm.subjectId]);
+
   return (
     <>
       <ToastContainer />
@@ -260,6 +285,7 @@ export function CreateContentDropdown() {
               semesterId: undefined,
               chapterId: undefined,
               lessonId: undefined,
+              textbookId: undefined,
               imageFiles: [],
               image: '',
               formula: '',
@@ -270,6 +296,7 @@ export function CreateContentDropdown() {
             setSemesterOptions([]);
             setChapterOptions([]);
             setLessonOptions([]);
+            setTextbookOptions([]);
           }
         }}
       >
@@ -285,36 +312,14 @@ export function CreateContentDropdown() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="question-text">Question*</Label>
-                <div
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    const text = e.clipboardData.getData('text/plain');
-                    if (contentMQRef.current) {
-                      contentMQRef.current.write(text);
-                      setSingleQuestionForm(prev => ({ ...prev, content: contentMQRef.current.latex() }));
-                    }
-                  }}
-                >
-                  <EditableMathField
-                    latex={singleQuestionForm.content}
-                    style={{ width: "100%",          // w-full
-                      border: "1px solid #e5e7eb", // border (Tailwind default = gray-300)
-                      borderRadius: "0.375rem",    // rounded (6px)
-                      paddingLeft: "0.75rem",  // px-3 = 12px
-                      paddingRight: "0.75rem",
-                      paddingTop: "0.5rem",    // py-2 = 8px
-                      paddingBottom: "0.5rem",
-                      minHeight: "48px",       // min-h-[48px]
-                      boxSizing: "border-box", // để padding không phá width
-                      outline: "none",}}
-                    onChange={(mathField) =>
-                      setSingleQuestionForm(prev => ({ ...prev, content: mathField.latex() }))
-                    }
-                    mathquillDidMount={(mf) => {
-                      contentMQRef.current = mf;
-                    }}
-                  />
-                </div>
+                <Textarea
+                  id="question-text"
+                  value={singleQuestionForm.content}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSingleQuestionForm(prev => ({ ...prev, content: e.target.value }))}
+                  placeholder="Enter your question here..."
+                  rows={3}
+                  required
+                />
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
@@ -343,6 +348,7 @@ export function CreateContentDropdown() {
                       <SelectItem value="5">Literature</SelectItem>
                       <SelectItem value="6">English</SelectItem>
                       <SelectItem value="7">History</SelectItem>
+                      <SelectItem value="8">Geography</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -483,6 +489,32 @@ export function CreateContentDropdown() {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="textbook">
+                  Textbook*
+                  {(!singleQuestionForm.gradeId || !singleQuestionForm.subjectId) && (
+                    <span className="text-red-500 text-sm ml-2">
+                      (Must choose Grade and Subject)
+                    </span>
+                  )}
+                </Label>
+                <Select 
+                  value={singleQuestionForm.textbookId?.toString() ?? ''}
+                  onValueChange={(value) => setSingleQuestionForm(prev => ({ ...prev, textbookId: Number(value) }))}
+                  disabled={!singleQuestionForm.gradeId || !singleQuestionForm.subjectId}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select textbook" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-48 overflow-y-auto">
+                    {textbookOptions.map((t) => (
+                      <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="formula">Formula (optional) </Label>
                 <div
                   onPaste={(e) => {
@@ -602,36 +634,14 @@ export function CreateContentDropdown() {
 
               <div className="space-y-2">
                 <Label htmlFor="explanation">Explanation*</Label>
-                <div
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    const text = e.clipboardData.getData('text/plain');
-                    if (explanationMQRef.current) {
-                      explanationMQRef.current.write(text);
-                      setSingleQuestionForm(prev => ({ ...prev, explanation: explanationMQRef.current.latex() }));
-                    }
-                  }}
-                >
-                  <EditableMathField 
-                    latex={singleQuestionForm.explanation}
-                    style={{ width: "100%",          // w-full
-                      border: "1px solid #e5e7eb", // border (Tailwind default = gray-300)
-                      borderRadius: "0.375rem",    // rounded (6px)
-                      paddingLeft: "0.75rem",  // px-3 = 12px
-                      paddingRight: "0.75rem",
-                      paddingTop: "0.5rem",    // py-2 = 8px
-                      paddingBottom: "0.5rem",
-                      minHeight: "48px",       // min-h-[48px]
-                      boxSizing: "border-box", // để padding không phá width
-                      outline: "none",}}
-                    onChange={(mathField) =>
-                      setSingleQuestionForm(prev => ({ ...prev, explanation: mathField.latex() }))
-                    }
-                    mathquillDidMount={(mf) => {
-                      explanationMQRef.current = mf;
-                    }}
-                  />
-                </div>
+                <Textarea
+                  id="explanation"
+                  value={singleQuestionForm.explanation}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSingleQuestionForm(prev => ({ ...prev, explanation: e.target.value }))}
+                  placeholder="Explain why the correct answer(s) are correct..."
+                  rows={3}
+                  required
+                />
               </div>
             </div>
 
@@ -649,6 +659,7 @@ export function CreateContentDropdown() {
                     semesterId: undefined,
                     chapterId: undefined,
                     lessonId: undefined,
+                    textbookId: undefined,
                     imageFiles: [],
                     image: '',
                     formula:'',
@@ -659,6 +670,7 @@ export function CreateContentDropdown() {
                   setSemesterOptions([]);
                   setChapterOptions([]);
                   setLessonOptions([]);
+                  setTextbookOptions([]);
                 }}
               >
                 Cancel
