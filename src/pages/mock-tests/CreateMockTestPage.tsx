@@ -78,13 +78,56 @@ export function CreateMockTestPage() {
 
   const [lessons, setLessons] = useState<Array<{ id: number; name: string }>>([]);
 
+  // Helper function to check if subject is selected
+  const isSubjectSelected = () => {
+    const subjectId = mockTestForm.subjectId;
+    return subjectId !== '' && subjectId != null;
+  };
+
   useEffect(() => {
     const fetchQuestions = async () => {
+      // Chỉ fetch khi đã chọn subject
+      const subjectId = mockTestForm.subjectId;
+      if (subjectId === '' || subjectId == null) {
+        setQuestions([]);
+        return;
+      }
+
       try {
         setQuestionsLoading(true);
         setQuestionsError(null);
-        const res = await api.get('/questions');
-        const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+        console.log('Fetching questions for subjectId:', subjectId);
+        const res = await api.get(`/questions/by-subject/${subjectId}`);
+        console.log('Full API Response:', res);
+        console.log('API Response data:', res.data);
+        console.log('Response structure:', {
+          data: res.data,
+          isArray: Array.isArray(res.data),
+          hasItems: res.data?.items,
+          itemsIsArray: Array.isArray(res.data?.items)
+        });
+        
+        // Thử nhiều cách để lấy dữ liệu
+        let items = [];
+        if (Array.isArray(res.data)) {
+          items = res.data;
+          console.log('Using res.data directly (array)');
+        } else if (Array.isArray(res.data?.items)) {
+          items = res.data.items;
+          console.log('Using res.data.items');
+        } else if (Array.isArray(res.data?.data)) {
+          items = res.data.data;
+          console.log('Using res.data.data');
+        } else if (res.data?.questions && Array.isArray(res.data.questions)) {
+          items = res.data.questions;
+          console.log('Using res.data.questions');
+        } else {
+          console.log('No valid data structure found. Available keys:', Object.keys(res.data || {}));
+        }
+        
+        console.log('Extracted items:', items);
+        console.log('Items length:', items.length);
+        
         // Map fields including CorrectAnswer and options
         const mapped = items.map((q: any) => ({ 
           id: q.id, 
@@ -92,9 +135,17 @@ export function CreateMockTestPage() {
           CorrectAnswer: q.CorrectAnswer,
           options: q.options
         }));
+        console.log('Mapped questions:', mapped);
+        console.log('Setting questions with length:', mapped.length);
         setQuestions(mapped);
       } catch (err: any) {
         console.error('Failed to fetch questions', err);
+        console.error('Error details:', {
+          message: err.message,
+          response: err.response,
+          status: err.response?.status,
+          data: err.response?.data
+        });
         setQuestionsError(err?.response?.data?.message || 'Không thể tải danh sách câu hỏi');
       } finally {
         setQuestionsLoading(false);
@@ -102,7 +153,7 @@ export function CreateMockTestPage() {
     };
 
     fetchQuestions();
-  }, []);
+  }, [mockTestForm.subjectId]);
 
   // Resolve names from IDs
   useEffect(() => {
@@ -320,14 +371,20 @@ export function CreateMockTestPage() {
             <p className="text-sm text-gray-600">
               Select questions to include. Total selected: {totalSelectedQuestions}
             </p>
+
           </CardHeader>
           <CardContent className="space-y-4">
             {questionsLoading && <p>Đang tải danh sách câu hỏi...</p>}
-            {questionsError && <p className="text-red-600">{questionsError}</p>}
-            {!questionsLoading && !questionsError && questions.length === 0 && (
-              <p className="text-sm text-gray-500">Không có câu hỏi nào.</p>
+            {questionsError && <p className="text-red-600">{questionsError} (Debug: error = {questionsError})</p>}
+            {!questionsLoading && !questionsError && !isSubjectSelected() && (
+              <p className="text-sm text-gray-500">Vui lòng chọn môn học để xem danh sách câu hỏi.</p>
             )}
-            {!questionsLoading && !questionsError && questions.length > 0 && (
+            {!questionsLoading && !questionsError && isSubjectSelected() && questions.length === 0 && (
+              <div>
+                <p className="text-sm text-gray-500">Không có câu hỏi nào cho môn học này.</p>
+              </div>
+            )}
+            {!questionsLoading && !questionsError && isSubjectSelected() && questions.length > 0 && (
               <div className="space-y-3">
                 {questions.map((q) => (
                   <div key={q.id} className="flex items-start space-x-3 p-3 border rounded-lg">
@@ -346,8 +403,11 @@ export function CreateMockTestPage() {
                 ))}
               </div>
             )}
-            {selectedQuestionIds.length === 0 && (
-              <p className="text-sm text-orange-600">Please select at least one question.</p>
+            {!isSubjectSelected() && (
+              <p className="text-sm text-orange-600">Vui lòng chọn môn học trước.</p>
+            )}
+            {isSubjectSelected() && selectedQuestionIds.length === 0 && (
+              <p className="text-sm text-orange-600">Vui lòng chọn ít nhất một câu hỏi.</p>
             )}
           </CardContent>
         </Card>
@@ -358,7 +418,7 @@ export function CreateMockTestPage() {
           </Button>
           <Button 
             type="submit" 
-            disabled={selectedQuestionIds.length === 0}
+            disabled={!isSubjectSelected() || selectedQuestionIds.length === 0}
           >
             <Save className="mr-2 h-4 w-4" />
             Create Mock Test
