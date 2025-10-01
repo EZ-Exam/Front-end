@@ -8,7 +8,13 @@ import {
   AlertCircle,
   Image as ImageIcon,
   Calculator,
-  CheckCircle
+  CheckCircle,
+  BookOpen,
+  Brain,
+  Target,
+  User,
+  Lightbulb,
+  Award
 } from 'lucide-react';
 import { Question } from '@/types';
 import axios from '@/services/axios';
@@ -40,11 +46,13 @@ export function QuestionBankDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold mb-2">Loading Question</h2>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <Card className="w-full max-w-lg shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardContent className="pt-8 pb-8 text-center">
+            <div className="relative mb-6">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading Question</h2>
             <p className="text-gray-600">Please wait while we fetch the question details...</p>
           </CardContent>
         </Card>
@@ -54,13 +62,15 @@ export function QuestionBankDetailPage() {
 
   if (!question) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Question Not Found</h2>
-            <p className="text-gray-600 mb-4">The question you're looking for doesn't exist.</p>
-            <Button asChild>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <Card className="w-full max-w-lg shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardContent className="pt-8 pb-8 text-center">
+            <div className="p-4 bg-red-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+              <AlertCircle className="h-10 w-10 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Question Not Found</h2>
+            <p className="text-gray-600 mb-6">The question you're looking for doesn't exist.</p>
+            <Button asChild className="rounded-xl">
               <Link to="/question-bank">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Question Bank
@@ -82,68 +92,110 @@ export function QuestionBankDetailPage() {
   };
 
   return (
-    <div className="py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="ghost" size="sm" asChild className="rounded-xl hover:bg-white/80">
               <Link to="/question-bank">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Question Bank
               </Link>
             </Button>
-            <h1 className="text-3xl font-bold">Question Details</h1>
+          </div>
+          
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+                <Brain className="h-8 w-8 text-white" />
+              </div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Question Details
+              </h1>
+            </div>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Explore this question in detail and understand the solution
+            </p>
           </div>
         </div>
 
         {/* Question Info */}
-        <Card className="mb-8">
-          <CardHeader>
+        <Card className="mb-8 shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardHeader className="pb-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-2xl">Question Information</CardTitle>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                  <BookOpen className="h-5 w-5 text-white" />
+                </div>
+                <CardTitle className="text-2xl">Question Information</CardTitle>
+              </div>
               <div className="flex items-center gap-2">
-                <Badge className={getDifficultyColor(question.difficultyLevel)}>
+                <Badge className={`${getDifficultyColor(question.difficultyLevel)} border-0 font-semibold text-sm px-3 py-1`}>
                   {question.difficultyLevel}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  ID: #{question.id}
                 </Badge>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-8">
             {/* Question Content */}
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Question Content</h3>
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-gray-900">{question.content}</p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Brain className="h-5 w-5 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-semibold">Question Content</h3>
+              </div>
+              <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
+                <p className="text-gray-900 text-lg leading-relaxed">{question.content}</p>
               </div>
             </div>
             
             {/* Lesson and Chapter Info */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Lesson</h3>
-                <p className="text-gray-700">{question.lessonName}</p>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <BookOpen className="h-5 w-5 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Lesson</h3>
+                </div>
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-gray-700 font-medium">{question.lessonName}</p>
+                </div>
               </div>
               {question.chapterName && (
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Chapter</h3>
-                  <p className="text-gray-700">{question.chapterName}</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Target className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Chapter</h3>
+                  </div>
+                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <p className="text-gray-700 font-medium">{question.chapterName}</p>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Image */}
             {question.image && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  Image
-                </h3>
-                <div className="border rounded-lg p-4">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <ImageIcon className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold">Question Image</h3>
+                </div>
+                <div className="border-2 border-orange-200 rounded-xl p-6 bg-orange-50">
                   <img 
                     src={question.image} 
                     alt="Question image" 
-                    className="max-w-full h-auto rounded"
+                    className="max-w-full h-auto rounded-lg shadow-lg"
                   />
                 </div>
               </div>
@@ -151,35 +203,55 @@ export function QuestionBankDetailPage() {
 
             {/* Formula */}
             {question.formula && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Calculator className="h-5 w-5" />
-                  Formula
-                </h3>
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-blue-800 font-mono text-lg">{question.formula}</p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-indigo-100 rounded-lg">
+                    <Calculator className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold">Formula</h3>
+                </div>
+                <div className="p-6 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl">
+                  <p className="text-indigo-800 font-mono text-xl text-center">{question.formula}</p>
                 </div>
               </div>
             )}
 
             {/* Options (for multiple choice questions) */}
             {question.options && question.options.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Answer Options</h3>
-                <div className="space-y-2">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-yellow-100 rounded-lg">
+                    <Award className="h-5 w-5 text-yellow-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold">Answer Options</h3>
+                </div>
+                <div className="space-y-3">
                   {question.options.map((option, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-500">
-                          {String.fromCharCode(65 + index)}
-                        </span>
-                        <span className={option === question.correctAnswer ? 'font-medium text-green-700' : ''}>
+                    <div key={index} className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 ${
+                      option === question.correctAnswer 
+                        ? 'bg-green-50 border-green-300 shadow-lg' 
+                        : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                    }`}>
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                        option === question.correctAnswer 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-gray-300 text-gray-700'
+                      }`}>
+                        {String.fromCharCode(65 + index)}
+                      </div>
+                      <div className="flex-1">
+                        <span className={`text-lg ${
+                          option === question.correctAnswer ? 'font-semibold text-green-800' : 'text-gray-700'
+                        }`}>
                           {option}
                         </span>
-                        {option === question.correctAnswer && (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        )}
                       </div>
+                      {option === question.correctAnswer && (
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-6 w-6 text-green-600" />
+                          <span className="text-sm font-semibold text-green-600">Correct Answer</span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -187,19 +259,29 @@ export function QuestionBankDetailPage() {
             )}
 
             {/* Correct Answer */}
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Correct Answer</h3>
-              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-800 font-medium">{question.correctAnswer}</p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                </div>
+                <h3 className="text-xl font-semibold">Correct Answer</h3>
+              </div>
+              <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
+                <p className="text-green-800 font-semibold text-xl text-center">{question.correctAnswer}</p>
               </div>
             </div>
 
             {/* Explanation */}
             {question.explanation && (
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Explanation</h3>
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-blue-800">{question.explanation}</p>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Lightbulb className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold">Explanation</h3>
+                </div>
+                <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl">
+                  <p className="text-purple-800 text-lg leading-relaxed">{question.explanation}</p>
                 </div>
               </div>
             )}
@@ -208,7 +290,19 @@ export function QuestionBankDetailPage() {
 
         {/* Comments Section */}
         {question && (
-          <CommentSection questionId={question.id} />
+          <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                  <User className="h-5 w-5 text-white" />
+                </div>
+                <CardTitle className="text-2xl">Discussion & Comments</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <CommentSection questionId={question.id} />
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

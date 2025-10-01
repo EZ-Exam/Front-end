@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -11,268 +10,78 @@ import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import { 
   ArrowLeft, 
   ArrowRight, 
-  Clock,
   CheckCircle,
-  XCircle,
   Flag,
-  AlertTriangle,
-  Trophy
+  Trophy,
+  Brain,
+  Target,
+  AlertTriangle
 } from 'lucide-react';
-import api from '@/services/axios';
-import 'katex/dist/katex.min.css';
+import { mockTests } from '@/data/mockData';
+
+interface Question {
+  id: string;
+  content?: string;
+  text?: string;
+  options?: string[];
+  correctAnswer?: string;
+  explanation?: string;
+  difficultyLevel?: string;
+  subjectName?: string;
+  lessonName?: string;
+  chapterName?: string;
+  imageUrl?: string;
+  formula?: string;
+}
+
+interface Exam {
+  id: string;
+  title: string;
+  subject: string;
+  difficulty: string;
+  duration: number;
+  totalQuestions: number;
+  questionSets: string[];
+}
 
 export function MockTestDetailPage() {
-  const { id } = useParams();
-  const [hasStarted, setHasStarted] = useState(false);
+  const { id } = useParams<{ id: string }>();
+  const { showLoading, hideLoading } = useGlobalLoading();
+  
+  const [exam, setExam] = useState<Exam | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
-  const [submitted, setSubmitted] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
-  const [exam, setExam] = useState<any>(null);
-  const [questions, setQuestions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Global loading hook
-  const { showLoading, withLoading } = useGlobalLoading();
-  
-  const handleSubmit = useCallback(async () => {
-    await withLoading(async () => {
-      // Simulate processing time for better UX
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setSubmitted(true);
-      setShowResults(true);
-      setShowSubmitDialog(false);
-      
-      // Save answers and submission time to localStorage for analytics
-      if (id) {
-        localStorage.setItem(`mocktest_${id}_answers`, JSON.stringify(answers));
-        localStorage.setItem(`mocktest_${id}_submitted_at`, new Date().toISOString());
-      }
-    }, "Đang chấm điểm bài thi...");
-  }, [answers, id, withLoading]);
-  
-  // Fetch exam and questions from API
-  useEffect(() => {
-    const fetchExamData = async () => {
-      if (!id) return;
-      
-      await withLoading(async () => {
-        try {
-          setLoading(true);
-          setError(null);
-          
-          // Fetch exam details
-          const examResponse = await api.get(`/exams/${id}`);
-          console.log('Exam data:', examResponse.data); // Debug log
-          setExam(examResponse.data);
-          
-          // Fetch exam questions with order
-          const questionsResponse = await api.get(`/exams/${id}/questions`);
-          const questionData = Array.isArray(questionsResponse?.data?.items) 
-            ? questionsResponse.data.items 
-            : (Array.isArray(questionsResponse?.data) ? questionsResponse.data : []);
-          
-          console.log('Questions data:', questionData); // Debug log
-          
-          // Sort questions by order field from exam_questions table
-          const sortedQuestions = questionData.sort((a: any, b: any) => {
-            const orderA = a.order || a.questionOrder || 0;
-            const orderB = b.order || b.questionOrder || 0;
-            return orderA - orderB;
-          });
-          
-          // Fetch full question details for each question
-          const questionsWithDetails = await Promise.all(
-            sortedQuestions.map(async (examQuestion: any) => {
-              try {
-                const questionResponse = await api.get(`/questions/${examQuestion.questionId}`);
-                const questionDetails = questionResponse.data;
-                
-                console.log(`Question ${examQuestion.questionId} details:`, questionDetails); // Debug each question
-                console.log(`Question ${examQuestion.questionId} options:`, questionDetails.options); // Debug options specifically
-                console.log(`Question ${examQuestion.questionId} type:`, questionDetails.type); // Debug type
-                
-                return {
-                  ...examQuestion,
-                  ...questionDetails,
-                  // Ensure we have the essential fields
-                  content: questionDetails.content || questionDetails.text || examQuestion.content,
-                  options: questionDetails.options || questionDetails.answers || examQuestion.options,
-                  CorrectAnswer: questionDetails.CorrectAnswer || questionDetails.correctAnswer || examQuestion.CorrectAnswer
-                };
-              } catch (err) {
-                console.error(`Failed to fetch question ${examQuestion.questionId}:`, err);
-                return examQuestion; // Return original if fetch fails
-              }
-            })
-          );
-          
-          console.log('Questions with details:', questionsWithDetails); // Debug log
-          setQuestions(questionsWithDetails);
-          
-        } catch (err: any) {
-          console.error('Failed to fetch exam data:', err);
-          setError(err?.response?.data?.message || 'Failed to load exam');
-        } finally {
-          setLoading(false);
-        }
-      }, "Đang tải bài thi...");
-    };
-
-    fetchExamData();
-  }, [id, withLoading]);
-  
-  useEffect(() => {
-    if (hasStarted && exam && !submitted) {
-      const duration = exam.duration || exam.timeLimit; 
-      setTimeLeft(duration * 60); // Convert to seconds
-      
-      const timer = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 0) {
-            handleSubmit();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      
-      return () => clearInterval(timer);
-    }
-  }, [hasStarted, exam, submitted, handleSubmit]);
-  
-  if (loading) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold mb-4">Loading exam...</h2>
-      </div>
-    );
-  }
-
-  if (error || !exam) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold mb-4">Exam not found</h2>
-        <p className="text-red-600 mb-4">{error}</p>
-        <Button asChild>
-          <Link to="/mock-tests">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Mock Tests
-          </Link>
-        </Button>
-      </div>
-    );
-  }
-
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  if (!hasStarted) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/mock-tests">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Mock Tests
-            </Link>
-          </Button>
-        </div>
-
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Clock className="h-8 w-8 text-blue-600" />
-            </div>
-            <CardTitle className="text-2xl">{exam.name}</CardTitle>
-            <div className="flex items-center justify-center gap-4 mt-4">
-              <Badge className="bg-blue-100 text-blue-800">
-                {exam.subjectName}
-              </Badge>
-              <Badge variant="outline" className="bg-orange-100 text-orange-800">
-                {exam.difficultyLevel}
-              </Badge>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{exam.duration || exam.timeLimit || 60}</div>
-                <div className="text-sm text-gray-600">Minutes</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{questions.length}</div>
-                <div className="text-sm text-gray-600">Questions</div>
-              </div>
-            </div>
-
-            <div className="space-y-4 text-sm">
-              <h3 className="font-semibold text-base">Instructions:</h3>
-              <div className="space-y-2 text-gray-600">
-                <p>• This is a timed test. You have {exam.duration || exam.timeLimit || 60} minutes to complete all questions.</p>
-                <p>• You can navigate between questions and change your answers before submitting.</p>
-                <p>• Use the flag feature to mark questions you want to review later.</p>
-                <p>• The test will auto-submit when time runs out.</p>
-                <p>• Make sure you have a stable internet connection.</p>
-              </div>
-            </div>
-
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-medium text-amber-900 mb-1">Important</h4>
-                  <p className="text-sm text-amber-700">
-                    Once you start the test, the timer cannot be paused. Make sure you're ready to commit 
-                    the full duration to complete this mock test.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <Button 
-              size="lg" 
-              className="w-full"
-              onClick={() => setHasStarted(true)}
-            >
-              Start Test
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const [isTestStarted, setIsTestStarted] = useState(false);
+  const [isTestCompleted, setIsTestCompleted] = useState(false);
+  const [score, setScore] = useState(0);
+  const [results, setResults] = useState<any>(null);
 
   const currentQuestion = questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   const answeredCount = Object.keys(answers).length;
   const flaggedCount = flagged.size;
+  const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
 
-  // Debug log for current question
-  console.log('Current question:', currentQuestion);
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   const handleAnswerChange = (value: string) => {
+    if (currentQuestion) {
     setAnswers(prev => ({
       ...prev,
       [currentQuestion.id]: value
     }));
+    }
   };
 
   const handleFlag = () => {
+    if (currentQuestion) {
     setFlagged(prev => {
       const newSet = new Set(prev);
       if (newSet.has(currentQuestion.id)) {
@@ -282,6 +91,7 @@ export function MockTestDetailPage() {
       }
       return newSet;
     });
+    }
   };
 
   const handleNext = () => {
@@ -296,121 +106,347 @@ export function MockTestDetailPage() {
     }
   };
 
-  const getScore = () => {
-    const correct = questions.filter(q => {
-      const selectedAnswer = answers[q.id];
-      // Sử dụng CorrectAnswer từ database hoặc correctAnswer từ API
-      const correctAnswer = q.CorrectAnswer || q.correctAnswer;
-      return correctAnswer === selectedAnswer;
-    }).length;
-    return Math.round((correct / questions.length) * 100);
+  const handleSubmit = () => {
+    setShowSubmitDialog(false);
+    setIsTestCompleted(true);
+    
+    // Calculate score
+    let correctAnswers = 0;
+    questions.forEach(question => {
+      const userAnswer = answers[question.id];
+      if (userAnswer === question.correctAnswer) {
+        correctAnswers++;
+      }
+    });
+    
+    const calculatedScore = Math.round((correctAnswers / questions.length) * 100);
+    setScore(calculatedScore);
+    
+    // Mock results data
+    setResults({
+      totalQuestions: questions.length,
+      answeredQuestions: answeredCount,
+      correctAnswers,
+      incorrectAnswers: answeredCount - correctAnswers,
+      unansweredQuestions: questions.length - answeredCount,
+      flaggedQuestions: flaggedCount,
+      timeSpent: exam?.duration ? exam.duration * 60 - timeLeft : 0,
+      score: calculatedScore,
+      performance: calculatedScore >= 80 ? 'Excellent' : calculatedScore >= 60 ? 'Good' : 'Needs Improvement'
+    });
   };
 
-  if (showResults) {
-    const score = getScore();
-    const correctCount = questions.filter(q => {
-      const selectedAnswer = answers[q.id];
-      // Sử dụng CorrectAnswer từ database hoặc correctAnswer từ API
-      const correctAnswer = q.CorrectAnswer || q.correctAnswer;
-      return correctAnswer === selectedAnswer;
-    }).length;
-    const duration = exam.duration || exam.timeLimit || 60;
-    const timeSpent = (duration * 60) - timeLeft;
+  const startTest = () => {
+    setIsTestStarted(true);
+    setTimeLeft(exam?.duration ? exam.duration * 60 : 1800); // Default 30 minutes
+  };
+
+  const retakeTest = () => {
+    setIsTestStarted(false);
+    setIsTestCompleted(false);
+    setCurrentQuestionIndex(0);
+    setAnswers({});
+    setFlagged(new Set());
+    setScore(0);
+    setResults(null);
+  };
+
+  const fetchExam = useCallback(async () => {
+    if (!id) return;
     
+    showLoading('Loading Mock Test...');
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const foundExam = mockTests.find(exam => exam.id === id);
+      if (foundExam) {
+        setExam(foundExam);
+        setQuestions([]); // Mock questions for now
+      } else {
+        console.error('Exam not found');
+      }
+    } catch (error) {
+      console.error('Error fetching exam:', error);
+    } finally {
+      hideLoading();
+    }
+  }, [id, showLoading, hideLoading]);
+
+  useEffect(() => {
+    fetchExam();
+  }, [fetchExam]);
+
+  useEffect(() => {
+    if (isTestStarted && timeLeft > 0) {
+      const timer = setTimeout(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (isTestStarted && timeLeft === 0) {
+      handleSubmit();
+    }
+  }, [isTestStarted, timeLeft]);
+
+  if (!exam) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/mock-tests">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Mock Tests
-            </Link>
-          </Button>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-6"></div>
+            <div className="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mx-auto absolute top-2 left-1/2 transform -translate-x-1/2 [animation-direction:reverse] [animation-duration:1.5s]"></div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading Mock Test...</h2>
+          <p className="text-gray-600">Please wait while we prepare your test</p>
         </div>
+      </div>
+    );
+  }
 
-        {/* Results Summary */}
-        <Card className={`border-2 ${score >= 70 ? 'border-green-200 bg-green-50' : score >= 50 ? 'border-yellow-200 bg-yellow-50' : 'border-red-200 bg-red-50'}`}>
-          <CardHeader className="text-center">
-            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
-              score >= 70 ? 'bg-green-100' : score >= 50 ? 'bg-yellow-100' : 'bg-red-100'
-            }`}>
-              {score >= 70 ? (
-                <Trophy className="h-10 w-10 text-green-600" />
-              ) : score >= 50 ? (
-                <CheckCircle className="h-10 w-10 text-yellow-600" />
-              ) : (
-                <XCircle className="h-10 w-10 text-red-600" />
-              )}
-            </div>
-            <CardTitle className="text-3xl mb-2">{score}%</CardTitle>
-            <p className="text-xl font-semibold mb-2">
-              {score >= 70 ? 'Excellent!' : score >= 50 ? 'Good Job!' : 'Keep Practicing!'}
-            </p>
-            <p className="text-gray-600">
-              You scored {correctCount} out of {questions.length} questions correct
-            </p>
-          </CardHeader>
-        </Card>
-
-        {/* Performance Metrics */}
-        <div className="grid md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <div className="text-2xl font-bold text-blue-600">{correctCount}</div>
-              <div className="text-sm text-gray-600">Correct Answers</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <div className="text-2xl font-bold text-orange-600">{answeredCount}</div>
-              <div className="text-sm text-gray-600">Questions Attempted</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <div className="text-2xl font-bold text-purple-600">{formatTime(timeSpent)}</div>
-              <div className="text-sm text-gray-600">Time Spent</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="flex gap-4">
-          <Button 
-            className="flex-1"
-            onClick={() => {
-              showLoading("Đang chuyển đến trang phân tích...");
-              setTimeout(() => {
-                window.location.href = `/mock-tests/${id}/analytics`;
-              }, 500);
-            }}
-          >
-            View Detailed Analytics
-          </Button>
-          <Button variant="outline" asChild className="flex-1">
-            <Link to="/mock-tests">
-              Take Another Test
-            </Link>
+  if (questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="p-6 bg-red-100 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+            <AlertTriangle className="h-12 w-12 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">No Questions Available</h2>
+          <p className="text-gray-600 mb-6">This mock test doesn't have any questions yet.</p>
+          <Button asChild>
+            <Link to="/mock-tests">Back to Mock Tests</Link>
           </Button>
         </div>
       </div>
     );
   }
 
+  // Pre-test screen
+  if (!isTestStarted && !isTestCompleted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="container mx-auto px-4 py-8">
+          {/* Hero Section */}
+          <div className="text-center mb-12">
+            <div className="p-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center shadow-2xl">
+              <Trophy className="h-12 w-12 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+              {exam.title}
+            </h1>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Get ready to test your knowledge with this comprehensive mock exam
+            </p>
+          </div>
+
+          {/* Test Stats */}
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            <Card className="text-center p-8 bg-white/90 backdrop-blur-sm border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+              <div className="p-4 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Brain className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">{exam.totalQuestions}</h3>
+              <p className="text-gray-600 font-semibold">Questions</p>
+            </Card>
+
+            <Card className="text-center p-8 bg-white/90 backdrop-blur-sm border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+              <div className="p-4 bg-gradient-to-r from-green-500 to-green-600 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Target className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">{exam.duration}</h3>
+              <p className="text-gray-600 font-semibold">Minutes</p>
+        </Card>
+
+            <Card className="text-center p-8 bg-white/90 backdrop-blur-sm border-0 shadow-2xl hover:shadow-3xl transition-all duration-300">
+              <div className="p-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Trophy className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">{exam.difficulty}</h3>
+              <p className="text-gray-600 font-semibold">Difficulty</p>
+            </Card>
+          </div>
+
+          {/* Instructions */}
+          <Card className="mb-12 bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
+            <CardHeader className="text-center pb-6">
+              <CardTitle className="text-2xl font-bold text-gray-800 flex items-center justify-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                  <Brain className="h-6 w-6 text-white" />
+                </div>
+                Test Instructions
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-1">Answer All Questions</h4>
+                    <p className="text-sm text-gray-600">Complete all questions to get your final score</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Flag className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-1">Flag Questions</h4>
+                    <p className="text-sm text-gray-600">Mark questions for review if needed</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Target className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-1">Time Management</h4>
+                    <p className="text-sm text-gray-600">Manage your time wisely during the test</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Trophy className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 mb-1">Get Results</h4>
+                    <p className="text-sm text-gray-600">Receive detailed performance analysis</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Start Button */}
+          <div className="text-center">
+            <Button
+              onClick={startTest}
+              className="h-16 px-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 rounded-2xl text-xl font-bold"
+            >
+              <Trophy className="mr-3 h-6 w-6" />
+              Start Mock Test
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Results screen
+  if (isTestCompleted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="container mx-auto px-4 py-8">
+          {/* Results Header */}
+          <div className="text-center mb-12">
+            <div className="p-6 bg-gradient-to-r from-green-500 to-blue-500 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center shadow-2xl">
+              <Trophy className="h-12 w-12 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-4">
+              Test Completed!
+            </h1>
+            <p className="text-xl text-gray-600">Here are your results</p>
+          </div>
+
+          {/* Score Display */}
+          <Card className="text-center mb-12 bg-white/90 backdrop-blur-sm border-0 shadow-2xl">
+            <CardContent className="p-12">
+              <div className="text-6xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-4">
+                {score}%
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Score</h2>
+              <p className="text-gray-600 text-lg">
+                {results?.performance === 'Excellent' ? 'Outstanding performance!' : 
+                 results?.performance === 'Good' ? 'Good job! Keep it up!' : 
+                 'Keep practicing to improve!'}
+              </p>
+            </CardContent>
+          </Card>
+          
+          {/* Performance Metrics */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <Card className="text-center p-6 bg-white/90 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+              <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-xl w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-1">{results?.correctAnswers || 0}</h3>
+              <p className="text-gray-600 font-semibold">Correct</p>
+            </Card>
+
+            <Card className="text-center p-6 bg-white/90 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+              <div className="p-3 bg-gradient-to-r from-red-500 to-red-600 rounded-xl w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-1">{results?.incorrectAnswers || 0}</h3>
+              <p className="text-gray-600 font-semibold">Incorrect</p>
+            </Card>
+
+            <Card className="text-center p-6 bg-white/90 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+              <div className="p-3 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                <Flag className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-1">{results?.flaggedQuestions || 0}</h3>
+              <p className="text-gray-600 font-semibold">Flagged</p>
+            </Card>
+
+            <Card className="text-center p-6 bg-white/90 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+              <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                <Target className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-1">{Math.round((results?.timeSpent || 0) / 60)}</h3>
+              <p className="text-gray-600 font-semibold">Minutes</p>
+          </Card>
+        </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button 
+              onClick={retakeTest}
+              className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold"
+            >
+              <Trophy className="mr-2 h-5 w-5" />
+              Retake Test
+          </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="h-12 px-8 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 rounded-xl text-lg font-semibold"
+            >
+            <Link to="/mock-tests">
+                <Brain className="mr-2 h-5 w-5" />
+                Back to Tests
+            </Link>
+          </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between bg-white border rounded-lg p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="container mx-auto px-4 py-6">
+        {/* Enhanced Header */}
+        <div className="flex items-center justify-between bg-white/90 backdrop-blur-sm border-0 rounded-2xl p-6 shadow-2xl mb-6">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold">{exam.name}</h1>
-          <Badge>{exam.subjectName}</Badge>
+            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl shadow-lg">
+              <Trophy className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">{exam.title}</h1>
+              <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 mt-1">
+                {exam.subject}
+              </Badge>
+            </div>
         </div>
         
         <div className="flex items-center gap-6">
           <div className="text-right">
-            <div className="text-sm text-gray-500">Time Remaining</div>
-            <div className={`text-lg font-mono font-bold ${timeLeft < 600 ? 'text-red-600' : ''}`}>
+              <div className="text-sm text-gray-500 font-medium">Time Remaining</div>
+              <div className={`text-2xl font-mono font-bold ${timeLeft < 600 ? 'text-red-600' : 'text-blue-600'}`}>
               {formatTime(timeLeft)}
             </div>
           </div>
@@ -418,102 +454,130 @@ export function MockTestDetailPage() {
           <Button
             variant="outline"
             onClick={() => setShowSubmitDialog(true)}
+              className="h-12 px-6 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl"
           >
+              <CheckCircle className="mr-2 h-5 w-5" />
             Submit Test
           </Button>
         </div>
       </div>
 
-      {/* Progress */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">
+        {/* Enhanced Progress */}
+        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm mb-6">
+          <CardContent className="pt-6 pb-6">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-lg font-semibold text-gray-800">
               Question {currentQuestionIndex + 1} of {questions.length}
             </span>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <span>Answered: {answeredCount}</span>
-              <span>Flagged: {flaggedCount}</span>
+              <div className="flex items-center gap-6 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="font-semibold">Answered: {answeredCount}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Flag className="h-4 w-4 text-orange-500" />
+                  <span className="font-semibold">Flagged: {flaggedCount}</span>
+                </div>
+              </div>
             </div>
+            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-purple-500 h-4 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              ></div>
           </div>
-          <Progress value={progress} className="h-2" />
         </CardContent>
       </Card>
 
-      <div className="grid lg:grid-cols-4 gap-6">
-        {/* Question */}
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Enhanced Question */}
         <div className="lg:col-span-3">
-          <Card>
-            <CardHeader>
+            <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+              <CardHeader className="pb-6 bg-gradient-to-r from-blue-50 to-purple-50">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">
+                  <CardTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                      <Brain className="h-5 w-5 text-white" />
+                    </div>
                   Question {currentQuestionIndex + 1}
                 </CardTitle>
                 <Button
                   variant={flagged.has(currentQuestion.id) ? "default" : "outline"}
                   size="sm"
                   onClick={handleFlag}
+                    className={`h-10 px-4 rounded-xl transition-all duration-300 ${
+                      flagged.has(currentQuestion.id) 
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-lg' 
+                        : 'border-2 border-gray-300 hover:border-orange-500 hover:bg-orange-50'
+                    }`}
                 >
                   <Flag className={`h-4 w-4 ${flagged.has(currentQuestion.id) ? 'fill-current' : ''}`} />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <p className="text-lg mb-4">{currentQuestion.content || currentQuestion.text || 'No question content available'}</p>
+              <CardContent className="space-y-8 p-8">
+                <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl">
+                  <p className="text-xl text-gray-800 leading-relaxed">
+                    {currentQuestion.content || currentQuestion.text || 'No question content available'}
+                  </p>
               </div>
 
-              {/* Answer Options */}
+                {/* Enhanced Answer Options */}
               <RadioGroup
                 value={answers[currentQuestion.id] || ''}
                 onValueChange={handleAnswerChange}
               >
-                <div className="space-y-3">
+                  <div className="space-y-4">
                   {currentQuestion.options && currentQuestion.options.length > 0 ? (
                     currentQuestion.options.map((option: string, index: number) => (
-                      <div key={index} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                        <RadioGroupItem value={option} id={`option-${index}`} />
-                        <Label htmlFor={`option-${index}`} className="cursor-pointer flex-1">
+                        <div key={index} className="group">
+                          <div className="flex items-center space-x-4 p-4 border-2 border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all duration-300 cursor-pointer">
+                            <RadioGroupItem value={option} id={`option-${index}`} className="w-5 h-5" />
+                            <Label htmlFor={`option-${index}`} className="cursor-pointer flex-1 text-lg font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
                           {option}
                         </Label>
+                          </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>No answer options available for this question.</p>
+                      <div className="text-center py-12 text-gray-500">
+                        <div className="p-4 bg-gray-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                          <AlertTriangle className="h-10 w-10 text-gray-400" />
+                        </div>
+                        <p className="text-lg">No answer options available for this question.</p>
                       <p className="text-sm mt-2">Question ID: {currentQuestion.id}</p>
-                      <p className="text-xs mt-1">Available fields: {JSON.stringify(Object.keys(currentQuestion))}</p>
-                      <p className="text-xs mt-1">Options value: {JSON.stringify(currentQuestion.options)}</p>
                     </div>
                   )}
                 </div>
               </RadioGroup>
 
-              {/* Navigation */}
-              <div className="flex items-center justify-between pt-4">
+                {/* Enhanced Navigation */}
+                <div className="flex items-center justify-between pt-6 border-t-2 border-gray-100">
                 <Button
                   variant="outline"
                   onClick={handlePrevious}
                   disabled={currentQuestionIndex === 0}
+                    className="h-12 px-6 rounded-xl border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 disabled:opacity-50"
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
+                    <ArrowLeft className="mr-2 h-5 w-5" />
                   Previous
                 </Button>
 
                 {currentQuestionIndex === questions.length - 1 ? (
                   <Button
                     onClick={() => setShowSubmitDialog(true)}
-                    className="bg-green-600 hover:bg-green-700"
+                      className="h-12 px-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold"
                   >
                     Submit Test
-                    <CheckCircle className="ml-2 h-4 w-4" />
+                      <CheckCircle className="ml-2 h-5 w-5" />
                   </Button>
                 ) : (
                   <Button
                     onClick={handleNext}
+                      className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold"
                   >
                     Next
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                      <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 )}
               </div>
@@ -521,53 +585,61 @@ export function MockTestDetailPage() {
           </Card>
         </div>
 
-        {/* Question Navigator */}
+          {/* Enhanced Question Navigator */}
         <div>
-          <Card className="sticky top-4">
-            <CardHeader>
-              <CardTitle className="text-sm">Question Navigator</CardTitle>
+            <Card className="sticky top-4 shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+              <CardHeader className="pb-6 bg-gradient-to-r from-purple-50 to-blue-50">
+                <CardTitle className="text-xl font-bold text-gray-800 flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg">
+                    <Target className="h-5 w-5 text-white" />
+                  </div>
+                  Question Navigator
+                </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-5 gap-2">
+              <CardContent className="p-6">
+                <div className="grid grid-cols-5 gap-3 mb-6">
                 {questions.map((question, index) => (
                   <Button
                     key={index}
                     variant={index === currentQuestionIndex ? 'default' : 'outline'}
                     size="sm"
-                    className={`w-10 h-10 p-0 relative ${
-                      answers[question.id] ? 'bg-green-50 border-green-200' : ''
+                      className={`w-12 h-12 p-0 relative rounded-xl transition-all duration-300 ${
+                        answers[question.id] ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg' : 
+                        index === currentQuestionIndex ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-lg' :
+                        'border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50'
                     }`}
                     onClick={() => setCurrentQuestionIndex(index)}
                   >
                     {index + 1}
                     {flagged.has(question.id) && (
-                      <Flag className="absolute -top-1 -right-1 h-3 w-3 fill-yellow-500 text-yellow-500" />
+                        <Flag className="absolute -top-1 -right-1 h-3 w-3 fill-orange-500 text-orange-500" />
                     )}
                   </Button>
                 ))}
               </div>
               
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-                  <span>Legend:</span>
-                </div>
-                <div className="space-y-1 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-100 border border-green-200 rounded"></div>
-                    <span>Answered</span>
+                <div className="pt-6 border-t-2 border-gray-100">
+                  <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+                    <span className="font-semibold">Legend:</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 border rounded"></div>
-                    <span>Not answered</span>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 bg-gradient-to-r from-green-500 to-green-600 rounded border-0"></div>
+                      <span className="font-medium">Answered</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 border-2 border-gray-300 rounded"></div>
+                      <span className="font-medium">Not answered</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Flag className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                    <span>Flagged</span>
+                    <div className="flex items-center gap-3">
+                      <Flag className="w-4 h-4 fill-orange-500 text-orange-500" />
+                      <span className="font-medium">Flagged</span>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
+          </div>
         </div>
       </div>
 

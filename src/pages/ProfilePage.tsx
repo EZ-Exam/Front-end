@@ -4,7 +4,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Mail, Calendar, Target, Phone } from 'lucide-react';
+import { 
+  Camera, 
+  Mail, 
+  Calendar, 
+  Target, 
+  Phone, 
+  User, 
+  Edit3, 
+  Save, 
+  X, 
+  Shield, 
+  Award, 
+  TrendingUp,
+  BookOpen,
+  Trophy,
+  Clock,
+  CheckCircle,
+  Sparkles,
+  Settings,
+  Bell,
+  Lock
+} from 'lucide-react';
 import { mockProgressData } from '@/data/mockData';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
@@ -243,163 +264,189 @@ export function ProfilePage() {
   };
 
   return (
-    <div className="space-y-6">
-      <ToastContainer />
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Profile</h1>
-        <div className="flex gap-2">
-          {isEditing ? (
-            <>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="container mx-auto px-4 py-8">
+        <ToastContainer />
+        
+        {/* Enhanced Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-3 mb-6">
+            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-lg">
+              <User className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Profile
+            </h1>
+          </div>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
+            Manage your personal information and account settings
+          </p>
+          
+          <div className="flex justify-center gap-4">
+            {isEditing ? (
+              <>
+                <Button 
+                  onClick={handleCancel}
+                  variant="outline"
+                  disabled={isLoading}
+                  className="rounded-xl border-2 border-gray-300 hover:border-red-500 hover:text-red-600"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleSave}
+                  disabled={isLoading}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 rounded-xl"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  {isLoading ? "Saving..." : "Save Changes"}
+                </Button>
+              </>
+            ) : (
               <Button 
-                onClick={handleCancel}
+                onClick={() => setIsEditing(true)}
                 variant="outline"
-                disabled={isLoading}
+                className="rounded-xl border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 hover:scale-105"
               >
-                Cancel
+                <Edit3 className="mr-2 h-4 w-4" />
+                Edit Profile
               </Button>
-              <Button 
-                onClick={handleSave}
-                disabled={isLoading}
-              >
-                {isLoading ? "Saving..." : "Save Changes"}
-              </Button>
-            </>
-          ) : (
-            <Button 
-              onClick={() => setIsEditing(true)}
-              variant="outline"
-            >
-              Edit Profile
-            </Button>
-          )}
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Show loading skeleton while data is being fetched */}
-      {!userProfile ? (
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-                <CardDescription>
-                  Update your profile information and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 bg-gray-200 rounded-full animate-pulse"></div>
-                  <div className="space-y-2">
-                    <div className="h-6 bg-gray-200 rounded animate-pulse w-32"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
-                  </div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
-                    <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                    <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-28"></div>
-                  <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Account Info
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
-                  <div className="h-5 bg-gray-200 rounded animate-pulse w-32"></div>
-                </div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
-                  <div className="h-5 bg-gray-200 rounded animate-pulse w-40"></div>
-                </div>
-                <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-28"></div>
-                  <div className="h-5 bg-gray-200 rounded animate-pulse w-36"></div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Quick Stats
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
-                      <div className="h-4 bg-gray-200 rounded animate-pulse w-8"></div>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-gray-300 h-2 rounded-full animate-pulse w-3/4"></div>
+        {/* Show loading skeleton while data is being fetched */}
+        {!userProfile ? (
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+                <CardHeader className="pb-6">
+                  <CardTitle className="text-2xl font-bold text-gray-800">Personal Information</CardTitle>
+                  <CardDescription className="text-gray-600">
+                    Update your profile information and preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  <div className="flex items-center gap-6">
+                    <div className="w-24 h-24 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full animate-pulse"></div>
+                    <div className="space-y-3">
+                      <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-40"></div>
+                      <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-24"></div>
                     </div>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-20"></div>
+                      <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse"></div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-24"></div>
+                      <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-28"></div>
+                    <div className="h-12 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="space-y-8">
+              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+                <CardHeader className="pb-6">
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Calendar className="h-5 w-5 text-blue-600" />
+                    </div>
+                    Account Info
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-24"></div>
+                    <div className="h-5 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-32"></div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-16"></div>
+                    <div className="h-5 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-40"></div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-28"></div>
+                    <div className="h-5 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-36"></div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+                <CardHeader className="pb-6">
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <TrendingUp className="h-5 w-5 text-purple-600" />
+                    </div>
+                    Quick Stats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-20"></div>
+                        <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-8"></div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div className="bg-gradient-to-r from-gray-300 to-gray-400 h-3 rounded-full animate-pulse w-3/4"></div>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Profile Info */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Personal Information</CardTitle>
-                <CardDescription>
-                  Update your profile information and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Avatar Section */}
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <Avatar className="w-20 h-20 border-2 border-gray-300">
-                      <AvatarImage src={previewImage || formData.avatarUrl || ''} />
-                      <AvatarFallback className="text-lg">
-                        {formData.fullName ? formData.fullName.charAt(0).toUpperCase() : 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    {isEditing && (
-                      <button 
-                        type="button"
-                        className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
-                        aria-label="Change profile picture"
-                        title="Change profile picture"
-                        onClick={triggerFileInput}
-                      >
-                        <Camera className="h-3 w-3" />
-                      </button>
-                    )}
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Profile Info */}
+            <div className="lg:col-span-2 space-y-8">
+              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+                <CardHeader className="pb-6">
+                  <CardTitle className="text-2xl font-bold text-gray-800">Personal Information</CardTitle>
+                  <CardDescription className="text-gray-600">
+                    Update your profile information and preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  {/* Enhanced Avatar Section */}
+                  <div className="flex items-center gap-6">
+                    <div className="relative">
+                      <Avatar className="w-24 h-24 border-4 border-white shadow-xl">
+                        <AvatarImage src={previewImage || formData.avatarUrl || ''} />
+                        <AvatarFallback className="text-2xl bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                          {formData.fullName ? formData.fullName.charAt(0).toUpperCase() : 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isEditing && (
+                        <button 
+                          type="button"
+                          className="absolute -bottom-2 -right-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-110 shadow-lg"
+                          aria-label="Change profile picture"
+                          title="Change profile picture"
+                          onClick={triggerFileInput}
+                        >
+                          <Camera className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-2xl text-gray-800">{formData.fullName || 'User'}</h3>
+                      <p className="text-gray-500 text-lg">Student</p>
+                      {selectedImage && (
+                        <p className="text-sm text-green-600 mt-2 flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          New image selected: {selectedImage.name}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{formData.fullName || 'User'}</h3>
-                    <p className="text-gray-500">Student</p>
-                    {selectedImage && (
-                      <p className="text-sm text-green-600 mt-1">
-                        New image selected: {selectedImage.name}
-                      </p>
-                    )}
-                  </div>
-                </div>
 
                 {/* Hidden file input */}
                 <input
@@ -411,89 +458,131 @@ export function ProfilePage() {
                   title="Upload avatar"
                 />
 
-                {/* Form Fields */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      value={formData.fullName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                      disabled={!isEditing}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  {/* Enhanced Form Fields */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <Label htmlFor="fullName" className="text-sm font-semibold text-gray-700">Full Name</Label>
                       <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        id="fullName"
+                        value={formData.fullName}
+                        onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
                         disabled={!isEditing}
-                        className="pl-10"
+                        className="h-12 rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                      />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email Address</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                          disabled={!isEditing}
+                          className="h-12 pl-12 rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="phoneNumber" className="text-sm font-semibold text-gray-700">Phone Number</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                      <Input
+                        id="phoneNumber"
+                        type="tel"
+                        placeholder="Enter your phone number"
+                        value={formData.phoneNumber}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                        disabled={!isEditing}
+                        className="h-12 pl-12 rounded-xl border-2 border-gray-200 focus:border-blue-500 transition-colors"
                       />
                     </div>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phoneNumber">Phone Number</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="phoneNumber"
-                      type="tel"
-                      placeholder="Enter your phone number"
-                      value={formData.phoneNumber}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                      disabled={!isEditing}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
 
               </CardContent>
             </Card>
           </div>
 
-          {/* Stats & Info */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  Account Info
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-500">Member since</p>
-                  <p className="font-medium">
-                    {userProfile?.createdAt ? formatDate(userProfile.createdAt) : 'Unknown'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Email</p>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    <span className="font-medium">{formData.email || 'Not provided'}</span>
+            {/* Enhanced Stats & Info */}
+            <div className="space-y-8">
+              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+                <CardHeader className="pb-6">
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Calendar className="h-5 w-5 text-blue-600" />
+                    </div>
+                    Account Info
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl">
+                    <p className="text-sm text-gray-600 mb-2">Member since</p>
+                    <p className="font-semibold text-gray-800">
+                      {userProfile?.createdAt ? formatDate(userProfile.createdAt) : 'Unknown'}
+                    </p>
                   </div>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Phone Number</p>
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    <span className="font-medium">{formData.phoneNumber || 'Not provided'}</span>
+                  <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl">
+                    <p className="text-sm text-gray-600 mb-2">Email</p>
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5 text-green-600" />
+                      <span className="font-semibold text-gray-800">{formData.email || 'Not provided'}</span>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                  <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl">
+                    <p className="text-sm text-gray-600 mb-2">Phone Number</p>
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-5 w-5 text-purple-600" />
+                      <span className="font-semibold text-gray-800">{formData.phoneNumber || 'Not provided'}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+                <CardHeader className="pb-6">
+                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <TrendingUp className="h-5 w-5 text-purple-600" />
+                    </div>
+                    Learning Stats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl">
+                      <div className="p-2 bg-blue-500 rounded-lg w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                        <BookOpen className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="text-2xl font-bold text-blue-600">12</div>
+                      <div className="text-sm text-gray-600">Lessons</div>
+                    </div>
+                    <div className="text-center p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl">
+                      <div className="p-2 bg-green-500 rounded-lg w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                        <Trophy className="h-6 w-6 text-white" />
+                      </div>
+                      <div className="text-2xl font-bold text-green-600">8</div>
+                      <div className="text-sm text-gray-600">Tests</div>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Progress</span>
+                      <span className="text-sm font-semibold text-orange-600">75%</span>
+                    </div>
+                    <div className="w-full bg-orange-200 rounded-full h-3">
+                      <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full w-3/4"></div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Plus, BookOpen, FileText, MessageSquare} from 'lucide-react';
+import { Plus, BookOpen, FileText, MessageSquare, Sparkles, Brain } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '@/services/axios';
 import { uploadImgBBMultipleFile } from '@/services/imgBB';
@@ -246,26 +246,54 @@ export function CreateContentDropdown() {
       <ToastContainer />
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="relative">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="relative h-10 w-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+          >
             <Plus className="h-5 w-5" />
           </Button>
         </DropdownMenuTrigger>
         
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuItem className='text-[#646cff]' onClick={() => { setActiveDialog('single-question'); setIsOpen(false); }}>
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Create Question
+        <DropdownMenuContent align="end" className="w-64 bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-xl p-2">
+          <DropdownMenuItem 
+            className='text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 rounded-lg p-3 cursor-pointer transition-all duration-300 hover:scale-105' 
+            onClick={() => { setActiveDialog('single-question'); setIsOpen(false); }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
+                <MessageSquare className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <div className="font-semibold">Create Question</div>
+                <div className="text-xs text-gray-500">Add new question</div>
+              </div>
+            </div>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/create-lesson" onClick={() => setIsOpen(false)}>
-            <BookOpen className="mr-2 h-4 w-4" />
-            Create Lesson
+            <Link to="/create-lesson" onClick={() => setIsOpen(false)} className="block">
+              <div className="flex items-center gap-3 p-3 hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 rounded-lg transition-all duration-300 hover:scale-105">
+                <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg">
+                  <BookOpen className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-green-600">Create Lesson</div>
+                  <div className="text-xs text-gray-500">Add new lesson</div>
+                </div>
+              </div>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/create-mock-test" onClick={() => setIsOpen(false)}>
-            <FileText className="mr-2 h-4 w-4" />
-            Create Mock Test
+            <Link to="/create-mock-test" onClick={() => setIsOpen(false)} className="block">
+              <div className="flex items-center gap-3 p-3 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 rounded-lg transition-all duration-300 hover:scale-105">
+                <div className="p-2 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg">
+                  <FileText className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-orange-600">Create Mock Test</div>
+                  <div className="text-xs text-gray-500">Add new test</div>
+                </div>
+              </div>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -300,10 +328,15 @@ export function CreateContentDropdown() {
           }
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create New Question</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl">
+          <DialogHeader className="pb-6">
+            <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                <Brain className="h-6 w-6 text-white" />
+              </div>
+              Create New Question
+            </DialogTitle>
+            <DialogDescription className="text-gray-600 text-base">
               Add a new question to the question bank. This question will be available for use in question sets and mock tests.
             </DialogDescription>
           </DialogHeader>
@@ -311,7 +344,7 @@ export function CreateContentDropdown() {
           <form onSubmit={handleCreateSingleQuestion} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="question-text">Question*</Label>
+                <Label htmlFor="question-text" className="text-sm font-semibold text-gray-700">Question*</Label>
                 <Textarea
                   id="question-text"
                   value={singleQuestionForm.content}
@@ -319,6 +352,7 @@ export function CreateContentDropdown() {
                   placeholder="Enter your question here..."
                   rows={3}
                   required
+                  className="border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300"
                 />
               </div>
 
@@ -645,7 +679,7 @@ export function CreateContentDropdown() {
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="pt-6 border-t border-gray-200">
               <Button 
                 type="button" 
                 variant="outline" 
@@ -672,10 +706,15 @@ export function CreateContentDropdown() {
                   setLessonOptions([]);
                   setTextbookOptions([]);
                 }}
+                className="h-12 px-6 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 transition-all duration-300 rounded-xl"
               >
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button 
+                type="submit"
+                className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold"
+              >
+                <Sparkles className="mr-2 h-5 w-5" />
                 Create Question
               </Button>
             </DialogFooter>

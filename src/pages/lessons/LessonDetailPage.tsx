@@ -236,6 +236,46 @@ export function LessonDetailPage() {
     setQuizSubmitted(false);
   };
 
+  const handleDownloadPDF = async () => {
+    if (!lesson?.pdfUrl) {
+      console.error('No PDF URL available');
+      return;
+    }
+
+    try {
+      // Fetch the PDF file
+      const response = await fetch(lesson.pdfUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch PDF');
+      }
+
+      // Convert to blob
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Extract filename from URL or use lesson title
+      const urlParts = lesson.pdfUrl.split('/');
+      const filename = urlParts[urlParts.length - 1] || `${lesson.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`;
+      
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      console.log('PDF downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      // You could add a toast notification here to inform the user
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -312,13 +352,9 @@ export function LessonDetailPage() {
               </p>
               
               <div className="mt-6 flex gap-4">
-                <Button>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Mark as Complete
-                </Button>
-                <Button variant="outline">
+                <Button variant="outline" onClick={handleDownloadPDF}>
                   <Download className="mr-2 h-4 w-4" />
-                  Download PDF
+                  Download Document
                 </Button>
               </div>
             </CardContent>

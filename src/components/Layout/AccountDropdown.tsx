@@ -22,7 +22,12 @@ import {
   PlusCircle, 
   MinusCircle, 
   TrendingUp,
-  Building2
+  Building2,
+  Crown,
+  Sparkles,
+  Zap,
+  Shield,
+  Star
 } from 'lucide-react';
 import { mockUserAccount, mockBankAccounts } from '@/data/mockData';
 import { useAuth } from '@/pages/auth/AuthContext';
@@ -83,59 +88,121 @@ export function AccountDropdown() {
       {isAuthenticated ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 px-2">
-              <Avatar className="w-8 h-8">
+            <Button variant="ghost" className="flex items-center gap-3 px-3 py-2 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl transition-all duration-300 hover:scale-105">
+              <Avatar className="w-8 h-8 border-2 border-blue-200 shadow-md">
                 <AvatarImage src={user?.avatarUrl || ''} />
-                <AvatarFallback>
+                <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold">
                   {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden md:block font-medium">
+              <span className="hidden md:block font-semibold text-gray-700">
                 {user?.fullName || 'User'}
               </span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
-            <div className="p-3">
-              <p className="font-medium">{user?.fullName || 'User'}</p>
-              <p className="text-sm text-gray-500">{user?.email || 'No email'}</p>
-              <div className="flex items-center justify-between mt-2">
-                <Badge className={getPackageBadgeColor(mockUserAccount.packageType)}>
+          <DropdownMenuContent align="end" className="w-72 bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-xl p-2">
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl mb-2">
+              <div className="flex items-center gap-3 mb-2">
+                <Avatar className="w-12 h-12 border-2 border-white shadow-lg">
+                  <AvatarImage src={user?.avatarUrl || ''} />
+                  <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold text-lg">
+                    {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-bold text-gray-800">{user?.fullName || 'User'}</p>
+                  <p className="text-sm text-gray-600">{user?.email || 'No email'}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <Badge className={`${getPackageBadgeColor(mockUserAccount.packageType)} border-0 shadow-md font-semibold px-3 py-1`}>
+                  <Crown className="w-3 h-3 mr-1" />
                   {mockUserAccount.packageType.toUpperCase()}
                 </Badge>
-                <span className="text-sm font-medium">${mockUserAccount.balance.toFixed(2)}</span>
+                <div className="text-lg font-bold text-green-600 bg-green-100 px-3 py-1 rounded-lg shadow-md">
+                  ${mockUserAccount.balance.toFixed(2)}
+                </div>
               </div>
             </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setActiveDialog('bank')}>
-              <Building2 className="mr-2 h-4 w-4" />
-              Bank Accounts
+            <DropdownMenuSeparator className="my-2" />
+            <DropdownMenuItem onClick={() => setActiveDialog('bank')} className="p-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 rounded-lg transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
+                  <Building2 className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-blue-600">Bank Accounts</div>
+                  <div className="text-xs text-gray-500">Manage your accounts</div>
+                </div>
+              </div>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setActiveDialog('deposit')}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Deposit Funds
+            <DropdownMenuItem onClick={() => setActiveDialog('deposit')} className="p-3 hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 rounded-lg transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg">
+                  <PlusCircle className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-green-600">Deposit Funds</div>
+                  <div className="text-xs text-gray-500">Add money to account</div>
+                </div>
+              </div>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setActiveDialog('withdrawal')}>
-              <MinusCircle className="mr-2 h-4 w-4" />
-              Withdraw Funds
+            <DropdownMenuItem onClick={() => setActiveDialog('withdrawal')} className="p-3 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 rounded-lg transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg">
+                  <MinusCircle className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-orange-600">Withdraw Funds</div>
+                  <div className="text-xs text-gray-500">Transfer to bank</div>
+                </div>
+              </div>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setActiveDialog('upgrade')}>
-              <TrendingUp className="mr-2 h-4 w-4" />
-              Upgrade Package
+            <DropdownMenuItem onClick={() => setActiveDialog('upgrade')} className="p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-purple-100 rounded-lg transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg">
+                  <TrendingUp className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-purple-600">Upgrade Package</div>
+                  <div className="text-xs text-gray-500">Get more features</div>
+                </div>
+              </div>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleProfileClick}>
-              <User className="mr-2 h-4 w-4" />
-              Profile
+            <DropdownMenuSeparator className="my-2" />
+            <DropdownMenuItem onClick={handleProfileClick} className="p-3 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 rounded-lg transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-gray-500 to-gray-600 rounded-lg">
+                  <User className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-600">Profile</div>
+                  <div className="text-xs text-gray-500">View your profile</div>
+                </div>
+              </div>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSettingsClick}>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+            <DropdownMenuItem onClick={handleSettingsClick} className="p-3 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 rounded-lg transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-gray-500 to-gray-600 rounded-lg">
+                  <Settings className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-600">Settings</div>
+                  <div className="text-xs text-gray-500">Account settings</div>
+                </div>
+              </div>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
+            <DropdownMenuSeparator className="my-2" />
+            <DropdownMenuItem onClick={handleLogout} className="p-3 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 rounded-lg transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg">
+                  <LogOut className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-red-600">Logout</div>
+                  <div className="text-xs text-gray-500">Sign out of account</div>
+                </div>
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -147,29 +214,37 @@ export function AccountDropdown() {
 
       {/* Bank Accounts Dialog */}
       <Dialog open={activeDialog === 'bank'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Bank Accounts</DialogTitle>
+        <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl">
+          <DialogHeader className="pb-6">
+            <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
+                <Building2 className="h-6 w-6 text-white" />
+              </div>
+              Bank Accounts
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {mockBankAccounts.map((account) => (
-              <Card key={account.id}>
-                <CardContent className="pt-4">
+              <Card key={account.id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">{account.bankName}</h4>
-                      <p className="text-sm text-gray-500">{account.accountNumber}</p>
-                      <p className="text-sm text-gray-500">{account.accountHolder}</p>
+                      <h4 className="font-bold text-gray-800 text-lg">{account.bankName}</h4>
+                      <p className="text-sm text-gray-600 font-medium">{account.accountNumber}</p>
+                      <p className="text-sm text-gray-600">{account.accountHolder}</p>
                     </div>
                     {account.isDefault && (
-                      <Badge>Default</Badge>
+                      <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-md">
+                        <Star className="w-3 h-3 mr-1" />
+                        Default
+                      </Badge>
                     )}
                   </div>
                 </CardContent>
               </Card>
             ))}
-            <Button className="w-full" variant="outline">
-              <PlusCircle className="mr-2 h-4 w-4" />
+            <Button className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold">
+              <PlusCircle className="mr-2 h-5 w-5" />
               Add Bank Account
             </Button>
           </div>
@@ -178,13 +253,18 @@ export function AccountDropdown() {
 
       {/* Deposit Dialog */}
       <Dialog open={activeDialog === 'deposit'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Deposit Funds</DialogTitle>
+        <DialogContent className="bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl">
+          <DialogHeader className="pb-6">
+            <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg">
+                <PlusCircle className="h-6 w-6 text-white" />
+              </div>
+              Deposit Funds
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleDeposit} className="space-y-4">
+          <form onSubmit={handleDeposit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="deposit-amount">Amount ($)</Label>
+              <Label htmlFor="deposit-amount" className="text-sm font-semibold text-gray-700">Amount ($)</Label>
               <Input
                 id="deposit-amount"
                 type="number"
@@ -194,26 +274,30 @@ export function AccountDropdown() {
                 onChange={(e) => setDepositAmount(e.target.value)}
                 placeholder="Enter amount to deposit"
                 required
+                className="border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 h-12 text-lg"
               />
             </div>
             <div className="space-y-2">
-              <Label>Payment Method</Label>
+              <Label className="text-sm font-semibold text-gray-700">Payment Method</Label>
               <Select>
-                <SelectTrigger>
+                <SelectTrigger className="border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 h-12">
                   <SelectValue placeholder="Select payment method" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white/95 backdrop-blur-sm border-0 shadow-xl rounded-xl">
                   <SelectItem value="card">Credit/Debit Card</SelectItem>
                   <SelectItem value="bank">Bank Transfer</SelectItem>
                   <SelectItem value="paypal">PayPal</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => setActiveDialog(null)}>
+            <div className="flex justify-end gap-4 pt-4">
+              <Button type="button" variant="outline" onClick={() => setActiveDialog(null)} className="h-12 px-6 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 transition-all duration-300 rounded-xl">
                 Cancel
               </Button>
-              <Button type="submit">Deposit</Button>
+              <Button type="submit" className="h-12 px-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold">
+                <Zap className="mr-2 h-5 w-5" />
+                Deposit
+              </Button>
             </div>
           </form>
         </DialogContent>
@@ -221,13 +305,18 @@ export function AccountDropdown() {
 
       {/* Withdrawal Dialog */}
       <Dialog open={activeDialog === 'withdrawal'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Withdraw Funds</DialogTitle>
+        <DialogContent className="bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl">
+          <DialogHeader className="pb-6">
+            <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg">
+                <MinusCircle className="h-6 w-6 text-white" />
+              </div>
+              Withdraw Funds
+            </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleWithdrawal} className="space-y-4">
+          <form onSubmit={handleWithdrawal} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="withdrawal-amount">Amount ($)</Label>
+              <Label htmlFor="withdrawal-amount" className="text-sm font-semibold text-gray-700">Amount ($)</Label>
               <Input
                 id="withdrawal-amount"
                 type="number"
@@ -238,18 +327,19 @@ export function AccountDropdown() {
                 onChange={(e) => setWithdrawalAmount(e.target.value)}
                 placeholder="Enter amount to withdraw"
                 required
+                className="border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-300 h-12 text-lg"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 bg-gray-100 px-3 py-2 rounded-lg">
                 Available balance: ${mockUserAccount.balance.toFixed(2)}
               </p>
             </div>
             <div className="space-y-2">
-              <Label>Bank Account</Label>
+              <Label className="text-sm font-semibold text-gray-700">Bank Account</Label>
               <Select value={selectedBank} onValueChange={setSelectedBank}>
-                <SelectTrigger>
+                <SelectTrigger className="border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-300 h-12">
                   <SelectValue placeholder="Select bank account" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white/95 backdrop-blur-sm border-0 shadow-xl rounded-xl">
                   {mockBankAccounts.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
                       {account.bankName} - {account.accountNumber}
@@ -258,11 +348,14 @@ export function AccountDropdown() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-end gap-4">
-              <Button type="button" variant="outline" onClick={() => setActiveDialog(null)}>
+            <div className="flex justify-end gap-4 pt-4">
+              <Button type="button" variant="outline" onClick={() => setActiveDialog(null)} className="h-12 px-6 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 transition-all duration-300 rounded-xl">
                 Cancel
               </Button>
-              <Button type="submit">Withdraw</Button>
+              <Button type="submit" className="h-12 px-8 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold">
+                <Zap className="mr-2 h-5 w-5" />
+                Withdraw
+              </Button>
             </div>
           </form>
         </DialogContent>
@@ -270,70 +363,125 @@ export function AccountDropdown() {
 
       {/* Upgrade Package Dialog */}
       <Dialog open={activeDialog === 'upgrade'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Upgrade Your Package</DialogTitle>
+        <DialogContent className="max-w-4xl bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl">
+          <DialogHeader className="pb-6">
+            <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg">
+                <TrendingUp className="h-6 w-6 text-white" />
+              </div>
+              Upgrade Your Package
+            </DialogTitle>
           </DialogHeader>
-          <div className="grid md:grid-cols-3 gap-4">
-            <Card className="border-2 border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-center">Basic</CardTitle>
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-lg hover:scale-105">
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-xl font-bold text-gray-800">Basic</CardTitle>
                 <div className="text-center">
-                  <span className="text-2xl font-bold">Free</span>
+                  <span className="text-3xl font-bold text-gray-600">Free</span>
                 </div>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li>• 5 lessons per month</li>
-                  <li>• 2 mock tests per month</li>
-                  <li>• Basic analytics</li>
-                  <li>• Community support</li>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    5 lessons per month
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    2 mock tests per month
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    Basic analytics
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                    Community support
+                  </li>
                 </ul>
-                <Button className="w-full mt-4" variant="outline" disabled>
+                <Button className="w-full mt-6 h-12" variant="outline" disabled>
                   Current Plan
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-blue-500 bg-blue-50">
-              <CardHeader>
-                <CardTitle className="text-center">Premium</CardTitle>
+            <Card className="border-2 border-blue-500 bg-gradient-to-b from-blue-50 to-blue-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg px-4 py-1">
+                  <Crown className="w-3 h-3 mr-1" />
+                  Current
+                </Badge>
+              </div>
+              <CardHeader className="text-center pb-4 pt-6">
+                <CardTitle className="text-xl font-bold text-blue-800">Premium</CardTitle>
                 <div className="text-center">
-                  <span className="text-2xl font-bold">$29.99</span>
+                  <span className="text-3xl font-bold text-blue-600">$29.99</span>
                   <span className="text-sm text-gray-500">/month</span>
                 </div>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li>• Unlimited lessons</li>
-                  <li>• Unlimited mock tests</li>
-                  <li>• Advanced analytics</li>
-                  <li>• Priority support</li>
-                  <li>• PDF downloads</li>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    Unlimited lessons
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    Unlimited mock tests
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    Advanced analytics
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    Priority support
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    PDF downloads
+                  </li>
                 </ul>
-                <Button className="w-full mt-4">
+                <Button className="w-full mt-6 h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                  <Shield className="mr-2 h-4 w-4" />
                   Current Plan
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-purple-500">
-              <CardHeader>
-                <CardTitle className="text-center">Pro</CardTitle>
+            <Card className="border-2 border-purple-500 hover:border-purple-600 transition-all duration-300 hover:shadow-xl hover:scale-105">
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-xl font-bold text-purple-800">Pro</CardTitle>
                 <div className="text-center">
-                  <span className="text-2xl font-bold">$49.99</span>
+                  <span className="text-3xl font-bold text-purple-600">$49.99</span>
                   <span className="text-sm text-gray-500">/month</span>
                 </div>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li>• Everything in Premium</li>
-                  <li>• AI-powered recommendations</li>
-                  <li>• 1-on-1 tutoring sessions</li>
-                  <li>• Custom study plans</li>
-                  <li>• Exam predictions</li>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    Everything in Premium
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    AI-powered recommendations
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    1-on-1 tutoring sessions
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    Custom study plans
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    Exam predictions
+                  </li>
                 </ul>
-                <Button className="w-full mt-4" variant="outline">
+                <Button className="w-full mt-6 h-12 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                  <Sparkles className="mr-2 h-4 w-4" />
                   Upgrade to Pro
                 </Button>
               </CardContent>
