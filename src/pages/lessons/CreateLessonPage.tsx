@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import { ArrowLeft, Save, Upload, Loader2 } from 'lucide-react';
 import api from '@/services/axios';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +15,9 @@ export function CreateLessonPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Global loading hook
+  const { withLoading } = useGlobalLoading();
   const [lessonForm, setLessonForm] = useState({
     title: '',
     description: '',
@@ -109,90 +113,93 @@ export function CreateLessonPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    await withLoading(async () => {
+      setIsLoading(true);
 
-    try {
-      // Validate required fields
-      if (!lessonForm.title || !lessonForm.description || !lessonForm.subject || !lessonForm.gradeId || !lessonForm.semesterId || !lessonForm.chapterId || !lessonForm.lessonId || !lessonForm.pdfFile) {
-        toast({
-          title: "Validation Error",
-          description: "Please fill in all required fields",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (selectedQuestionIds.length === 0) {
-        toast({
-          title: "Validation Error",
-          description: "Please select at least one question",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Upload PDF file to get URL
-      let pdfUrl = '';
-      if (lessonForm.pdfFile) {
-        try {
-          const formData = new FormData();
-          formData.append('file', lessonForm.pdfFile);
-          
-          const uploadResponse = await api.post('/pdf-blob/upload?folder=uploads', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
-          
-          if (uploadResponse.data && uploadResponse.data.publicUrl) {
-            pdfUrl = uploadResponse.data.publicUrl;
-          } else {
-            throw new Error('No publicUrl in response');
-          }
-        } catch (error) {
-          console.error('PDF upload error:', error);
+      try {
+        // Validate required fields
+        if (!lessonForm.title || !lessonForm.description || !lessonForm.subject || !lessonForm.gradeId || !lessonForm.semesterId || !lessonForm.chapterId || !lessonForm.lessonId || !lessonForm.pdfFile) {
           toast({
-            title: "Upload Error",
-            description: "Failed to upload PDF file. Please try again.",
+            title: "Validation Error",
+            description: "Please fill in all required fields",
             variant: "destructive",
           });
           return;
         }
+
+        if (selectedQuestionIds.length === 0) {
+          toast({
+            title: "Validation Error",
+            description: "Please select at least one question",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Upload PDF file to get URL
+        let pdfUrl = '';
+        if (lessonForm.pdfFile) {
+          try {
+            const formData = new FormData();
+            formData.append('file', lessonForm.pdfFile);
+            
+            const uploadResponse = await api.post('/pdf-blob/upload?folder=uploads', formData, {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+              },
+            });
+            
+            if (uploadResponse.data && uploadResponse.data.publicUrl) {
+              pdfUrl = uploadResponse.data.publicUrl;
+            } else {
+              throw new Error('No publicUrl in response');
+            }
+          } catch (error) {
+            console.error('PDF upload error:', error);
+            toast({
+              title: "Upload Error",
+              description: "Failed to upload PDF file. Please try again.",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+
+        // Prepare API payload according to the schema
+        const apiPayload = {
+          title: lessonForm.title,
+          description: lessonForm.description,
+          subjectId: lessonForm.subject, // Assuming subject maps to subjectId
+          pdfUrl: pdfUrl,
+          questions: selectedQuestionIds.map(id => id.toString()) // Convert question IDs to array of strings
+        };
+
+        console.log("Dữ liệu gửi đi",apiPayload);
+
+        // Call API
+        await api.post('/lessons-enhanced', apiPayload);
+        
+        toast({
+          title: "Success",
+          description: "Lesson created successfully!",
+          variant: "default",
+        });
+
+        // Navigate back to lessons page
+        navigate('/lessons');
+
+      } catch (error: any) {
+        console.error('Error creating lesson:', error);
+        toast({
+          title: "Error",
+          description: error.response?.data?.message || "Failed to create lesson. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
-
-      // Prepare API payload according to the schema
-      const apiPayload = {
-        title: lessonForm.title,
-        description: lessonForm.description,
-        subjectId: lessonForm.subject, // Assuming subject maps to subjectId
-        pdfUrl: pdfUrl,
-        questions: selectedQuestionIds.map(id => id.toString()) // Convert question IDs to array of strings
-      };
-
-      console.log("Dữ liệu gửi đi",apiPayload);
-
-      // Call API
-      await api.post('/lessons-enhanced', apiPayload);
-      
-      toast({
-        title: "Success",
-        description: "Lesson created successfully!",
-        variant: "default",
-      });
-
-      // Navigate back to lessons page
-      navigate('/lessons');
-
-    } catch (error: any) {
-      console.error('Error creating lesson:', error);
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || "Failed to create lesson. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    }, "Đang tạo bài học mới...");
   };
 
 

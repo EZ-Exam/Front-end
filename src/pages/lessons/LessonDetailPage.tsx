@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import { 
   FileText, 
   ArrowLeft, 
@@ -78,26 +79,31 @@ export function LessonDetailPage() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [questionResults, setQuestionResults] = useState<Record<string, { isCorrect: boolean; selectedAnswers: string[]; correctAnswer: string }>>({});
 
+  // Global loading hook
+  const { withLoading } = useGlobalLoading();
+
   // Fetch lesson data from API
   useEffect(() => {
     const fetchLesson = async () => {
       if (!id) return;
       
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await api.get(`/lessons-enhanced/${id}`);
-        setLesson(response.data);
-      } catch (err: any) {
-        console.error('Failed to fetch lesson:', err);
-        setError(err.response?.data?.message || 'Failed to load lesson');
-      } finally {
-        setLoading(false);
-      }
+      await withLoading(async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const response = await api.get(`/lessons-enhanced/${id}`);
+          setLesson(response.data);
+        } catch (err: any) {
+          console.error('Failed to fetch lesson:', err);
+          setError(err.response?.data?.message || 'Failed to load lesson');
+        } finally {
+          setLoading(false);
+        }
+      }, "Đang tải bài học...");
     };
 
     fetchLesson();
-  }, [id]);
+  }, [id, withLoading]);
 
   // Fetch questions when lesson is loaded
   useEffect(() => {

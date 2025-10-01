@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import { ArrowLeft, Save } from 'lucide-react';
 // import { mockQuestionSets } from '@/data/mockData';
 import api from '@/services/axios';
@@ -14,6 +15,10 @@ import { toast, ToastContainer } from 'react-toastify';
 
 export function CreateMockTestPage() {
   const navigate = useNavigate();
+  
+  // Global loading hook
+  const { withLoading } = useGlobalLoading();
+  
   const [mockTestForm, setMockTestForm] = useState({
     name: '',
     description: '',
@@ -203,8 +208,9 @@ export function CreateMockTestPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      // Step 1: Create the exam
+    await withLoading(async () => {
+      try {
+        // Step 1: Create the exam
         const examResponse = await api.post('/exams', {
           name: mockTestForm.name,
           description: mockTestForm.description,
@@ -215,41 +221,42 @@ export function CreateMockTestPage() {
           createdByUserId: getUserIdFromToken()
         });
       
-      const examId = examResponse.data.id;
-      console.log('Exam created with ID:', examId);
-      
-      // Step 2: Add selected questions to the exam with order
-      for (let i = 0; i < selectedQuestionIds.length; i++) {
-        const qId = selectedQuestionIds[i];
-        await api.post('/exams/questions', {
-          examId: examId,
-          questionId: qId,
-          order: i + 1 // Order starts from 1 and increments for each question
+        const examId = examResponse.data.id;
+        console.log('Exam created with ID:', examId);
+        
+        // Step 2: Add selected questions to the exam with order
+        for (let i = 0; i < selectedQuestionIds.length; i++) {
+          const qId = selectedQuestionIds[i];
+          await api.post('/exams/questions', {
+            examId: examId,
+            questionId: qId,
+            order: i + 1 // Order starts from 1 and increments for each question
+          });
+        }
+        
+        // Success - show toast and navigate
+        console.log('Showing success toast...');
+        toast.success("Mock test created successfully", {
+          position: "top-center",
+          theme: "light",
+          autoClose: 3000
+        });
+        
+        // Delay navigation to allow toast to show
+        setTimeout(() => {
+          navigate('/mock-tests');
+        }, 1000);
+        
+      } catch (error) {
+        console.error('Error creating mock test:', error);
+        console.log('Showing error toast...');
+        toast.error("Failed to create mock test. Please try again.", {
+          position: "top-center",
+          theme: "light",
+          autoClose: 5000
         });
       }
-      
-      // Success - show toast and navigate
-      console.log('Showing success toast...');
-      toast.success("Mock test created successfully", {
-        position: "top-center",
-        theme: "light",
-        autoClose: 3000
-      });
-      
-      // Delay navigation to allow toast to show
-      setTimeout(() => {
-        navigate('/mock-tests');
-      }, 1000);
-      
-    } catch (error) {
-      console.error('Error creating mock test:', error);
-      console.log('Showing error toast...');
-      toast.error("Failed to create mock test. Please try again.", {
-        position: "top-center",
-        theme: "light",
-        autoClose: 5000
-      });
-    }
+    }, "Đang tạo bài thi thử mới...");
   };
 
   // const availableQuestionSets = mockQuestionSets; // no longer used

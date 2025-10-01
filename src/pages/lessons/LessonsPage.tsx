@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import { Play, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import api from '@/services/axios';
@@ -48,27 +49,32 @@ export function LessonsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 6;
 
+  // Global loading hook
+  const { withLoading } = useGlobalLoading();
+
   // Fetch all lessons from API (no pagination on backend yet)
   const fetchLessons = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get(`/lessons-enhanced`);
-      console.log("data",response.data);
-      const data = response.data;
-      
-      // API returns array directly, not wrapped in object
-      setLessons(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Failed to fetch lessons:', error);
-      setLessons([]);
-    } finally {
-      setLoading(false);
-    }
+    await withLoading(async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/lessons-enhanced`);
+        console.log("data",response.data);
+        const data = response.data;
+        
+        // API returns array directly, not wrapped in object
+        setLessons(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch lessons:', error);
+        setLessons([]);
+      } finally {
+        setLoading(false);
+      }
+    }, "Đang tải danh sách bài học...");
   };
 
   useEffect(() => {
     fetchLessons();
-  }, []);
+  }, [withLoading]);
 
   // Client-side filtering for search and subject
   const filteredLessons = lessons.filter(lesson => {

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import { Clock, Users, Search, AlertTriangle } from 'lucide-react';
 import api from '@/services/axios';
 
@@ -16,55 +17,60 @@ export function MockTestsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Global loading hook
+  const { withLoading } = useGlobalLoading();
+
   // Fetch exams from API
   useEffect(() => {
     const fetchExams = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await api.get('/exams');
-        const examData = Array.isArray(response?.data?.items) ? response.data.items : (Array.isArray(response?.data) ? response.data : []);
-        
-        // Fetch question count and order info for each exam
-        const examsWithDetails = await Promise.all(
-          examData.map(async (exam: any) => {
-            try {
-              const questionsResponse = await api.get(`/exams/${exam.id}/questions`);
-              const questions = Array.isArray(questionsResponse?.data?.items) 
-                ? questionsResponse.data.items 
-                : (Array.isArray(questionsResponse?.data) ? questionsResponse.data : []);
-              
-              return {
-                ...exam,
-                questionCount: questions.length,
-                questions: questions.sort((a: any, b: any) => {
-                  const orderA = a.order || a.questionOrder || 0;
-                  const orderB = b.order || b.questionOrder || 0;
-                  return orderA - orderB;
-                })
-              };
-            } catch (err) {
-              console.error(`Failed to fetch questions for exam ${exam.id}:`, err);
-              return {
-                ...exam,
-                questionCount: 0,
-                questions: []
-              };
-            }
-          })
-        );
-        
-        setExams(examsWithDetails);
-      } catch (err: any) {
-        console.error('Failed to fetch exams:', err);
-        setError(err?.response?.data?.message || 'Failed to load exams');
-      } finally {
-        setLoading(false);
-      }
+      await withLoading(async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          const response = await api.get('/exams');
+          const examData = Array.isArray(response?.data?.items) ? response.data.items : (Array.isArray(response?.data) ? response.data : []);
+          
+          // Fetch question count and order info for each exam
+          const examsWithDetails = await Promise.all(
+            examData.map(async (exam: any) => {
+              try {
+                const questionsResponse = await api.get(`/exams/${exam.id}/questions`);
+                const questions = Array.isArray(questionsResponse?.data?.items) 
+                  ? questionsResponse.data.items 
+                  : (Array.isArray(questionsResponse?.data) ? questionsResponse.data : []);
+                
+                return {
+                  ...exam,
+                  questionCount: questions.length,
+                  questions: questions.sort((a: any, b: any) => {
+                    const orderA = a.order || a.questionOrder || 0;
+                    const orderB = b.order || b.questionOrder || 0;
+                    return orderA - orderB;
+                  })
+                };
+              } catch (err) {
+                console.error(`Failed to fetch questions for exam ${exam.id}:`, err);
+                return {
+                  ...exam,
+                  questionCount: 0,
+                  questions: []
+                };
+              }
+            })
+          );
+          
+          setExams(examsWithDetails);
+        } catch (err: any) {
+          console.error('Failed to fetch exams:', err);
+          setError(err?.response?.data?.message || 'Failed to load exams');
+        } finally {
+          setLoading(false);
+        }
+      }, "Đang tải danh sách bài thi...");
     };
 
     fetchExams();
-  }, []);
+  }, [withLoading]);
 
   const filteredTests = exams.filter(test => {
     const matchesSearch = test.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
