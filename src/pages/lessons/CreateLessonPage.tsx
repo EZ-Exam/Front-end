@@ -28,7 +28,7 @@ export function CreateLessonPage() {
     semesterId: undefined as number | undefined,
     chapterId: undefined as number | undefined,
     lessonId: undefined as number | undefined,
-    pdfFile: null as File | null
+    docFile: null as File | null
   });
 
   const [semesterOptions, setSemesterOptions] = useState<Array<{ id: number; name: string }>>([]);
@@ -119,7 +119,7 @@ export function CreateLessonPage() {
 
       try {
         // Validate required fields
-        if (!lessonForm.title || !lessonForm.description || !lessonForm.subject || !lessonForm.gradeId || !lessonForm.semesterId || !lessonForm.chapterId || !lessonForm.lessonId || !lessonForm.pdfFile) {
+        if (!lessonForm.title || !lessonForm.description || !lessonForm.subject || !lessonForm.gradeId || !lessonForm.semesterId || !lessonForm.chapterId || !lessonForm.lessonId || !lessonForm.docFile) {
           toast({
             title: "Validation Error",
             description: "Please fill in all required fields",
@@ -138,28 +138,28 @@ export function CreateLessonPage() {
         }
 
         // Upload PDF file to get URL
-        let pdfUrl = '';
-        if (lessonForm.pdfFile) {
+        let docUrl = '';
+        if (lessonForm.docFile) {
           try {
             const formData = new FormData();
-            formData.append('file', lessonForm.pdfFile);
+            formData.append('file', lessonForm.docFile);
             
-            const uploadResponse = await api.post('/pdf-blob/upload?folder=uploads', formData, {
+            const uploadResponse = await api.post('/document-blob/upload?folder=uploads', formData, {
               headers: {
                 'Content-Type': 'multipart/form-data',
               },
             });
             
             if (uploadResponse.data && uploadResponse.data.publicUrl) {
-              pdfUrl = uploadResponse.data.publicUrl;
+              docUrl = uploadResponse.data.publicUrl;
             } else {
               throw new Error('No publicUrl in response');
             }
           } catch (error) {
-            console.error('PDF upload error:', error);
+            console.error('Document upload error:', error);
             toast({
               title: "Upload Error",
-              description: "Failed to upload PDF file. Please try again.",
+              description: "Failed to upload Document file. Please try again.",
               variant: "destructive",
             });
             return;
@@ -171,7 +171,7 @@ export function CreateLessonPage() {
           title: lessonForm.title,
           description: lessonForm.description,
           subjectId: lessonForm.subject, // Assuming subject maps to subjectId
-          pdfUrl: pdfUrl,
+          pdfUrl: docUrl,
           questions: selectedQuestionIds.map(id => id.toString()) // Convert question IDs to array of strings
         };
 
@@ -366,24 +366,24 @@ export function CreateLessonPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="pdf">PDF File *</Label>
+              <Label htmlFor="doc">Document File *</Label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                 <Input
-                  id="pdf"
+                  id="doc"
                   type="file"
-                  accept=".pdf"
-                  onChange={(e) => setLessonForm(prev => ({ ...prev, pdfFile: e.target.files?.[0] || null }))}
+                  accept=".doc,.docx,.pdf"
+                  onChange={(e) => setLessonForm(prev => ({ ...prev, docFile: e.target.files?.[0] || null }))}
                   className="hidden"
                   required
                 />
-                <Label htmlFor="pdf" className="cursor-pointer">
-                  <span className="text-blue-600 hover:text-blue-700">Click to upload PDF</span>
+                <Label htmlFor="doc" className="cursor-pointer">
+                  <span className="text-blue-600 hover:text-blue-700">Click to upload Document</span>
                   <span className="text-gray-500"> or drag and drop</span>
                 </Label>
-                {lessonForm.pdfFile && (
+                {lessonForm.docFile && (
                   <p className="mt-2 text-sm text-green-600">
-                    Selected: {lessonForm.pdfFile.name}
+                    Selected: {lessonForm.docFile.name}
                   </p>
                 )}
               </div>
