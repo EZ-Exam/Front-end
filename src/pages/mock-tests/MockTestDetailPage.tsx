@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -35,80 +36,96 @@ export function MockTestDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const handleSubmit = useCallback(() => {
-    setSubmitted(true);
-    setShowResults(true);
-    setShowSubmitDialog(false);
-  }, []);
+  // Global loading hook
+  const { showLoading, withLoading } = useGlobalLoading();
+  
+  const handleSubmit = useCallback(async () => {
+    await withLoading(async () => {
+      // Simulate processing time for better UX
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setSubmitted(true);
+      setShowResults(true);
+      setShowSubmitDialog(false);
+      
+      // Save answers and submission time to localStorage for analytics
+      if (id) {
+        localStorage.setItem(`mocktest_${id}_answers`, JSON.stringify(answers));
+        localStorage.setItem(`mocktest_${id}_submitted_at`, new Date().toISOString());
+      }
+    }, "Đang chấm điểm bài thi...");
+  }, [answers, id, withLoading]);
   
   // Fetch exam and questions from API
   useEffect(() => {
     const fetchExamData = async () => {
       if (!id) return;
       
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch exam details
-        const examResponse = await api.get(`/exams/${id}`);
-        console.log('Exam data:', examResponse.data); // Debug log
-        setExam(examResponse.data);
-        
-        // Fetch exam questions with order
-        const questionsResponse = await api.get(`/exams/${id}/questions`);
-        const questionData = Array.isArray(questionsResponse?.data?.items) 
-          ? questionsResponse.data.items 
-          : (Array.isArray(questionsResponse?.data) ? questionsResponse.data : []);
-        
-        console.log('Questions data:', questionData); // Debug log
-        
-        // Sort questions by order field from exam_questions table
-        const sortedQuestions = questionData.sort((a: any, b: any) => {
-          const orderA = a.order || a.questionOrder || 0;
-          const orderB = b.order || b.questionOrder || 0;
-          return orderA - orderB;
-        });
-        
-        // Fetch full question details for each question
-        const questionsWithDetails = await Promise.all(
-          sortedQuestions.map(async (examQuestion: any) => {
-            try {
-              const questionResponse = await api.get(`/questions/${examQuestion.questionId}`);
-              const questionDetails = questionResponse.data;
-              
-              console.log(`Question ${examQuestion.questionId} details:`, questionDetails); // Debug each question
-              console.log(`Question ${examQuestion.questionId} options:`, questionDetails.options); // Debug options specifically
-              console.log(`Question ${examQuestion.questionId} type:`, questionDetails.type); // Debug type
-              
-              return {
-                ...examQuestion,
-                ...questionDetails,
-                // Ensure we have the essential fields
-                content: questionDetails.content || questionDetails.text || examQuestion.content,
-                options: questionDetails.options || questionDetails.answers || examQuestion.options,
-                CorrectAnswer: questionDetails.CorrectAnswer || questionDetails.correctAnswer || examQuestion.CorrectAnswer
-              };
-            } catch (err) {
-              console.error(`Failed to fetch question ${examQuestion.questionId}:`, err);
-              return examQuestion; // Return original if fetch fails
-            }
-          })
-        );
-        
-        console.log('Questions with details:', questionsWithDetails); // Debug log
-        setQuestions(questionsWithDetails);
-        
-      } catch (err: any) {
-        console.error('Failed to fetch exam data:', err);
-        setError(err?.response?.data?.message || 'Failed to load exam');
-      } finally {
-        setLoading(false);
-      }
+      await withLoading(async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          
+          // Fetch exam details
+          const examResponse = await api.get(`/exams/${id}`);
+          console.log('Exam data:', examResponse.data); // Debug log
+          setExam(examResponse.data);
+          
+          // Fetch exam questions with order
+          const questionsResponse = await api.get(`/exams/${id}/questions`);
+          const questionData = Array.isArray(questionsResponse?.data?.items) 
+            ? questionsResponse.data.items 
+            : (Array.isArray(questionsResponse?.data) ? questionsResponse.data : []);
+          
+          console.log('Questions data:', questionData); // Debug log
+          
+          // Sort questions by order field from exam_questions table
+          const sortedQuestions = questionData.sort((a: any, b: any) => {
+            const orderA = a.order || a.questionOrder || 0;
+            const orderB = b.order || b.questionOrder || 0;
+            return orderA - orderB;
+          });
+          
+          // Fetch full question details for each question
+          const questionsWithDetails = await Promise.all(
+            sortedQuestions.map(async (examQuestion: any) => {
+              try {
+                const questionResponse = await api.get(`/questions/${examQuestion.questionId}`);
+                const questionDetails = questionResponse.data;
+                
+                console.log(`Question ${examQuestion.questionId} details:`, questionDetails); // Debug each question
+                console.log(`Question ${examQuestion.questionId} options:`, questionDetails.options); // Debug options specifically
+                console.log(`Question ${examQuestion.questionId} type:`, questionDetails.type); // Debug type
+                
+                return {
+                  ...examQuestion,
+                  ...questionDetails,
+                  // Ensure we have the essential fields
+                  content: questionDetails.content || questionDetails.text || examQuestion.content,
+                  options: questionDetails.options || questionDetails.answers || examQuestion.options,
+                  CorrectAnswer: questionDetails.CorrectAnswer || questionDetails.correctAnswer || examQuestion.CorrectAnswer
+                };
+              } catch (err) {
+                console.error(`Failed to fetch question ${examQuestion.questionId}:`, err);
+                return examQuestion; // Return original if fetch fails
+              }
+            })
+          );
+          
+          console.log('Questions with details:', questionsWithDetails); // Debug log
+          setQuestions(questionsWithDetails);
+          
+        } catch (err: any) {
+          console.error('Failed to fetch exam data:', err);
+          setError(err?.response?.data?.message || 'Failed to load exam');
+        } finally {
+          setLoading(false);
+        }
+      }, "Đang tải bài thi...");
     };
 
     fetchExamData();
-  }, [id]);
+  }, [id, withLoading]);
   
   useEffect(() => {
     if (hasStarted && exam && !submitted) {
@@ -360,10 +377,16 @@ export function MockTestDetailPage() {
         </div>
 
         <div className="flex gap-4">
-          <Button asChild className="flex-1">
-            <Link to="/analytics">
-              View Detailed Analytics
-            </Link>
+          <Button 
+            className="flex-1"
+            onClick={() => {
+              showLoading("Đang chuyển đến trang phân tích...");
+              setTimeout(() => {
+                window.location.href = `/mock-tests/${id}/analytics`;
+              }, 500);
+            }}
+          >
+            View Detailed Analytics
           </Button>
           <Button variant="outline" asChild className="flex-1">
             <Link to="/mock-tests">

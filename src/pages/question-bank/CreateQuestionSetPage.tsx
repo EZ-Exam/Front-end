@@ -7,11 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import { ArrowLeft, Plus, Trash2, Save } from 'lucide-react';
-import { MultipleChoiceQuestion, Answer } from '@/types';
+import { MultipleChoiceQuestion } from '@/types';
 
 export function CreateQuestionSetPage() {
   const navigate = useNavigate();
+  
+  // Global loading hook
+  const { withLoading } = useGlobalLoading();
+  
   const [questionSetForm, setQuestionSetForm] = useState({
     title: '',
     description: '',
@@ -91,11 +96,17 @@ export function CreateQuestionSetPage() {
     ));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Creating question set:', { questionSetForm, questions });
-    // Here you would save to backend
-    navigate('/question-bank');
+    
+    await withLoading(async () => {
+      console.log('Creating question set:', { questionSetForm, questions });
+      // Here you would save to backend
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      navigate('/question-bank');
+    }, "Đang tạo bộ câu hỏi mới...");
   };
 
   return (
