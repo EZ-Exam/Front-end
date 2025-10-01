@@ -14,7 +14,6 @@ import { MockTestDetailPage } from '@/pages/mock-tests/MockTestDetailPage';
 import { MockTestAnalyticsPage } from '@/pages/mock-tests/MockTestAnalyticsPage';
 import { CreateMockTestPage } from '@/pages/mock-tests/CreateMockTestPage';
 import { QuestionBankPage } from '@/pages/question-bank/QuestionBankPage';
-import { CreateQuestionSetPage } from '@/pages/question-bank/CreateQuestionSetPage';
 import { NotificationsPage } from '@/pages/NotificationPage';
 import { QuestionBankDetailPage } from '@/pages/question-bank/QuestionBankDetailPage';
 
@@ -41,8 +40,7 @@ export function AppRouter() {
           
           {/* Question Bank Routes */}
           <Route path="question-bank" element={<QuestionBankPage />} />
-          <Route path="question-bank/:id/:mode" element={<QuestionBankDetailPage />} />
-          <Route path="create-question-set" element={<CreateQuestionSetPage />} />
+          <Route path="question-bank/:id" element={<QuestionBankDetailPage />} />
           
           {/* Mock Tests Routes */}
           <Route path="mock-tests" element={<MockTestsPage />} />

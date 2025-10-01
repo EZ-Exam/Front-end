@@ -232,12 +232,6 @@ export function CreateContentDropdown() {
             Create Question
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/create-question-set" onClick={() => setIsOpen(false)}>
-              <HelpCircle className="mr-2 h-4 w-4" />
-              Create Question Set
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
             <Link to="/create-lesson" onClick={() => setIsOpen(false)}>
             <BookOpen className="mr-2 h-4 w-4" />
             Create Lesson

@@ -70,14 +70,31 @@ export interface Exercise {
 
 export interface Question {
   id: string;
-  text: string;
-  content?: string; // Thêm field content để tương thích với API
+  content: string;
+  questionSource: string;
+  difficultyLevel: 'Easy' | 'Medium' | 'Hard';
+  createdByUserName: string;
+  lessonName: string;
+  chapterName?: string;
+  image?: string;
   formula?: string;
   options?: string[];
-  correctAnswer: string | number;
-  CorrectAnswer?: string; // Thêm field CorrectAnswer từ database
+  correctAnswer: string;
   explanation?: string;
   type: 'multiple-choice' | 'text' | 'numerical';
+}
+
+export interface QuestionComment {
+  id: string;
+  questionId: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  replies?: QuestionComment[];
+  parentId?: string;
 }
 
 export interface MockTest {

@@ -1,5 +1,5 @@
-import { User, Lesson, Exercise, Question, MockTest, Comment, ProgressData } from '@/types';
-import { QuestionSet, MultipleChoiceQuestion, Answer,Notification } from '@/types';
+import { User, Lesson, Question, MockTest, Comment, ProgressData } from '@/types';
+import { Notification } from '@/types';
 import { UserAccount, BankAccount, Transaction } from '@/types';
 
 export const mockUser: User = {
@@ -12,85 +12,6 @@ export const mockUser: User = {
   joinDate: '2024-01-15'
 };
 
-export const mockQuestionSets: QuestionSet[] = [
-  {
-    id: '1',
-    title: 'Quadratic Equations Basics',
-    description: 'Fundamental concepts and solving methods for quadratic equations',
-    subject: 'Math',
-    difficulty: 'Medium',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-    questions: [
-      {
-        id: 'q1',
-        questionText: 'What is the discriminant of the quadratic equation x² - 5x + 6 = 0?',
-        answers: [
-          { id: 'a1', text: '1', isCorrect: true },
-          { id: 'a2', text: '25', isCorrect: false },
-          { id: 'a3', text: '36', isCorrect: false },
-          { id: 'a4', text: '49', isCorrect: false }
-        ],
-        explanation: 'The discriminant is b² - 4ac = (-5)² - 4(1)(6) = 25 - 24 = 1'
-      },
-      {
-        id: 'q2',
-        questionText: 'How many real solutions does x² - 5x + 6 = 0 have?',
-        answers: [
-          { id: 'a5', text: '0', isCorrect: false },
-          { id: 'a6', text: '1', isCorrect: false },
-          { id: 'a7', text: '2', isCorrect: true },
-          { id: 'a8', text: '3', isCorrect: false }
-        ],
-        explanation: 'Since the discriminant is positive (1 > 0), there are 2 real solutions'
-      }
-    ]
-  },
-  {
-    id: '2',
-    title: 'Newton\'s Laws of Motion',
-    description: 'Understanding the fundamental laws that govern motion',
-    subject: 'Physics',
-    difficulty: 'Hard',
-    createdAt: '2024-01-16T14:30:00Z',
-    updatedAt: '2024-01-16T14:30:00Z',
-    questions: [
-      {
-        id: 'q3',
-        questionText: 'What is Newton\'s first law also known as?',
-        answers: [
-          { id: 'a9', text: 'Law of Inertia', isCorrect: true },
-          { id: 'a10', text: 'Law of Acceleration', isCorrect: false },
-          { id: 'a11', text: 'Law of Action-Reaction', isCorrect: false },
-          { id: 'a12', text: 'Law of Gravity', isCorrect: false }
-        ],
-        explanation: 'Newton\'s first law is also known as the Law of Inertia, which states that objects at rest stay at rest and objects in motion stay in motion unless acted upon by an external force.'
-      }
-    ]
-  },
-  {
-    id: '3',
-    title: 'Chemical Bonding Types',
-    description: 'Explore ionic and covalent bonds in molecules',
-    subject: 'Chemistry',
-    difficulty: 'Medium',
-    createdAt: '2024-01-17T09:15:00Z',
-    updatedAt: '2024-01-17T09:15:00Z',
-    questions: [
-      {
-        id: 'q4',
-        questionText: 'Which type of bond forms between metals and non-metals?',
-        answers: [
-          { id: 'a13', text: 'Covalent', isCorrect: false },
-          { id: 'a14', text: 'Ionic', isCorrect: true },
-          { id: 'a15', text: 'Metallic', isCorrect: false },
-          { id: 'a16', text: 'Hydrogen', isCorrect: false }
-        ],
-        explanation: 'Ionic bonds form between metals and non-metals through the transfer of electrons from metal atoms to non-metal atoms.'
-      }
-    ]
-  }
-];
 
 export const mockLessons: Lesson[] = [
   {
@@ -101,8 +22,7 @@ export const mockLessons: Lesson[] = [
     duration: 25,
     pdfUrl: '/pdfs/quadratic-equations.pdf',
     difficulty: 'Medium',
-    completed: true,
-    questionSetId: '1'
+    completed: true
   },
   {
     id: '2',
@@ -112,8 +32,7 @@ export const mockLessons: Lesson[] = [
     duration: 30,
     pdfUrl: '/pdfs/newtons-laws.pdf',
     difficulty: 'Hard',
-    completed: false,
-    questionSetId: '2'
+    completed: false
   },
   {
     id: '3',
@@ -123,30 +42,77 @@ export const mockLessons: Lesson[] = [
     duration: 20,
     pdfUrl: '/pdfs/chemical-bonding.pdf',
     difficulty: 'Medium',
-    completed: false,
-    questionSetId: '3'
+    completed: false
   }
 ];
 
-  export const mockQuestions: Question[] = [
-    {
-      id: '1',
-      text: 'Solve for x in the equation x² - 5x + 6 = 0',
-      formula: 'x^2 - 5x + 6 = 0',
-      options: ['x = 2, 3', 'x = 1, 6', 'x = -2, -3', 'x = 0, 5'],
-      correctAnswer: 'x = 2, 3',
-      explanation: 'Factor the quadratic: (x-2)(x-3) = 0, so x = 2 or x = 3',
-      type: 'multiple-choice'
-    },
-    {
-      id: '2',
-      text: 'What is the acceleration due to gravity on Earth?',
-      options: ['9.8 m/s²', '10 m/s²', '8.9 m/s²', '11.2 m/s²'],
-      correctAnswer: '9.8 m/s²',
-      explanation: 'The standard acceleration due to gravity is approximately 9.8 m/s²',
-      type: 'multiple-choice'
-    }
-  ];
+export const mockQuestions: Question[] = [
+  {
+    id: '1',
+    content: 'What is the discriminant of the quadratic equation x² - 5x + 6 = 0?',
+    questionSource: 'Math Textbook Chapter 5',
+    difficultyLevel: 'Medium',
+    createdByUserName: 'Dr. Smith',
+    lessonName: 'Quadratic Equations',
+    chapterName: 'Discriminant and Roots',
+    options: ['1', '25', '36', '49'],
+    correctAnswer: '1',
+    explanation: 'The discriminant is b² - 4ac = (-5)² - 4(1)(6) = 25 - 24 = 1',
+    type: 'multiple-choice'
+  },
+  {
+    id: '2',
+    content: 'How many real solutions does x² - 5x + 6 = 0 have?',
+    questionSource: 'Practice Workbook',
+    difficultyLevel: 'Easy',
+    createdByUserName: 'Prof. Johnson',
+    lessonName: 'Quadratic Equations',
+    chapterName: 'Discriminant and Roots',
+    options: ['0', '1', '2', '3'],
+    correctAnswer: '2',
+    explanation: 'Since the discriminant is positive (1 > 0), there are 2 real solutions',
+    type: 'multiple-choice'
+  },
+  {
+    id: '3',
+    content: 'What is Newton\'s first law also known as?',
+    questionSource: 'Physics Fundamentals',
+    difficultyLevel: 'Hard',
+    createdByUserName: 'Dr. Brown',
+    lessonName: 'Newton\'s Laws of Motion',
+    chapterName: 'First Law of Motion',
+    options: ['Law of Inertia', 'Law of Acceleration', 'Law of Action-Reaction', 'Law of Gravity'],
+    correctAnswer: 'Law of Inertia',
+    explanation: 'Newton\'s first law is also known as the Law of Inertia, which states that objects at rest stay at rest and objects in motion stay in motion unless acted upon by an external force.',
+    type: 'multiple-choice'
+  },
+  {
+    id: '4',
+    content: 'Which type of bond forms between metals and non-metals?',
+    questionSource: 'Chemistry Textbook',
+    difficultyLevel: 'Medium',
+    createdByUserName: 'Dr. Wilson',
+    lessonName: 'Chemical Bonding',
+    chapterName: 'Types of Bonds',
+    options: ['Covalent', 'Ionic', 'Metallic', 'Hydrogen'],
+    correctAnswer: 'Ionic',
+    explanation: 'Ionic bonds form between metals and non-metals through the transfer of electrons from metal atoms to non-metal atoms.',
+    type: 'multiple-choice'
+  },
+  {
+    id: '5',
+    content: 'Calculate the area of a circle with radius 5 cm.',
+    questionSource: 'Geometry Workbook',
+    difficultyLevel: 'Easy',
+    createdByUserName: 'Ms. Davis',
+    lessonName: 'Circle Geometry',
+    chapterName: 'Area and Circumference',
+    formula: 'A = πr²',
+    correctAnswer: '78.54 cm²',
+    explanation: 'Using the formula A = πr², A = π × 5² = π × 25 = 78.54 cm²',
+    type: 'numerical'
+  }
+];
 
 export const mockTests: MockTest[] = [
   {
@@ -156,7 +122,7 @@ export const mockTests: MockTest[] = [
     duration: 120,
     totalQuestions: 50,
     difficulty: 'Hard',
-    questionSets: [mockQuestionSets[0].id]
+    questionSets: ['1', '2']
   },
   {
     id: '2',
@@ -165,7 +131,7 @@ export const mockTests: MockTest[] = [
     duration: 90,
     totalQuestions: 30,
     difficulty: 'Medium',
-    questionSets: [mockQuestionSets[1].id]
+    questionSets: ['3']
   }
 ];
 
