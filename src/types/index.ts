@@ -85,16 +85,21 @@ export interface Question {
 }
 
 export interface QuestionComment {
-  id: string;
-  questionId: string;
-  userId: string;
+  id: number;
+  questionId: number;
+  userId: number;
   userName: string;
+  userEmail: string;
   userAvatar?: string;
   content: string;
+  rating: number;
+  parentCommentId?: number | null;
+  isHelpful: boolean;
+  isApproved: boolean;
   createdAt: string;
   updatedAt: string;
-  replies?: QuestionComment[];
-  parentId?: string;
+  replyCount: number;
+  replies: QuestionComment[];
 }
 
 export interface MockTest {

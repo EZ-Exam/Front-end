@@ -300,7 +300,7 @@ export function QuestionBankDetailPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <CommentSection questionId={question.id} />
+              <CommentSection questionId={Number(question.id)} />
             </CardContent>
           </Card>
         )}
