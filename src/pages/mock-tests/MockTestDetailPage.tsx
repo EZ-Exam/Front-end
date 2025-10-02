@@ -17,36 +17,36 @@ import {
   Target,
   AlertTriangle
 } from 'lucide-react';
-import { mockTests } from '@/data/mockData';
+import api from '@/services/axios';
+import { useAuth } from '@/pages/auth/AuthContext';
 
 interface Question {
   id: string;
-  content?: string;
-  text?: string;
+  contentQuestion?: string;
   options?: string[];
   correctAnswer?: string;
   explanation?: string;
-  difficultyLevel?: string;
-  subjectName?: string;
-  lessonName?: string;
-  chapterName?: string;
   imageUrl?: string;
   formula?: string;
+  difficultyLevel?: string;
+  chapterId?: number;
+  gradeId?: number;
 }
 
 interface Exam {
   id: string;
   title: string;
   subject: string;
-  difficulty: string;
+  lesson: string;
   duration: number;
   totalQuestions: number;
-  questionSets: string[];
+  examTypeName: string;
 }
 
 export function MockTestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { showLoading, hideLoading } = useGlobalLoading();
+  const { user } = useAuth();
   
   const [exam, setExam] = useState<Exam | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -59,6 +59,10 @@ export function MockTestDetailPage() {
   const [isTestCompleted, setIsTestCompleted] = useState(false);
   const [score, setScore] = useState(0);
   const [results, setResults] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
+  const [questionTimes, setQuestionTimes] = useState<Record<string, number>>({});
+  const [testStartTime, setTestStartTime] = useState<number>(Date.now());
 
   const currentQuestion = questions[currentQuestionIndex];
   const answeredCount = Object.keys(answers).length;
@@ -95,50 +99,210 @@ export function MockTestDetailPage() {
   };
 
   const handleNext = () => {
+    // Track time spent on current question
+    if (currentQuestion) {
+      const timeSpent = Date.now() - questionStartTime;
+      setQuestionTimes(prev => ({
+        ...prev,
+        [currentQuestion.id]: (prev[currentQuestion.id] || 0) + timeSpent
+      }));
+    }
+    
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
+      setQuestionStartTime(Date.now());
     }
   };
 
   const handlePrevious = () => {
+    // Track time spent on current question
+    if (currentQuestion) {
+      const timeSpent = Date.now() - questionStartTime;
+      setQuestionTimes(prev => ({
+        ...prev,
+        [currentQuestion.id]: (prev[currentQuestion.id] || 0) + timeSpent
+      }));
+    }
+    
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
+      setQuestionStartTime(Date.now());
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setShowSubmitDialog(false);
-    setIsTestCompleted(true);
+    showLoading('Submitting your test...');
     
-    // Calculate score
-    let correctAnswers = 0;
-    questions.forEach(question => {
-      const userAnswer = answers[question.id];
-      if (userAnswer === question.correctAnswer) {
-        correctAnswers++;
+    try {
+      // Calculate score
+      let correctAnswers = 0;
+      const details: any[] = [];
+      
+      questions.forEach(question => {
+        const userAnswer = answers[question.id];
+        const isCorrect = userAnswer === question.correctAnswer;
+        if (isCorrect) {
+          correctAnswers++;
+        }
+        
+        // Prepare detail for each question
+        details.push({
+          questionId: question.id,
+          difficulty: question.difficultyLevel || 'Medium', // Default if not available
+          chapterId: question.chapterId || null,
+          gradeId: question.gradeId || null,
+          isCorrect: isCorrect
+        });
+      });
+      
+      const calculatedScore = Math.round((correctAnswers / questions.length) * 100);
+      const timeTaken = Math.round((Date.now() - testStartTime) / 1000); // Actual time taken in seconds
+      const incorrectCount = questions.length - correctAnswers;
+      const unansweredCount = questions.length - answeredCount;
+      
+      // Get userId from localStorage or context (adjust as needed)
+      const userId = user?.id || 'anonymous';
+      
+      // Track time for current question before submitting
+      if (currentQuestion) {
+        const timeSpent = Date.now() - questionStartTime;
+        setQuestionTimes(prev => ({
+          ...prev,
+          [currentQuestion.id]: (prev[currentQuestion.id] || 0) + timeSpent
+        }));
       }
-    });
-    
-    const calculatedScore = Math.round((correctAnswers / questions.length) * 100);
-    setScore(calculatedScore);
-    
-    // Mock results data
-    setResults({
-      totalQuestions: questions.length,
-      answeredQuestions: answeredCount,
-      correctAnswers,
-      incorrectAnswers: answeredCount - correctAnswers,
-      unansweredQuestions: questions.length - answeredCount,
-      flaggedQuestions: flaggedCount,
-      timeSpent: exam?.duration ? exam.duration * 60 - timeLeft : 0,
-      score: calculatedScore,
-      performance: calculatedScore >= 80 ? 'Excellent' : calculatedScore >= 60 ? 'Good' : 'Needs Improvement'
-    });
+      
+      // Prepare answers array with detailed information
+      const answersArray = questions.map(question => {
+        const selectedAnswer = answers[question.id] || null;
+        const isCorrect = selectedAnswer === question.correctAnswer;
+        const questionTimeSpent = questionTimes[question.id] || 0;
+        
+        return {
+          questionId: question.id.toString(), // ensure string
+          selectedAnswer: selectedAnswer || "", // ensure string (empty if null)
+          correctAnswer: question.correctAnswer || "", // ensure string
+          isCorrect: Boolean(isCorrect), // ensure boolean
+          timeSpent: Number(Math.round(questionTimeSpent / 1000)) // ensure number (seconds)
+        };
+      });
+      
+      // Prepare submission data according to the required format
+      const submissionData = {
+        examId: id!, // string
+        userId: userId.toString(), // ensure string
+        score: Number(calculatedScore), // ensure number
+        correctCount: Number(correctAnswers), // ensure number
+        incorrectCount: Number(incorrectCount), // ensure number
+        unansweredCount: Number(unansweredCount), // ensure number
+        totalQuestions: Number(questions.length), // ensure number
+        submittedAt: new Date().toISOString(), // ISO string
+        timeTaken: Number(timeTaken), // ensure number (seconds)
+        answers: answersArray
+      };
+      
+      console.log('Submitting exam data:', submissionData);
+      
+      // Call API to submit exam results
+      const response = await api.post('/exam-history', submissionData);
+      console.log('Submission successful:', response.data);
+      
+      // Save results to localStorage for analytics page
+      const resultsData = {
+        totalQuestions: questions.length,
+        answeredQuestions: answeredCount,
+        correctAnswers,
+        incorrectAnswers: incorrectCount,
+        unansweredQuestions: unansweredCount,
+        flaggedQuestions: flaggedCount,
+        timeSpent: timeTaken,
+        score: calculatedScore,
+        performance: calculatedScore >= 80 ? 'Excellent' : calculatedScore >= 60 ? 'Good' : 'Needs Improvement'
+      };
+      
+      // Save data for analytics page
+      localStorage.setItem(`mocktest_${id}_answers`, JSON.stringify(answers));
+      localStorage.setItem(`mocktest_${id}_submitted_at`, new Date().toISOString());
+      localStorage.setItem(`mocktest_${id}_results`, JSON.stringify(resultsData));
+      
+      setScore(calculatedScore);
+      setResults(resultsData);
+      setIsTestCompleted(true);
+      
+    } catch (error: any) {
+      console.error('Error submitting exam:', error);
+      
+      // More detailed error handling
+      let errorMessage = 'Failed to submit exam. Please try again.';
+      
+      if (error.response) {
+        // API returned an error response
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        if (status === 400) {
+          errorMessage = `Bad Request: ${data.message || 'Invalid data format'}`;
+        } else if (status === 401) {
+          errorMessage = 'Unauthorized. Please login again.';
+        } else if (status === 500) {
+          errorMessage = 'Server error. Please try again later.';
+        } else {
+          errorMessage = `Error ${status}: ${data.message || 'Unknown error'}`;
+        }
+        
+        console.error('API Error Details:', {
+          status,
+          data,
+          headers: error.response.headers
+        });
+      } else if (error.request) {
+        errorMessage = 'Network error. Please check your connection.';
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+      
+      setError(errorMessage);
+    } finally {
+      hideLoading();
+    }
   };
 
-  const startTest = () => {
-    setIsTestStarted(true);
-    setTimeLeft(exam?.duration ? exam.duration * 60 : 1800); // Default 30 minutes
+  const startTest = async () => {
+    if (!exam) return;
+    
+    showLoading('Loading questions...');
+    try {
+      const response = await api.get(`/exams/${id}/questions/detail`);
+      console.log("Response Questions by examId",response.data);
+      // Map API response to Question interface
+      const mappedQuestions: Question[] = response.data.map((q: any) => ({
+        id: q.id.toString(),
+        contentQuestion: q.contentQuestion,
+        options: q.options ? Object.values(q.options) : [],
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        imageUrl: q.imageUrl,
+        formula: q.formula,
+        difficultyLevel: q.difficultyLevel,
+        chapterId: q.chapterId,
+        gradeId: q.gradeId
+      }));
+      
+      console.log("Mapped Questions:", mappedQuestions);
+      setQuestions(mappedQuestions);
+      setIsTestStarted(true);
+      setTimeLeft(exam.duration * 60);
+      const now = Date.now();
+      setTestStartTime(now); // Initialize test start time
+      setQuestionStartTime(now); // Initialize question time tracking
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+      setError('Failed to load questions. Please try again.');
+    } finally {
+      hideLoading();
+    }
   };
 
   const retakeTest = () => {
@@ -156,18 +320,26 @@ export function MockTestDetailPage() {
     
     showLoading('Loading Mock Test...');
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await api.get(`/exams/${id}`);
+      console.log("Response Exam by examId",response.data);
+      const examData = response.data;
       
-      const foundExam = mockTests.find(exam => exam.id === id);
-      if (foundExam) {
-        setExam(foundExam);
-        setQuestions([]); // Mock questions for now
-      } else {
-        console.error('Exam not found');
-      }
+      // Map API response to Exam interface
+      const mappedExam: Exam = {
+        id: examData.id.toString(),
+        title: examData.name,
+        subject: examData.subjectName || 'Unknown Subject',
+        lesson: examData.lessonName || 'Unknown Lesson',
+        duration: examData.duration, 
+        totalQuestions: examData.totalQuestions,
+        examTypeName: examData.examTypeName || 'Mock Test'
+      };
+      
+      setExam(mappedExam);
+      setError(null);
     } catch (error) {
       console.error('Error fetching exam:', error);
+      setError('Failed to load exam details. Please try again.');
     } finally {
       hideLoading();
     }
@@ -188,6 +360,28 @@ export function MockTestDetailPage() {
     }
   }, [isTestStarted, timeLeft]);
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="p-6 bg-red-100 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+            <AlertTriangle className="h-12 w-12 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Error Loading Mock Test</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="flex gap-4 justify-center">
+            <Button onClick={fetchExam}>
+              Try Again
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/mock-tests">Back to Mock Tests</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!exam) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
@@ -203,7 +397,8 @@ export function MockTestDetailPage() {
     );
   }
 
-  if (questions.length === 0) {
+  // Only check for questions if test has started
+  if (isTestStarted && questions.length === 0 && !error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -260,8 +455,8 @@ export function MockTestDetailPage() {
               <div className="p-4 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Trophy className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">{exam.difficulty}</h3>
-              <p className="text-gray-600 font-semibold">Difficulty</p>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">{exam.examTypeName}</h3>
+              <p className="text-gray-600 font-semibold">Type</p>
             </Card>
           </div>
 
@@ -403,23 +598,32 @@ export function MockTestDetailPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button 
+            <Button
+              asChild
+              className="h-12 px-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold"
+            >
+              <Link to={`/mock-tests/${id}/analytics`}>
+                <Target className="mr-2 h-5 w-5" />
+                View Analytics
+              </Link>
+            </Button>
+            <Button 
               onClick={retakeTest}
               className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold"
             >
               <Trophy className="mr-2 h-5 w-5" />
               Retake Test
-          </Button>
+            </Button>
             <Button
               asChild
               variant="outline"
               className="h-12 px-8 border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all duration-300 rounded-xl text-lg font-semibold"
             >
-            <Link to="/mock-tests">
+              <Link to="/mock-tests">
                 <Brain className="mr-2 h-5 w-5" />
                 Back to Tests
-            </Link>
-          </Button>
+              </Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -518,8 +722,23 @@ export function MockTestDetailPage() {
               <CardContent className="space-y-8 p-8">
                 <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl">
                   <p className="text-xl text-gray-800 leading-relaxed">
-                    {currentQuestion.content || currentQuestion.text || 'No question content available'}
+                    {currentQuestion.contentQuestion || 'No question content available'}
                   </p>
+                  {currentQuestion.imageUrl && (
+                    <div className="mt-4">
+                      <img 
+                        src={currentQuestion.imageUrl} 
+                        alt="Question illustration" 
+                        className="max-w-full h-auto rounded-lg shadow-md"
+                      />
+                    </div>
+                  )}
+                  {currentQuestion.formula && (
+                    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-600 font-medium mb-2">Formula:</p>
+                      <p className="text-blue-800 font-mono">{currentQuestion.formula}</p>
+                    </div>
+                  )}
               </div>
 
                 {/* Enhanced Answer Options */}
@@ -608,7 +827,18 @@ export function MockTestDetailPage() {
                         index === currentQuestionIndex ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-lg' :
                         'border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50'
                     }`}
-                    onClick={() => setCurrentQuestionIndex(index)}
+                    onClick={() => {
+                      // Track time spent on current question
+                      if (currentQuestion) {
+                        const timeSpent = Date.now() - questionStartTime;
+                        setQuestionTimes(prev => ({
+                          ...prev,
+                          [currentQuestion.id]: (prev[currentQuestion.id] || 0) + timeSpent
+                        }));
+                      }
+                      setCurrentQuestionIndex(index);
+                      setQuestionStartTime(Date.now());
+                    }}
                   >
                     {index + 1}
                     {flagged.has(question.id) && (
