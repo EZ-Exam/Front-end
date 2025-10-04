@@ -12,6 +12,8 @@ import { CreateLessonPage } from '@/pages/lessons/CreateLessonPage';
 import { MockTestsPage } from '@/pages/mock-tests/MockTestsPage';
 import { MockTestDetailPage } from '@/pages/mock-tests/MockTestDetailPage';
 import { MockTestAnalyticsPage } from '@/pages/mock-tests/MockTestAnalyticsPage';
+import { MockTestHistoryPage } from '@/pages/mock-tests/MockTestHistoryPage';
+import { MockTestHistoryDetailPage } from '@/pages/mock-tests/MockTestHistoryDetailPage';
 import { CreateMockTestPage } from '@/pages/mock-tests/CreateMockTestPage';
 import { QuestionBankPage } from '@/pages/question-bank/QuestionBankPage';
 import { NotificationsPage } from '@/pages/NotificationPage';
@@ -46,6 +48,8 @@ export function AppRouter() {
           <Route path="mock-tests" element={<MockTestsPage />} />
           <Route path="mock-tests/:id" element={<MockTestDetailPage />} />
           <Route path="mock-tests/:id/analytics" element={<MockTestAnalyticsPage />} />
+          <Route path="mock-tests/history" element={<MockTestHistoryPage />} />
+          <Route path="mock-tests/history/:id" element={<MockTestHistoryDetailPage />} />
           <Route path="create-mock-test" element={<CreateMockTestPage />} />
         </Route>
         

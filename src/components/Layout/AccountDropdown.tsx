@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '@/services/axios';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,8 +27,8 @@ import {
   Crown,
   Sparkles,
   Zap,
-  Shield,
-  Star
+  Star,
+  Infinity
 } from 'lucide-react';
 import { mockUserAccount, mockBankAccounts } from '@/data/mockData';
 import { useAuth } from '@/pages/auth/AuthContext';
@@ -39,8 +40,24 @@ export function AccountDropdown() {
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [selectedBank, setSelectedBank] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // User data is now managed by AuthContext, no need to fetch here
+
+  // Subscription type mapping
+  const subscriptionTypeMapping = {
+    'free': 1,
+    'basic': 2,
+    'premium': 3,
+    'unlimited': 4
+  };
+
+  const subscriptionNameMapping = {
+    'free': 'Free',
+    'basic': 'Basic',
+    'premium': 'Premium',
+    'unlimited': 'Unlimited'
+  };
 
   const handleLogin = () => {
     navigate('/login');
@@ -74,12 +91,118 @@ export function AccountDropdown() {
     setSelectedBank('');
   };
 
+  // Function to handle subscription upgrade
+  const handleUpgradeSubscription = async (subscriptionType: string) => {
+    if (!user) {
+      console.error('User not found');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const payload = {
+        userId: parseInt(user.id),
+        subscriptionTypeId: subscriptionTypeMapping[subscriptionType.toLowerCase() as keyof typeof subscriptionTypeMapping],
+        itemName: subscriptionNameMapping[subscriptionType.toLowerCase() as keyof typeof subscriptionNameMapping],
+        quantity: 1,
+        amount: 2000, // Test amount as requested
+        description: `${user.fullName} mua gói ${subscriptionNameMapping[subscriptionType.toLowerCase() as keyof typeof subscriptionNameMapping]}`
+      };
+
+      console.log('Creating payment with payload:', payload);
+      
+      const response = await api.post('/payments/create-payment', payload);
+      
+      if (response.status === 200 || response.status === 201) {
+        console.log('Payment created successfully:', response.data);
+        
+        // Check if checkoutUrl exists in response
+        if (response.data.checkoutUrl) {
+          // Redirect to checkout URL
+          window.location.href = response.data.checkoutUrl;
+        } else {
+          console.warn('No checkoutUrl found in response:', response.data);
+          alert('Payment created but no checkout URL provided');
+        }
+      }
+    } catch (error) {
+      console.error('Error creating payment:', error);
+      // You can add error notification here
+      alert('Error creating payment. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getPackageBadgeColor = (packageType: string) => {
     switch (packageType) {
-      case 'basic': return 'bg-gray-100 text-gray-800';
+      case 'free': return 'bg-gray-100 text-gray-800';
+      case 'basic': return 'bg-green-100 text-green-800';
       case 'premium': return 'bg-blue-100 text-blue-800';
-      case 'pro': return 'bg-purple-100 text-purple-800';
+      case 'unlimited': return 'bg-indigo-100 text-indigo-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Function to check if a package is the current plan
+  const isCurrentPlan = (packageName: string) => {
+    const currentSubscription = user?.subscriptionName?.toLowerCase() || 'free';
+    return currentSubscription === packageName.toLowerCase();
+  };
+
+  // Function to get package styling based on current plan
+  const getPackageStyling = (packageName: string) => {
+    const isCurrent = isCurrentPlan(packageName);
+    
+    switch (packageName.toLowerCase()) {
+      case 'free':
+        return {
+          borderColor: isCurrent ? 'border-gray-500' : 'border-gray-200',
+          bgGradient: isCurrent ? 'bg-gradient-to-b from-gray-50 to-gray-100' : '',
+          shadow: isCurrent ? 'shadow-xl hover:shadow-2xl' : 'hover:shadow-lg',
+          titleColor: 'text-gray-800',
+          priceColor: 'text-gray-600'
+        };
+      case 'basic':
+        return {
+          borderColor: isCurrent ? 'border-green-500' : 'border-green-200',
+          bgGradient: isCurrent ? 'bg-gradient-to-b from-green-50 to-green-100' : '',
+          shadow: isCurrent ? 'shadow-xl hover:shadow-2xl' : 'hover:shadow-lg',
+          titleColor: 'text-green-800',
+          priceColor: 'text-green-600'
+        };
+      case 'premium':
+        return {
+          borderColor: isCurrent ? 'border-blue-500' : 'border-blue-200',
+          bgGradient: isCurrent ? 'bg-gradient-to-b from-blue-50 to-blue-100' : '',
+          shadow: isCurrent ? 'shadow-xl hover:shadow-2xl' : 'hover:shadow-lg',
+          titleColor: 'text-blue-800',
+          priceColor: 'text-blue-600'
+        };
+      case 'pro':
+        return {
+          borderColor: isCurrent ? 'border-purple-500' : 'border-purple-200',
+          bgGradient: isCurrent ? 'bg-gradient-to-b from-purple-50 to-purple-100' : '',
+          shadow: isCurrent ? 'shadow-xl hover:shadow-2xl' : 'hover:shadow-lg',
+          titleColor: 'text-purple-800',
+          priceColor: 'text-purple-600'
+        };
+      case 'unlimited':
+        return {
+          borderColor: isCurrent ? 'border-indigo-500' : 'border-indigo-200',
+          bgGradient: isCurrent ? 'bg-gradient-to-b from-indigo-50 to-indigo-100' : '',
+          shadow: isCurrent ? 'shadow-xl hover:shadow-2xl' : 'hover:shadow-lg',
+          titleColor: 'text-indigo-800',
+          priceColor: 'text-indigo-600'
+        };
+      default:
+        return {
+          borderColor: 'border-gray-200',
+          bgGradient: '',
+          shadow: 'hover:shadow-lg',
+          titleColor: 'text-gray-800',
+          priceColor: 'text-gray-600'
+        };
     }
   };
 
@@ -112,15 +235,6 @@ export function AccountDropdown() {
                 <div>
                   <p className="font-bold text-gray-800">{user?.fullName || 'User'}</p>
                   <p className="text-sm text-gray-600">{user?.email || 'No email'}</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <Badge className={`${getPackageBadgeColor(mockUserAccount.packageType)} border-0 shadow-md font-semibold px-3 py-1`}>
-                  <Crown className="w-3 h-3 mr-1" />
-                  {mockUserAccount.packageType.toUpperCase()}
-                </Badge>
-                <div className="text-lg font-bold text-green-600 bg-green-100 px-3 py-1 rounded-lg shadow-md">
-                  ${mockUserAccount.balance.toFixed(2)}
                 </div>
               </div>
             </div>
@@ -372,12 +486,20 @@ export function AccountDropdown() {
               Upgrade Your Package
             </DialogTitle>
           </DialogHeader>
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="border-2 border-gray-200 hover:border-gray-300 transition-all duration-300 hover:shadow-lg hover:scale-105">
-              <CardHeader className="text-center pb-4">
-                <CardTitle className="text-xl font-bold text-gray-800">Basic</CardTitle>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className={`border-2 ${getPackageStyling('free').borderColor} hover:border-gray-300 transition-all duration-300 ${getPackageStyling('free').shadow} hover:scale-105 ${getPackageStyling('free').bgGradient} ${isCurrentPlan('free') ? 'relative' : ''}`}>
+              {isCurrentPlan('free') && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <Badge className="bg-gradient-to-r from-gray-500 to-gray-600 text-white border-0 shadow-lg px-4 py-1">
+                    <User className="w-3 h-3 mr-1" />
+                    Current
+                  </Badge>
+                </div>
+              )}
+              <CardHeader className={`text-center ${isCurrentPlan('free') ? 'pt-6' : 'pb-4'}`}>
+                <CardTitle className={`text-xl font-bold ${getPackageStyling('free').titleColor}`}>Free</CardTitle>
                 <div className="text-center">
-                  <span className="text-3xl font-bold text-gray-600">Free</span>
+                  <span className={`text-3xl font-bold ${getPackageStyling('free').priceColor}`}>Free</span>
                 </div>
               </CardHeader>
               <CardContent>
@@ -399,23 +521,40 @@ export function AccountDropdown() {
                     Community support
                   </li>
                 </ul>
-                <Button className="w-full mt-6 h-12" variant="outline" disabled>
-                  Current Plan
+                <Button 
+                  className={`w-full mt-6 h-12 ${isCurrentPlan('free') ? 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105' : ''}`}
+                  variant={isCurrentPlan('free') ? 'default' : 'outline'}
+                  disabled={isCurrentPlan('free') || isLoading}
+                  onClick={() => !isCurrentPlan('free') && handleUpgradeSubscription('basic')}
+                >
+                  {isCurrentPlan('free') ? (
+                    <>
+                      <User className="mr-2 h-4 w-4" />
+                      Current Plan
+                    </>
+                  ) : (
+                    <>
+                      <Star className="mr-2 h-4 w-4" />
+                      {isLoading ? 'Processing...' : 'Upgrade to Basic'}
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-blue-500 bg-gradient-to-b from-blue-50 to-blue-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg px-4 py-1">
-                  <Crown className="w-3 h-3 mr-1" />
-                  Current
-                </Badge>
-              </div>
-              <CardHeader className="text-center pb-4 pt-6">
-                <CardTitle className="text-xl font-bold text-blue-800">Premium</CardTitle>
+            <Card className={`border-2 ${getPackageStyling('premium').borderColor} transition-all duration-300 ${getPackageStyling('premium').shadow} hover:scale-105 ${getPackageStyling('premium').bgGradient} ${isCurrentPlan('premium') ? 'relative' : ''}`}>
+              {isCurrentPlan('premium') && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg px-4 py-1">
+                    <Crown className="w-3 h-3 mr-1" />
+                    Current
+                  </Badge>
+                </div>
+              )}
+              <CardHeader className={`text-center ${isCurrentPlan('premium') ? 'pt-6' : 'pb-4'}`}>
+                <CardTitle className={`text-xl font-bold ${getPackageStyling('premium').titleColor}`}>Premium</CardTitle>
                 <div className="text-center">
-                  <span className="text-3xl font-bold text-blue-600">$29.99</span>
+                  <span className={`text-3xl font-bold ${getPackageStyling('premium').priceColor}`}>$29.99</span>
                   <span className="text-sm text-gray-500">/month</span>
                 </div>
               </CardHeader>
@@ -442,18 +581,40 @@ export function AccountDropdown() {
                     PDF downloads
                   </li>
                 </ul>
-                <Button className="w-full mt-6 h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  <Shield className="mr-2 h-4 w-4" />
-                  Current Plan
+                <Button 
+                  className={`w-full mt-6 h-12 ${isCurrentPlan('premium') ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'}`}
+                  variant="default"
+                  disabled={isCurrentPlan('premium') || isLoading}
+                  onClick={() => !isCurrentPlan('premium') && handleUpgradeSubscription('premium')}
+                >
+                  {isCurrentPlan('premium') ? (
+                    <>
+                      <Crown className="mr-2 h-4 w-4" />
+                      Current Plan
+                    </>
+                  ) : (
+                    <>
+                      <Crown className="mr-2 h-4 w-4" />
+                      {isLoading ? 'Processing...' : 'Upgrade to Premium'}
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-purple-500 hover:border-purple-600 transition-all duration-300 hover:shadow-xl hover:scale-105">
-              <CardHeader className="text-center pb-4">
-                <CardTitle className="text-xl font-bold text-purple-800">Pro</CardTitle>
+            <Card className={`border-2 ${getPackageStyling('pro').borderColor} hover:border-purple-600 transition-all duration-300 ${getPackageStyling('pro').shadow} hover:scale-105 ${getPackageStyling('pro').bgGradient} ${isCurrentPlan('pro') ? 'relative' : ''}`}>
+              {isCurrentPlan('pro') && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg px-4 py-1">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Current
+                  </Badge>
+                </div>
+              )}
+              <CardHeader className={`text-center ${isCurrentPlan('pro') ? 'pt-6' : 'pb-4'}`}>
+                <CardTitle className={`text-xl font-bold ${getPackageStyling('pro').titleColor}`}>Pro</CardTitle>
                 <div className="text-center">
-                  <span className="text-3xl font-bold text-purple-600">$49.99</span>
+                  <span className={`text-3xl font-bold ${getPackageStyling('pro').priceColor}`}>$49.99</span>
                   <span className="text-sm text-gray-500">/month</span>
                 </div>
               </CardHeader>
@@ -480,9 +641,83 @@ export function AccountDropdown() {
                     Exam predictions
                   </li>
                 </ul>
-                <Button className="w-full mt-6 h-12 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Upgrade to Pro
+                <Button 
+                  className={`w-full mt-6 h-12 ${isCurrentPlan('pro') ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105' : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'}`}
+                  variant="default"
+                  disabled={isCurrentPlan('pro') || isLoading}
+                  onClick={() => !isCurrentPlan('pro') && handleUpgradeSubscription('pro')}
+                >
+                  {isCurrentPlan('pro') ? (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Current Plan
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      {isLoading ? 'Processing...' : 'Upgrade to Pro'}
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className={`border-2 ${getPackageStyling('unlimited').borderColor} hover:border-indigo-600 transition-all duration-300 ${getPackageStyling('unlimited').shadow} hover:scale-105 ${getPackageStyling('unlimited').bgGradient} ${isCurrentPlan('unlimited') ? 'relative' : ''}`}>
+              {isCurrentPlan('unlimited') && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <Badge className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white border-0 shadow-lg px-4 py-1">
+                    <Infinity className="w-3 h-3 mr-1" />
+                    Current
+                  </Badge>
+                </div>
+              )}
+              <CardHeader className={`text-center ${isCurrentPlan('unlimited') ? 'pt-6' : 'pb-4'}`}>
+                <CardTitle className={`text-xl font-bold ${getPackageStyling('unlimited').titleColor}`}>Unlimited</CardTitle>
+                <div className="text-center">
+                  <span className={`text-3xl font-bold ${getPackageStyling('unlimited').priceColor}`}>$99.99</span>
+                  <span className="text-sm text-gray-500">/month</span>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                    Everything in Pro
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                    Unlimited AI tutoring
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                    Live expert sessions
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                    Priority exam scheduling
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                    White-label solutions
+                  </li>
+                </ul>
+                <Button 
+                  className={`w-full mt-6 h-12 ${isCurrentPlan('unlimited') ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105' : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'}`}
+                  variant="default"
+                  disabled={isCurrentPlan('unlimited') || isLoading}
+                  onClick={() => !isCurrentPlan('unlimited') && handleUpgradeSubscription('unlimited')}
+                >
+                  {isCurrentPlan('unlimited') ? (
+                    <>
+                      <Infinity className="mr-2 h-4 w-4" />
+                      Current Plan
+                    </>
+                  ) : (
+                    <>
+                      <Infinity className="mr-2 h-4 w-4" />
+                      {isLoading ? 'Processing...' : 'Upgrade to Unlimited'}
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>

@@ -22,6 +22,8 @@ export interface UserData {
   phoneNumber?: string;
   avatarUrl?: string;
   roleId?: string;
+  balance?: number | null;
+  subscriptionName?: string | null;
   [key: string]: any; // fallback cho các field khác
 }
 
@@ -95,6 +97,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           phoneNumber: userData.phoneNumber || '',
           avatarUrl: userData.avatarUrl || '',
           roleId: userData.roleId || '',
+          balance: userData.balance || null,
+          subscriptionName: userData.subscriptionName || null,
         });
         
         // Role-based navigation nếu có navigate function

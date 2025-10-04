@@ -10,7 +10,8 @@ import {
   PenTool,
   X,
   Sparkles,
-  Zap
+  Zap,
+  History
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -24,6 +25,7 @@ const navigation = [
   { name: 'Lessons', href: '/lessons', icon: BookOpen, color: 'from-green-500 to-green-600' },
   { name: 'Question Bank', href: '/question-bank', icon: PenTool, color: 'from-purple-500 to-purple-600' },
   { name: 'Mock Tests', href: '/mock-tests', icon: FileText, color: 'from-orange-500 to-orange-600' },
+  { name: 'Mock Test History', href: '/mock-tests/history', icon: History, color: 'from-indigo-500 to-indigo-600' },
   { name: 'Profile', href: '/profile', icon: User, color: 'from-pink-500 to-pink-600' },
   { name: 'Settings', href: '/settings', icon: Settings, color: 'from-gray-500 to-gray-600' },
   { name: 'Help & Support', href: '/help', icon: HelpCircle, color: 'from-teal-500 to-teal-600' },

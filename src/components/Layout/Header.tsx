@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Search, Menu, Crown } from 'lucide-react';
-import { mockUserAccount } from '@/data/mockData';
+import { Search, Menu, Crown, User, Star, Infinity } from 'lucide-react';
 import EZEXAMLogo from '@/assest/EZEXAM_Icon.png';
 import {NotificationDropdown} from '@/components/Layout/NotificationDropdown';
 import { CreateContentDropdown } from './CreateContentDropdown';
@@ -12,11 +11,49 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuToggle }: HeaderProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   // Function to check if user is authenticated
   const checkUserAuthentication = (): boolean => {
     return isAuthenticated;
+  };
+
+  // Function to get subscription icon and colors
+  const getSubscriptionInfo = (subscriptionName: string | null) => {
+    const subscription = subscriptionName?.toLowerCase() || 'free';
+    
+    switch (subscription) {
+      case 'free':
+        return {
+          icon: User,
+          gradient: 'from-gray-500 to-gray-600',
+          textColor: 'text-gray-700'
+        };
+      case 'basic':
+        return {
+          icon: Star,
+          gradient: 'from-green-500 to-green-600',
+          textColor: 'text-green-700'
+        };
+      case 'premium':
+        return {
+          icon: Crown,
+          gradient: 'from-blue-500 to-blue-600',
+          textColor: 'text-blue-700'
+        };
+      case 'unlimited':
+        return {
+          icon: Infinity,
+          gradient: 'from-purple-500 to-purple-600',
+          textColor: 'text-purple-700'
+        };
+      default:
+        return {
+          icon: User,
+          gradient: 'from-gray-500 to-gray-600',
+          textColor: 'text-gray-700'
+        };
+    }
   };
 
   return (
@@ -59,19 +96,27 @@ export function Header({ onMenuToggle }: HeaderProps) {
         {checkUserAuthentication() && <CreateContentDropdown />}
 
         {/* Enhanced Account Balance & Package */}
-        {checkUserAuthentication() && (
-          <div className="hidden md:flex items-center gap-4 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <div className="flex items-center gap-2">
-              <div className="p-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg shadow-md">
-                <Crown className="h-4 w-4 text-white" />
+        {checkUserAuthentication() && user && (() => {
+          const subscriptionInfo = getSubscriptionInfo(user.subscriptionName || null);
+          const IconComponent = subscriptionInfo.icon;
+          const balanceVND = user.balance || 0;
+          
+          return (
+            <div className="hidden md:flex items-center gap-4 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className={`p-1 bg-gradient-to-r ${subscriptionInfo.gradient} rounded-lg shadow-md`}>
+                  <IconComponent className="h-4 w-4 text-white" />
+                </div>
+                <span className={`text-sm font-semibold capitalize ${subscriptionInfo.textColor}`}>
+                  {user.subscriptionName || 'Free'}
+                </span>
               </div>
-              <span className="text-sm font-semibold text-gray-700 capitalize">{mockUserAccount.packageType}</span>
+              <div className="text-sm font-bold text-green-600 bg-gradient-to-r from-green-100 to-green-200 px-3 py-1 rounded-lg shadow-md">
+                {balanceVND.toLocaleString('vi-VN')}₫
+              </div>
             </div>
-            <div className="text-sm font-bold text-green-600 bg-gradient-to-r from-green-100 to-green-200 px-3 py-1 rounded-lg shadow-md">
-              ${mockUserAccount.balance.toFixed(2)}
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         <AccountDropdown />
       </div>
