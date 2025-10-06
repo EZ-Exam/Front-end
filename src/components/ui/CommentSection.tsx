@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
+import { useState, useEffect, useCallback, useMemo} from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -70,14 +70,10 @@ export function CommentSection({ questionId }: CommentSectionProps) {
   const currentUser = getUserInfoFromToken();
 
   // Check if user can delete a comment
-  const canDeleteComment = (comment: QuestionComment) => {
-    // Admin có thể xóa tất cả comment (roleId khác 1, ví dụ: 2, 3...)
-    if (currentUser.role === 'admin' || currentUser.role === 'Admin') {
-      return true;
-    }
-    
-    // User (roleId = 1) chỉ có thể xóa comment của chính mình
-    return comment.userId === currentUser.userId;
+  const canDeleteComment = () => {
+    // Chỉ có moderator (roleId = 3) mới được xóa comment
+    // Kể cả người tạo comment cũng không được xóa
+    return currentUser.roleId === 3;
   };
 
   useEffect(() => {
@@ -189,7 +185,39 @@ export function CommentSection({ questionId }: CommentSectionProps) {
       const response = await axios.delete(`/question-comments/${deleteDialog.commentId}`);
       console.log('✅ Delete response:', response.data);
       
-      // Refresh comments to see how backend handles cascade
+      // Tạm thời: Cập nhật UI ngay lập tức để hiển thị comment đã xóa
+      // (Trong khi chờ backend sửa để trả về comment đã xóa)
+      setComments(prevComments => 
+        prevComments.map(comment => {
+          if (comment.id === deleteDialog.commentId) {
+            return {
+              ...comment,
+              isDeleted: true,
+              deletedBy: currentUser.userId,
+              deletedAt: new Date().toISOString(),
+              deletedByUserName: 'Moderator' // Tạm thời, backend sẽ cung cấp tên thực
+            };
+          }
+          // Cũng cập nhật replies nếu có
+          if (comment.replies) {
+            return {
+              ...comment,
+              replies: comment.replies.map(reply => 
+                reply.id === deleteDialog.commentId ? {
+                  ...reply,
+                  isDeleted: true,
+                  deletedBy: currentUser.userId,
+                  deletedAt: new Date().toISOString(),
+                  deletedByUserName: 'Moderator'
+                } : reply
+              )
+            };
+          }
+          return comment;
+        })
+      );
+      
+      // Refresh comments để đồng bộ với server (sau khi backend sửa)
       await fetchComments();
     } catch (error) {
       console.error('❌ Error deleting comment:', error);
@@ -383,7 +411,7 @@ export function CommentSection({ questionId }: CommentSectionProps) {
         </Avatar>
         
         <div className="flex-1">
-          <div className="bg-gray-50 rounded-lg p-3">
+          <div className={`rounded-lg p-3 ${comment.isDeleted ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
               <span className="font-medium text-sm">{comment.userName}</span>
@@ -391,15 +419,35 @@ export function CommentSection({ questionId }: CommentSectionProps) {
                 {formatDate(comment.createdAt)}
               </Badge>
               </div>
-              {comment.rating && (
+              {comment.rating && !comment.isDeleted && (
                 <StarRating rating={comment.rating} readonly={true} />
               )}
             </div>
-            <p className="text-gray-800 text-sm">{comment.content}</p>
+            
+            {comment.isDeleted ? (
+              <div className="text-center py-4">
+                <div className="flex items-center justify-center gap-2 text-red-600">
+                  <Trash2 className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    Bình luận này đã bị xóa
+                    {comment.deletedByUserName && (
+                      <span className="text-gray-600"> bởi {comment.deletedByUserName}</span>
+                    )}
+                  </span>
+                </div>
+                {comment.deletedAt && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formatDate(comment.deletedAt)}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-800 text-sm">{comment.content}</p>
+            )}
           </div>
           
           <div className="flex items-center gap-2 mt-2">
-            {!isReply && (
+            {!isReply && !comment.isDeleted && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -417,7 +465,7 @@ export function CommentSection({ questionId }: CommentSectionProps) {
               </span>
             )}
             
-            {canDelete && (
+            {canDelete && !comment.isDeleted && (
             <Button
               variant="ghost"
               size="sm"
@@ -463,7 +511,7 @@ export function CommentSection({ questionId }: CommentSectionProps) {
                   onDeleteComment={onDeleteComment}
                   onToggleExpanded={() => {}}
                   isExpanded={false}
-                  canDelete={canDeleteComment(reply)}
+                  canDelete={canDeleteComment()}
                 />
               ))}
               
@@ -583,7 +631,7 @@ export function CommentSection({ questionId }: CommentSectionProps) {
                 onDeleteComment={handleDeleteComment}
                 onToggleExpanded={toggleRepliesExpanded}
                 isExpanded={expandedReplies.has(comment.id)}
-                canDelete={canDeleteComment(comment)}
+                canDelete={canDeleteComment()}
               />
             ))}
           </div>
