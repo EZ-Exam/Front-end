@@ -90,7 +90,7 @@ export function MockTestHistoryDetailPage() {
       setExamHistory(history);
       
       // Fetch exam details
-      const examResponse = await api.get(`/exams/${history.examId}`);
+      const examResponse = await api.get(`/exam-history/exam/${history.examId}`);
       const examData = examResponse.data;
       
       setExamDetail({
@@ -101,7 +101,8 @@ export function MockTestHistoryDetailPage() {
       });
       
       // Fetch questions for this exam
-      const questionsResponse = await api.get(`/exams/${history.examId}/questions/detail`);
+      const questionsResponse = await api.get(`/exam-history/${history.examId}/questions/detail`);
+      console.log("Questions Response",questionsResponse.data);
       const mappedQuestions: Question[] = questionsResponse.data.map((q: any) => ({
         id: q.id.toString(),
         contentQuestion: q.contentQuestion,

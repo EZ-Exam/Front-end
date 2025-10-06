@@ -100,6 +100,11 @@ export interface QuestionComment {
   updatedAt: string;
   replyCount: number;
   replies: QuestionComment[];
+  // Soft delete fields
+  isDeleted?: boolean;
+  deletedBy?: number;
+  deletedAt?: string;
+  deletedByUserName?: string; // Tên của moderator đã xóa
 }
 
 export interface MockTest {
