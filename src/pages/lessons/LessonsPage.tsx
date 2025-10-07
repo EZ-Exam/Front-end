@@ -14,7 +14,7 @@ import {
   Filter, 
   RefreshCw
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '@/services/axios';
 
 interface Lesson {
@@ -27,14 +27,13 @@ interface Lesson {
   updatedAt?: string;
 }
 
-// API returns array directly, not wrapped in object
-// interface LessonsResponse {
-//   items: Lesson[];
-//   pageNumber: number;
-//   pageSize: number;
-//   totalItems: number;
-//   totalPages: number;
-// }
+interface LessonsResponse {
+  items: Lesson[];
+  pageNumber: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
 
 const subjectMapping: { [key: string]: string } = {
   '1': 'Math',
@@ -50,70 +49,122 @@ const subjectMapping: { [key: string]: string } = {
 export function LessonsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [subjectFilter, setSubjectFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('title');
+  const [sortOrder, setSortOrder] = useState('asc');
+  const [allLessons, setAllLessons] = useState<Lesson[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const pageSize = 6;
 
   // Global loading hook
   const { withLoading } = useGlobalLoading();
 
-  // Fetch all lessons from API (no pagination on backend yet)
-  const fetchLessons = async () => {
+  // Fetch lessons from API with pagination, search, and sort
+  const fetchLessons = useCallback(async () => {
     await withLoading(async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/lessons-enhanced`);
-        console.log("data",response.data);
-        const data = response.data;
         
-        // API returns array directly, not wrapped in object
-        setLessons(Array.isArray(data) ? data : []);
+        // Build query parameters
+        const params = new URLSearchParams();
+        params.append('pageNumber', currentPage.toString());
+        params.append('pageSize', pageSize.toString());
+        
+        // Search is now handled on frontend, no need to send to API
+        
+        // Add subject filter
+        if (subjectFilter !== 'all') {
+          // Find subjectId from subject name
+          const subjectId = Object.keys(subjectMapping).find(
+            key => subjectMapping[key] === subjectFilter
+          );
+          if (subjectId) {
+            params.append('subjectId', subjectId);
+          }
+        }
+        
+        // Add sort parameter
+        const sortValue = `${sortBy}:${sortOrder}`;
+        params.append('sort', sortValue);
+        params.append('isSort', '1'); // Enable sorting
+        
+        const response = await api.get(`/lessons-enhanced/paged?${params.toString()}`);
+        console.log("API Response:", response.data);
+        
+        const data: LessonsResponse = response.data;
+        
+        // Update state with API response
+        setAllLessons(data.items || []);
+        setTotalPages(data.totalPages || 1);
+        setTotalItems(data.totalItems || 0);
+        
       } catch (error) {
         console.error('Failed to fetch lessons:', error);
-        setLessons([]);
+        setAllLessons([]);
+        setTotalPages(1);
+        setTotalItems(0);
       } finally {
         setLoading(false);
       }
     }, "Đang tải danh sách bài học...");
-  };
+  }, [currentPage, subjectFilter, sortBy, sortOrder, withLoading]);
 
+  // Fetch lessons when dependencies change (excluding searchQuery)
   useEffect(() => {
     fetchLessons();
-  }, [withLoading]);
+  }, [fetchLessons]);
 
-  // Client-side filtering for search and subject
-  const filteredLessons = lessons.filter(lesson => {
-    const matchesSearch = lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         lesson.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const lessonSubject = subjectMapping[lesson.subjectId] || 'Unknown';
-    const matchesSubject = subjectFilter === 'all' || lessonSubject === subjectFilter;
-    
-    return matchesSearch && matchesSubject;
-  });
+  // Reset to page 1 when filters change (excluding searchQuery)
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [subjectFilter, sortBy, sortOrder]);
+
+  // Client-side filtering for search query
+  const filteredLessons = useMemo(() => {
+    return allLessons.filter(lesson => {
+      const matchesSearch = lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           lesson.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesSearch;
+    });
+  }, [allLessons, searchQuery]);
 
   // Calculate pagination for filtered results
-  const totalFilteredItems = filteredLessons.length;
-  const totalFilteredPages = Math.ceil(totalFilteredItems / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedLessons = filteredLessons.slice(startIndex, endIndex);
+  const { totalFilteredItems, totalFilteredPages, paginatedLessons } = useMemo(() => {
+    const totalItems = filteredLessons.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginated = filteredLessons.slice(startIndex, endIndex);
+    
+    return {
+      totalFilteredItems: totalItems,
+      totalFilteredPages: totalPages,
+      paginatedLessons: paginated
+    };
+  }, [filteredLessons, currentPage, pageSize]);
 
-  // Update total pages when filtered results change
+  // Update lessons state with paginated results
   useEffect(() => {
+    setLessons(paginatedLessons);
     setTotalPages(totalFilteredPages);
-    // Reset to page 1 if current page is beyond available pages
+  }, [paginatedLessons, totalFilteredPages]);
+
+  // Reset to page 1 if current page is beyond available pages
+  useEffect(() => {
     if (currentPage > totalFilteredPages && totalFilteredPages > 0) {
       setCurrentPage(1);
     }
-  }, [totalFilteredPages, currentPage]);
+  }, [totalFilteredPages]); // Only depend on totalFilteredPages to avoid infinite loop
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when search query changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, subjectFilter]);
-
+  }, [searchQuery]);
 
   const getSubjectColor = (subjectId: string) => {
     const subject = subjectMapping[subjectId] || 'Unknown';
@@ -154,7 +205,7 @@ export function LessonsPage() {
             Explore our comprehensive collection of interactive lessons designed to help you master exam concepts
           </p>
           <Badge variant="outline" className="text-sm px-4 py-2 bg-white/80 backdrop-blur-sm">
-            {loading ? 'Loading...' : `${totalFilteredItems} lessons available`}
+            {loading ? 'Loading...' : `${totalItems} lessons available`}
           </Badge>
         </div>
 
@@ -167,7 +218,7 @@ export function LessonsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-4 gap-4">
+            <div className="grid md:grid-cols-5 gap-4">
               <div className="relative md:col-span-2">
                 <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <Input
@@ -195,11 +246,31 @@ export function LessonsPage() {
                 </SelectContent>
               </Select>
 
+              <Select value={`${sortBy}:${sortOrder}`} onValueChange={(value) => {
+                const [field, order] = value.split(':');
+                setSortBy(field);
+                setSortOrder(order);
+              }}>
+                <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="createdAt:desc">Mới nhất trước</SelectItem>
+                  <SelectItem value="createdAt:asc">Cũ nhất trước</SelectItem>
+                  <SelectItem value="updatedAt:desc">Cập nhật gần nhất trước</SelectItem>
+                  <SelectItem value="updatedAt:asc">Cập nhật lâu nhất trước</SelectItem>
+                  <SelectItem value="title:asc">Tên A→Z</SelectItem>
+                  <SelectItem value="title:desc">Tên Z→A</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Button 
                 variant="outline" 
                 onClick={() => {
                   setSearchQuery('');
                   setSubjectFilter('all');
+                  setSortBy('title');
+                  setSortOrder('asc');
                 }}
                 className="h-12 border-2 border-gray-200 hover:border-red-500 hover:text-red-600 rounded-xl"
               >
@@ -211,9 +282,12 @@ export function LessonsPage() {
             {/* Results count */}
             <div className="mt-4 flex items-center justify-between">
               <p className="text-sm text-gray-600">
-                Showing <span className="font-semibold text-blue-600">{totalFilteredItems}</span> of <span className="font-semibold">{lessons.length}</span> lessons
+                Showing <span className="font-semibold text-blue-600">{lessons.length}</span> of <span className="font-semibold">{totalFilteredItems}</span> lessons
+                {totalPages > 1 && (
+                  <span className="ml-2">(Page {currentPage} of {totalPages})</span>
+                )}
               </p>
-              {totalFilteredItems !== lessons.length && (
+              {(searchQuery || subjectFilter !== 'all') && (
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                   Filtered Results
                 </Badge>
@@ -238,7 +312,7 @@ export function LessonsPage() {
               </Card>
             ))}
           </div>
-        ) : totalFilteredItems === 0 ? (
+        ) : lessons.length === 0 ? (
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardContent className="py-20 text-center">
               <div className="max-w-md mx-auto">
@@ -246,19 +320,21 @@ export function LessonsPage() {
                   <BookOpen className="h-10 w-10 text-gray-400" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                  {lessons.length === 0 ? 'No Lessons Available' : 'No Lessons Found'}
+                  {totalItems === 0 ? 'No Lessons Available' : 'No Lessons Found'}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  {lessons.length === 0 
+                  {totalItems === 0 
                     ? 'Lessons will be loaded from the server.' 
                     : 'Try adjusting your search criteria or filters.'}
                 </p>
-                {lessons.length > 0 && (
+                {totalFilteredItems > 0 && (
                   <Button 
                     variant="outline" 
                     onClick={() => {
                       setSearchQuery('');
                       setSubjectFilter('all');
+                      setSortBy('title');
+                      setSortOrder('asc');
                     }}
                     className="rounded-xl"
                   >
@@ -272,7 +348,7 @@ export function LessonsPage() {
         ) : (
           <>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedLessons.map((lesson, index) => (
+              {lessons.map((lesson, index) => (
                 <Card 
                   key={lesson.id} 
                   className="group hover:shadow-2xl transition-all duration-300 hover:scale-105 border-0 bg-white/90 backdrop-blur-sm shadow-lg"

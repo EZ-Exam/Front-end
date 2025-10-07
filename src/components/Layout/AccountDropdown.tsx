@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/services/axios';
 import {
@@ -33,6 +33,24 @@ import {
 import { mockUserAccount, mockBankAccounts } from '@/data/mockData';
 import { useAuth } from '@/pages/auth/AuthContext';
 
+// Define subscription type interface
+interface SubscriptionType {
+  id: number;
+  subscriptionCode: string;
+  subscriptionName: string;
+  subscriptionPrice: number;
+  description: string;
+  maxSolutionViews: number;
+  maxAIRequests: number;
+  isAIEnabled: boolean;
+  features: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  updatedBy: string | null;
+  updatedByName: string | null;
+}
+
 export function AccountDropdown() {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -41,23 +59,34 @@ export function AccountDropdown() {
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
   const [selectedBank, setSelectedBank] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [subscriptionTypes, setSubscriptionTypes] = useState<SubscriptionType[]>([]);
+  const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(false);
 
   // User data is now managed by AuthContext, no need to fetch here
 
-  // Subscription type mapping
-  const subscriptionTypeMapping = {
-    'free': 1,
-    'basic': 2,
-    'premium': 3,
-    'unlimited': 4
+  // Fetch subscription types from API
+  const fetchSubscriptionTypes = async () => {
+    setIsLoadingSubscriptions(true);
+    try {
+      const response = await api.get('/subscription-types');
+      if (response.status === 200) {
+        setSubscriptionTypes(response.data);
+        console.log('Subscription types loaded:', response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription types:', error);
+    } finally {
+      setIsLoadingSubscriptions(false);
+    }
   };
 
-  const subscriptionNameMapping = {
-    'free': 'Free',
-    'basic': 'Basic',
-    'premium': 'Premium',
-    'unlimited': 'Unlimited'
-  };
+  // Load subscription types when upgrade dialog opens
+  useEffect(() => {
+    if (activeDialog === 'upgrade' && subscriptionTypes.length === 0) {
+      fetchSubscriptionTypes();
+    }
+  }, [activeDialog]);
+
 
   const handleLogin = () => {
     navigate('/login');
@@ -92,7 +121,7 @@ export function AccountDropdown() {
   };
 
   // Function to handle subscription upgrade
-  const handleUpgradeSubscription = async (subscriptionType: string) => {
+  const handleUpgradeSubscription = async (subscriptionType: SubscriptionType) => {
     if (!user) {
       console.error('User not found');
       return;
@@ -102,11 +131,11 @@ export function AccountDropdown() {
     try {
       const payload = {
         userId: parseInt(user.id),
-        subscriptionTypeId: subscriptionTypeMapping[subscriptionType.toLowerCase() as keyof typeof subscriptionTypeMapping],
-        itemName: subscriptionNameMapping[subscriptionType.toLowerCase() as keyof typeof subscriptionNameMapping],
+        subscriptionTypeId: subscriptionType.id,
+        itemName: subscriptionType.subscriptionName,
         quantity: 1,
-        amount: 2000, // Test amount as requested
-        description: `${user.fullName} mua gói ${subscriptionNameMapping[subscriptionType.toLowerCase() as keyof typeof subscriptionNameMapping]}`
+        amount: subscriptionType.subscriptionPrice * 100, // Convert to cents if needed
+        description: `${user.fullName} mua gói ${subscriptionType.subscriptionName}`
       };
 
       console.log('Creating payment with payload:', payload);
@@ -134,27 +163,19 @@ export function AccountDropdown() {
     }
   };
 
-  const getPackageBadgeColor = (packageType: string) => {
-    switch (packageType) {
-      case 'free': return 'bg-gray-100 text-gray-800';
-      case 'basic': return 'bg-green-100 text-green-800';
-      case 'premium': return 'bg-blue-100 text-blue-800';
-      case 'unlimited': return 'bg-indigo-100 text-indigo-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   // Function to check if a package is the current plan
-  const isCurrentPlan = (packageName: string) => {
+  const isCurrentPlan = (subscriptionType: SubscriptionType) => {
     const currentSubscription = user?.subscriptionName?.toLowerCase() || 'free';
-    return currentSubscription === packageName.toLowerCase();
+    return currentSubscription === subscriptionType.subscriptionName.toLowerCase();
   };
 
-  // Function to get package styling based on current plan
-  const getPackageStyling = (packageName: string) => {
-    const isCurrent = isCurrentPlan(packageName);
+  // Function to get package styling based on subscription type
+  const getPackageStyling = (subscriptionType: SubscriptionType) => {
+    const isCurrent = isCurrentPlan(subscriptionType);
+    const packageName = subscriptionType.subscriptionName.toLowerCase();
     
-    switch (packageName.toLowerCase()) {
+    switch (packageName) {
       case 'free':
         return {
           borderColor: isCurrent ? 'border-gray-500' : 'border-gray-200',
@@ -203,6 +224,19 @@ export function AccountDropdown() {
           titleColor: 'text-gray-800',
           priceColor: 'text-gray-600'
         };
+    }
+  };
+
+  // Function to get icon for subscription type
+  const getSubscriptionIcon = (subscriptionType: SubscriptionType) => {
+    const packageName = subscriptionType.subscriptionName.toLowerCase();
+    switch (packageName) {
+      case 'free': return User;
+      case 'basic': return Star;
+      case 'premium': return Crown;
+      case 'pro': return Sparkles;
+      case 'unlimited': return Infinity;
+      default: return Star;
     }
   };
 
@@ -486,242 +520,99 @@ export function AccountDropdown() {
               Upgrade Your Package
             </DialogTitle>
           </DialogHeader>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className={`border-2 ${getPackageStyling('free').borderColor} hover:border-gray-300 transition-all duration-300 ${getPackageStyling('free').shadow} hover:scale-105 ${getPackageStyling('free').bgGradient} ${isCurrentPlan('free') ? 'relative' : ''}`}>
-              {isCurrentPlan('free') && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-gradient-to-r from-gray-500 to-gray-600 text-white border-0 shadow-lg px-4 py-1">
-                    <User className="w-3 h-3 mr-1" />
-                    Current
-                  </Badge>
-                </div>
-              )}
-              <CardHeader className={`text-center ${isCurrentPlan('free') ? 'pt-6' : 'pb-4'}`}>
-                <CardTitle className={`text-xl font-bold ${getPackageStyling('free').titleColor}`}>Free</CardTitle>
-                <div className="text-center">
-                  <span className={`text-3xl font-bold ${getPackageStyling('free').priceColor}`}>Free</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    5 lessons per month
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    2 mock tests per month
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    Basic analytics
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    Community support
-                  </li>
-                </ul>
-                <Button 
-                  className={`w-full mt-6 h-12 ${isCurrentPlan('free') ? 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105' : ''}`}
-                  variant={isCurrentPlan('free') ? 'default' : 'outline'}
-                  disabled={isCurrentPlan('free') || isLoading}
-                  onClick={() => !isCurrentPlan('free') && handleUpgradeSubscription('basic')}
-                >
-                  {isCurrentPlan('free') ? (
-                    <>
-                      <User className="mr-2 h-4 w-4" />
-                      Current Plan
-                    </>
-                  ) : (
-                    <>
-                      <Star className="mr-2 h-4 w-4" />
-                      {isLoading ? 'Processing...' : 'Upgrade to Basic'}
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className={`border-2 ${getPackageStyling('premium').borderColor} transition-all duration-300 ${getPackageStyling('premium').shadow} hover:scale-105 ${getPackageStyling('premium').bgGradient} ${isCurrentPlan('premium') ? 'relative' : ''}`}>
-              {isCurrentPlan('premium') && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg px-4 py-1">
-                    <Crown className="w-3 h-3 mr-1" />
-                    Current
-                  </Badge>
-                </div>
-              )}
-              <CardHeader className={`text-center ${isCurrentPlan('premium') ? 'pt-6' : 'pb-4'}`}>
-                <CardTitle className={`text-xl font-bold ${getPackageStyling('premium').titleColor}`}>Premium</CardTitle>
-                <div className="text-center">
-                  <span className={`text-3xl font-bold ${getPackageStyling('premium').priceColor}`}>$29.99</span>
-                  <span className="text-sm text-gray-500">/month</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    Unlimited lessons
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    Unlimited mock tests
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    Advanced analytics
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    Priority support
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    PDF downloads
-                  </li>
-                </ul>
-                <Button 
-                  className={`w-full mt-6 h-12 ${isCurrentPlan('premium') ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105' : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'}`}
-                  variant="default"
-                  disabled={isCurrentPlan('premium') || isLoading}
-                  onClick={() => !isCurrentPlan('premium') && handleUpgradeSubscription('premium')}
-                >
-                  {isCurrentPlan('premium') ? (
-                    <>
-                      <Crown className="mr-2 h-4 w-4" />
-                      Current Plan
-                    </>
-                  ) : (
-                    <>
-                      <Crown className="mr-2 h-4 w-4" />
-                      {isLoading ? 'Processing...' : 'Upgrade to Premium'}
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className={`border-2 ${getPackageStyling('pro').borderColor} hover:border-purple-600 transition-all duration-300 ${getPackageStyling('pro').shadow} hover:scale-105 ${getPackageStyling('pro').bgGradient} ${isCurrentPlan('pro') ? 'relative' : ''}`}>
-              {isCurrentPlan('pro') && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg px-4 py-1">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    Current
-                  </Badge>
-                </div>
-              )}
-              <CardHeader className={`text-center ${isCurrentPlan('pro') ? 'pt-6' : 'pb-4'}`}>
-                <CardTitle className={`text-xl font-bold ${getPackageStyling('pro').titleColor}`}>Pro</CardTitle>
-                <div className="text-center">
-                  <span className={`text-3xl font-bold ${getPackageStyling('pro').priceColor}`}>$49.99</span>
-                  <span className="text-sm text-gray-500">/month</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    Everything in Premium
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    AI-powered recommendations
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    1-on-1 tutoring sessions
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    Custom study plans
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    Exam predictions
-                  </li>
-                </ul>
-                <Button 
-                  className={`w-full mt-6 h-12 ${isCurrentPlan('pro') ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105' : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'}`}
-                  variant="default"
-                  disabled={isCurrentPlan('pro') || isLoading}
-                  onClick={() => !isCurrentPlan('pro') && handleUpgradeSubscription('pro')}
-                >
-                  {isCurrentPlan('pro') ? (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Current Plan
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      {isLoading ? 'Processing...' : 'Upgrade to Pro'}
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className={`border-2 ${getPackageStyling('unlimited').borderColor} hover:border-indigo-600 transition-all duration-300 ${getPackageStyling('unlimited').shadow} hover:scale-105 ${getPackageStyling('unlimited').bgGradient} ${isCurrentPlan('unlimited') ? 'relative' : ''}`}>
-              {isCurrentPlan('unlimited') && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white border-0 shadow-lg px-4 py-1">
-                    <Infinity className="w-3 h-3 mr-1" />
-                    Current
-                  </Badge>
-                </div>
-              )}
-              <CardHeader className={`text-center ${isCurrentPlan('unlimited') ? 'pt-6' : 'pb-4'}`}>
-                <CardTitle className={`text-xl font-bold ${getPackageStyling('unlimited').titleColor}`}>Unlimited</CardTitle>
-                <div className="text-center">
-                  <span className={`text-3xl font-bold ${getPackageStyling('unlimited').priceColor}`}>$99.99</span>
-                  <span className="text-sm text-gray-500">/month</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                    Everything in Pro
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                    Unlimited AI tutoring
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                    Live expert sessions
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                    Priority exam scheduling
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
-                    White-label solutions
-                  </li>
-                </ul>
-                <Button 
-                  className={`w-full mt-6 h-12 ${isCurrentPlan('unlimited') ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105' : 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'}`}
-                  variant="default"
-                  disabled={isCurrentPlan('unlimited') || isLoading}
-                  onClick={() => !isCurrentPlan('unlimited') && handleUpgradeSubscription('unlimited')}
-                >
-                  {isCurrentPlan('unlimited') ? (
-                    <>
-                      <Infinity className="mr-2 h-4 w-4" />
-                      Current Plan
-                    </>
-                  ) : (
-                    <>
-                      <Infinity className="mr-2 h-4 w-4" />
-                      {isLoading ? 'Processing...' : 'Upgrade to Unlimited'}
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+          {isLoadingSubscriptions ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+              <span className="ml-3 text-gray-600">Loading subscription packages...</span>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {subscriptionTypes.map((subscriptionType) => {
+                const styling = getPackageStyling(subscriptionType);
+                const IconComponent = getSubscriptionIcon(subscriptionType);
+                const isCurrent = isCurrentPlan(subscriptionType);
+                
+                return (
+                  <Card 
+                    key={subscriptionType.id} 
+                    className={`border-2 ${styling.borderColor} transition-all duration-300 ${styling.shadow} hover:scale-105 ${styling.bgGradient} ${isCurrent ? 'relative' : ''}`}
+                  >
+                    {isCurrent && (
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg px-4 py-1">
+                          <IconComponent className="w-3 h-3 mr-1" />
+                          Current
+                        </Badge>
+                      </div>
+                    )}
+                    <CardHeader className={`text-center ${isCurrent ? 'pt-6' : 'pb-4'}`}>
+                      <CardTitle className={`text-xl font-bold ${styling.titleColor}`}>
+                        {subscriptionType.subscriptionName}
+                      </CardTitle>
+                      <div className="text-center">
+                        <span className={`text-3xl font-bold ${styling.priceColor}`}>
+                          {subscriptionType.subscriptionPrice === 0 ? 'Free' : `${subscriptionType.subscriptionPrice.toLocaleString('vi-VN')} VND`}
+                        </span>
+                        {subscriptionType.subscriptionPrice > 0 && (
+                          <span className="text-sm text-gray-500">/month</span>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="mb-4">
+                        <p className="text-sm text-gray-600 mb-3">{subscriptionType.description}</p>
+                      </div>
+                      <ul className="space-y-3 text-sm">
+                        <li className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          Max Solution Views: {subscriptionType.maxSolutionViews === -1 ? 'Forever' : subscriptionType.maxSolutionViews}
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          Max AI Requests: {subscriptionType.maxAIRequests === -1 ? 'Forever' : subscriptionType.maxAIRequests}
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          AI Enabled: {subscriptionType.isAIEnabled ? 'Yes' : 'No'}
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          Features: {subscriptionType.features}
+                        </li>
+                      </ul>
+                      <Button 
+                        className={`w-full mt-6 h-20 flex flex-col items-center justify-center px-2 ${
+                          isCurrent 
+                            ? 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105' 
+                            : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'
+                        }`}
+                        variant="default"
+                        disabled={isCurrent || isLoading}
+                        onClick={() => !isCurrent && handleUpgradeSubscription(subscriptionType)}
+                      >
+                        {isCurrent ? (
+                          <div className="flex items-center">
+                            <IconComponent className="mr-2 h-4 w-4 flex-shrink-0" />
+                            <span className="text-sm font-semibold">Current Plan</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center">
+                            <div className="flex items-center mb-1">
+                              <IconComponent className="mr-2 h-4 w-4 flex-shrink-0" />
+                              <span className="text-xs font-medium">Upgrade to</span>
+                            </div>
+                            <span className="text-sm font-semibold leading-tight text-center break-words">
+                              {isLoading ? 'Processing...' : subscriptionType.subscriptionName}
+                            </span>
+                          </div>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

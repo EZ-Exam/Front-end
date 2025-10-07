@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageCircle, X, Send, Minimize2, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Minimize2, Loader2, Bot, Sparkles } from 'lucide-react';
 import api from '@/services/axios';
 
 interface Message {
@@ -148,31 +148,50 @@ export function SupportChat() {
     <>
       {/* Chat Toggle Button */}
       {!isOpen && (
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg z-50 bg-blue-600 hover:bg-blue-700"
-          size="sm"
-        >
-          <MessageCircle className="h-6 w-6" />
-        </Button>
+        <div className="fixed bottom-6 right-6 z-50 animate-bounce">
+          <Button
+            onClick={() => setIsOpen(true)}
+            className="w-16 h-16 rounded-full shadow-2xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-110 hover:shadow-3xl"
+            size="sm"
+          >
+            <MessageCircle className="h-7 w-7" />
+          </Button>
+        </div>
       )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className={`fixed bottom-6 right-6 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50 transition-all duration-200 ${
-          isMinimized ? 'h-14' : 'h-96'
-        }`}>
+        <div className={`fixed bottom-6 right-6 w-[400px] bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 transition-all duration-300 ease-in-out ${
+          isMinimized ? 'h-16' : 'h-[500px]'
+        } animate-in slide-in-from-bottom-4 fade-in-0`}>
           {/* Chat Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-blue-600 text-white rounded-t-lg">
+          <div className="flex items-center justify-between p-5 border-b bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 text-white rounded-t-2xl">
             <div className="flex items-center gap-3">
-              <Avatar className="w-8 h-8">
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-blue-500 text-white text-xs">AI</AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="w-10 h-10 ring-2 ring-white/20">
+                  <AvatarImage src="" />
+                  <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-semibold">
+                    <Bot className="h-5 w-5" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
+              </div>
               <div>
-                <h3 className="font-medium text-sm">AI Assistant</h3>
-                <p className="text-xs text-blue-100">
-                  {isLoading ? 'Typing...' : 'Online'}
+                <h3 className="font-semibold text-base flex items-center gap-2">
+                  AI Assistant
+                  <Sparkles className="h-4 w-4 text-yellow-300 animate-pulse" />
+                </h3>
+                <p className="text-sm text-blue-100">
+                  {isLoading ? (
+                    <span className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:0.1s]"></div>
+                      <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                      Typing...
+                    </span>
+                  ) : (
+                    'Online'
+                  )}
                 </p>
               </div>
             </div>
@@ -181,7 +200,7 @@ export function SupportChat() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsMinimized(!isMinimized)}
-                className="text-white hover:bg-blue-700 h-8 w-8 p-0"
+                className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full transition-all duration-200 hover:scale-110"
               >
                 <Minimize2 className="h-4 w-4" />
               </Button>
@@ -189,7 +208,7 @@ export function SupportChat() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsOpen(false)}
-                className="text-white hover:bg-blue-700 h-8 w-8 p-0"
+                className="text-white hover:bg-white/20 h-9 w-9 p-0 rounded-full transition-all duration-200 hover:scale-110"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -200,20 +219,20 @@ export function SupportChat() {
           {!isMinimized && (
             <>
               {/* Messages */}
-              <ScrollArea className="flex-1 p-4 h-64">
+              <ScrollArea className="flex-1 p-5 h-[340px]">
                 <div className="space-y-4">
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in-0 slide-in-from-bottom-2`}
                     >
-                      <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
+                      <div className={`max-w-[280px] px-4 py-3 rounded-2xl text-sm shadow-lg transition-all duration-200 hover:shadow-xl ${
                         msg.sender === 'user'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-900'
+                          ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-br-md'
+                          : 'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-900 rounded-bl-md border border-gray-200'
                       }`}>
-                        <p>{msg.text}</p>
-                        <p className={`text-xs mt-1 ${
+                        <p className="leading-relaxed">{msg.text}</p>
+                        <p className={`text-xs mt-2 ${
                           msg.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
                         }`}>
                           {formatTime(msg.timestamp)}
@@ -224,11 +243,15 @@ export function SupportChat() {
                   
                   {/* Loading indicator */}
                   {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="max-w-xs px-3 py-2 rounded-lg text-sm bg-gray-100 text-gray-900">
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>AI is thinking...</span>
+                    <div className="flex justify-start animate-in fade-in-0 slide-in-from-bottom-2">
+                      <div className="max-w-[280px] px-4 py-3 rounded-2xl text-sm bg-gradient-to-r from-gray-50 to-gray-100 text-gray-900 rounded-bl-md border border-gray-200 shadow-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.1s]"></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                          </div>
+                          <span className="text-gray-600">AI is thinking...</span>
                         </div>
                       </div>
                     </div>
@@ -237,24 +260,24 @@ export function SupportChat() {
               </ScrollArea>
 
               {/* Message Input */}
-              <div className="p-4 border-t">
+              <div className="p-5 border-t bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-2xl">
                 {error && (
-                  <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
+                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 animate-in fade-in-0 slide-in-from-top-2">
                     {error}
                   </div>
                 )}
-                <form onSubmit={handleSendMessage} className="flex gap-2">
+                <form onSubmit={handleSendMessage} className="flex gap-3">
                   <Input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder={isLoading ? "AI is responding..." : "Type your message..."}
-                    className="flex-1 text-sm"
+                    className="flex-1 text-sm rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-all duration-200 hover:border-gray-400"
                     disabled={isLoading}
                   />
                   <Button 
                     type="submit" 
                     size="sm" 
-                    className="px-3"
+                    className="px-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
                     disabled={isLoading || !message.trim()}
                   >
                     {isLoading ? (
