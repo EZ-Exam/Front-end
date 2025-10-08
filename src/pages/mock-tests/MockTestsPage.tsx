@@ -14,7 +14,9 @@ import {
   Filter, 
   RefreshCw,
   Trophy,
-  Play
+  Play,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import api from '@/services/axios';
 
@@ -25,19 +27,64 @@ export function MockTestsPage() {
   const [exams, setExams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // New state for ID-based filtering and sorting
+  const [subjectId, setSubjectId] = useState<string>('');
+  const [lessonId, setLessonId] = useState<string>('');
+  const [examTypeId, setExamTypeId] = useState<string>('');
+  const [createdById, setCreatedById] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('name');
+  const [sortOrder, setSortOrder] = useState<string>('asc');
+  const [pageNumber, setPageNumber] = useState<number>(1);
+  const [pageSize] = useState<number>(6);
+  const [totalPages, setTotalPages] = useState<number>(0);
 
   // Global loading hook
   const { withLoading } = useGlobalLoading();
 
-  // Fetch exams from API
+  // Fetch exams from API with query parameters
   useEffect(() => {
     const fetchExams = async () => {
       await withLoading(async () => {
         try {
           setLoading(true);
           setError(null);
-          const response = await api.get('/exams');
+          
+          // Build query parameters
+          const queryParams = new URLSearchParams();
+          
+          // Add search parameter
+          if (searchQuery.trim()) {
+            queryParams.append('search', searchQuery.trim());
+          }
+          
+          // Add ID-based filters
+          if (subjectId) queryParams.append('subjectId', subjectId);
+          if (lessonId) queryParams.append('lessonId', lessonId);
+          if (examTypeId) queryParams.append('examTypeId', examTypeId);
+          if (createdById) queryParams.append('createdById', createdById);
+          
+          // Add sorting parameters
+          if (sortBy && sortOrder) {
+            const sortValue = `${sortBy}:${sortOrder}`;
+            queryParams.append('sort', sortValue);
+            queryParams.append('isSort', '1');
+          }
+          
+          // Add pagination parameters
+          queryParams.append('pageNumber', pageNumber.toString());
+          queryParams.append('pageSize', pageSize.toString());
+          
+          const queryString = queryParams.toString();
+          const apiUrl = queryString ? `/exams?${queryString}` : '/exams';
+          
+          const response = await api.get(apiUrl);
           const examData = Array.isArray(response?.data?.items) ? response.data.items : (Array.isArray(response?.data) ? response.data : []);
+          
+          // Update pagination info if available
+          if (response?.data?.totalPages) {
+            setTotalPages(response.data.totalPages);
+          }
           
           // Fetch question count and order info for each exam
           const examsWithDetails = await Promise.all(
@@ -79,14 +126,15 @@ export function MockTestsPage() {
     };
 
     fetchExams();
-  }, [withLoading]);
+  }, [withLoading, searchQuery, subjectId, lessonId, examTypeId, createdById, sortBy, sortOrder, pageNumber, pageSize]);
 
+  // Since filtering is now done server-side via API, we use exams directly
+  // Keep client-side filtering for backward compatibility with existing UI filters
   const filteredTests = exams.filter(test => {
-    const matchesSearch = test.name?.toLowerCase().includes(searchQuery.toLowerCase()) || false;
     const matchesSubject = subjectFilter === 'all' || test.subjectName === subjectFilter;
     const matchesDifficulty = difficultyFilter === 'all' || test.difficultyLevel === difficultyFilter;
     
-    return matchesSearch && matchesSubject && matchesDifficulty;
+    return matchesSubject && matchesDifficulty;
   });
 
   const getDifficultyColor = (difficulty: string) => {
@@ -192,11 +240,11 @@ export function MockTestsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-4 gap-4">
+            <div className="grid md:grid-cols-5 gap-4">
               <div className="relative md:col-span-2">
                 <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <Input
-                  placeholder="Search mock tests by name or subject..."
+                  placeholder="Search mock tests by name or description..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-12 h-12 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-xl"
@@ -220,12 +268,41 @@ export function MockTestsPage() {
                 </SelectContent>
               </Select>
 
+              <Select value={`${sortBy}:${sortOrder}`} onValueChange={(value) => {
+                const [field, order] = value.split(':');
+                setSortBy(field);
+                setSortOrder(order);
+              }}>
+                <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="createdAt:desc">Newest first</SelectItem>
+                  <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+                  <SelectItem value="updatedAt:desc">Most recent update first</SelectItem>
+                  <SelectItem value="updatedAt:asc">Longest update first</SelectItem>
+                  <SelectItem value="name:asc">Name A→Z</SelectItem>
+                  <SelectItem value="name:desc">Name Z→A</SelectItem>
+                  <SelectItem value="totalQuestions:asc">Fewest questions</SelectItem>
+                  <SelectItem value="totalQuestions:desc">Most questions</SelectItem>
+                  <SelectItem value="timeLimit:asc">Shortest time</SelectItem>
+                  <SelectItem value="timeLimit:desc">Longest time</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Button 
                 variant="outline" 
                 onClick={() => {
                   setSearchQuery('');
                   setSubjectFilter('all');
                   setDifficultyFilter('all');
+                  setSubjectId('');
+                  setLessonId('');
+                  setExamTypeId('');
+                  setCreatedById('');
+                  setSortBy('name');
+                  setSortOrder('asc');
+                  setPageNumber(1);
                 }}
                 className="h-12 border-2 border-gray-200 hover:border-red-500 hover:text-red-600 rounded-xl"
               >
@@ -238,8 +315,11 @@ export function MockTestsPage() {
             <div className="mt-4 flex items-center justify-between">
               <p className="text-sm text-gray-600">
                 Showing <span className="font-semibold text-blue-600">{filteredTests.length}</span> of <span className="font-semibold">{exams.length}</span> tests
+                {totalPages > 1 && (
+                  <span className="ml-2">(Page {pageNumber} of {totalPages})</span>
+                )}
               </p>
-              {filteredTests.length !== exams.length && (
+              {(searchQuery || subjectFilter !== 'all' || subjectId || lessonId || examTypeId || createdById) && (
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                   Filtered Results
                 </Badge>
@@ -338,6 +418,47 @@ export function MockTestsPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+      
+      {/* Enhanced Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-12 flex justify-center">
+          <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 shadow-lg">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
+              disabled={pageNumber === 1}
+              className="rounded-lg"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={page === pageNumber ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPageNumber(page)}
+                className={`min-w-[40px] rounded-lg ${
+                  page === pageNumber 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0' 
+                    : ''
+                }`}
+              >
+                {page}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPageNumber(Math.min(totalPages, pageNumber + 1))}
+              disabled={pageNumber === totalPages}
+              className="rounded-lg"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
       </div>

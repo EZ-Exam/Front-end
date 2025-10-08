@@ -17,9 +17,10 @@ import {
   ChevronRight,
   Brain,
   Target,
-  Zap
+  Zap,
+  ChevronLeft
 } from 'lucide-react';
-import { Question } from '@/types';
+import { Question } from '@/types'; // Updated with difficultyLevelId
 import axios from '@/services/axios';
 
 export function QuestionBankPage() {
@@ -27,30 +28,70 @@ export function QuestionBankPage() {
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // New state for search, sort, and pagination
+  const [sortBy, setSortBy] = useState<string>('createdAt');
+  const [sortOrder, setSortOrder] = useState<string>('desc');
+  const [pageNumber, setPageNumber] = useState<number>(1);
+  const [pageSize] = useState<number>(6);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [totalItems, setTotalItems] = useState<number>(0);
 
   useEffect(() => {
     fetchQuestions();
-  }, []);
+  }, [searchQuery, sortBy, sortOrder, pageNumber]);
 
   const fetchQuestions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/questions?isSort=0');
-      console.log("Response",response.data);
-      setQuestions(response.data.items);
+      
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      
+      // Add search parameter
+      if (searchQuery.trim()) {
+        queryParams.append('search', searchQuery.trim());
+      }
+      
+      // Add sorting parameters
+      if (sortBy && sortOrder) {
+        const sortValue = `${sortBy}:${sortOrder}`;
+        queryParams.append('sort', sortValue);
+        queryParams.append('isSort', '1');
+      } else {
+        queryParams.append('isSort', '0');
+      }
+      
+      // Add pagination parameters
+      queryParams.append('pageNumber', pageNumber.toString());
+      queryParams.append('pageSize', pageSize.toString());
+      
+      const queryString = queryParams.toString();
+      const apiUrl = queryString ? `/questions?${queryString}` : '/questions?isSort=0';
+      
+      const response = await axios.get(apiUrl);
+      console.log("Response", response.data);
+      
+      setQuestions(response.data.items || []);
+      setTotalPages(response.data.totalPages || 0);
+      setTotalItems(response.data.totalItems || 0);
     } catch (error) {
       console.error('Error fetching questions:', error);
+      setQuestions([]);
+      setTotalPages(0);
+      setTotalItems(0);
     } finally {
       setLoading(false);
     }
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'bg-green-100 text-green-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getDifficultyInfo = (difficultyLevelId: number) => {
+    switch (difficultyLevelId) {
+      case 1: return { text: 'Dễ', color: 'bg-green-100 text-green-800' };
+      case 2: return { text: 'Trung bình', color: 'bg-yellow-100 text-yellow-800' };
+      case 3: return { text: 'Khó', color: 'bg-red-100 text-red-800' };
+      case 4: return { text: 'Rất khó', color: 'bg-purple-100 text-purple-800' };
+      default: return { text: 'Unknown', color: 'bg-gray-100 text-gray-800' };
     }
   };
 
@@ -70,18 +111,19 @@ export function QuestionBankPage() {
     );
   }
 
+  // Since filtering is now done server-side via API, we use questions directly
+  // Keep client-side filtering for backward compatibility with existing UI filters
   const filteredQuestions = questions.filter(question => {
-    const matchesSearch = question.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         question.lessonName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDifficulty = difficultyFilter === 'all' || question.difficultyLevel === difficultyFilter;
-    return matchesSearch && matchesDifficulty;
+    const matchesDifficulty = difficultyFilter === 'all' || question.difficultyLevelId?.toString() === difficultyFilter;
+    return matchesDifficulty;
   });
 
   const stats = {
-    total: questions.length,
-    easy: questions.filter(q => q.difficultyLevel === 'Easy').length,
-    medium: questions.filter(q => q.difficultyLevel === 'Medium').length,
-    hard: questions.filter(q => q.difficultyLevel === 'Hard').length,
+    total: totalItems,
+    easy: questions.filter(q => q.difficultyLevelId === 1).length,
+    medium: questions.filter(q => q.difficultyLevelId === 2).length,
+    hard: questions.filter(q => q.difficultyLevelId === 3).length,
+    veryHard: questions.filter(q => q.difficultyLevelId === 4).length,
   };
 
   return (
@@ -103,7 +145,7 @@ export function QuestionBankPage() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-8">
           <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -120,7 +162,7 @@ export function QuestionBankPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm font-medium">Easy</p>
+                  <p className="text-green-100 text-sm font-medium">Dễ</p>
                   <p className="text-3xl font-bold">{stats.easy}</p>
                 </div>
                 <Target className="h-8 w-8 text-green-200" />
@@ -132,7 +174,7 @@ export function QuestionBankPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-yellow-100 text-sm font-medium">Medium</p>
+                  <p className="text-yellow-100 text-sm font-medium">Trung bình</p>
                   <p className="text-3xl font-bold">{stats.medium}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-yellow-200" />
@@ -144,10 +186,22 @@ export function QuestionBankPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-red-100 text-sm font-medium">Hard</p>
+                  <p className="text-red-100 text-sm font-medium">Khó</p>
                   <p className="text-3xl font-bold">{stats.hard}</p>
                 </div>
                 <Zap className="h-8 w-8 text-red-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm font-medium">Rất khó</p>
+                  <p className="text-3xl font-bold">{stats.veryHard}</p>
+                </div>
+                <Brain className="h-8 w-8 text-purple-200" />
               </div>
             </CardContent>
           </Card>
@@ -158,15 +212,15 @@ export function QuestionBankPage() {
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-xl">
               <Filter className="h-5 w-5 text-blue-600" />
-              Search & Filter
+              Search & Filter Questions
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-4 gap-4">
+            <div className="grid md:grid-cols-5 gap-4">
               <div className="relative md:col-span-2">
                 <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <Input
-                  placeholder="Search questions or lessons..."
+                  placeholder="Search questions by content or source..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-12 h-12 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-xl"
@@ -175,13 +229,30 @@ export function QuestionBankPage() {
 
               <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
                 <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
-                  <SelectValue placeholder="All Difficulties" />
+                  <SelectValue placeholder="Tất cả độ khó" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Difficulties</SelectItem>
-                  <SelectItem value="Easy">Easy</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Hard">Hard</SelectItem>
+                  <SelectItem value="all">Tất cả độ khó</SelectItem>
+                  <SelectItem value="1">Dễ</SelectItem>
+                  <SelectItem value="2">Trung bình</SelectItem>
+                  <SelectItem value="3">Khó</SelectItem>
+                  <SelectItem value="4">Rất khó</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={`${sortBy}:${sortOrder}`} onValueChange={(value) => {
+                const [field, order] = value.split(':');
+                setSortBy(field);
+                setSortOrder(order);
+              }}>
+                <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="createdAt:desc">Newest first</SelectItem>
+                  <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+                  <SelectItem value="content:asc">Content A→Z</SelectItem>
+                  <SelectItem value="content:desc">Content Z→A</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -190,6 +261,9 @@ export function QuestionBankPage() {
                 onClick={() => {
                   setSearchQuery('');
                   setDifficultyFilter('all');
+                  setSortBy('createdAt');
+                  setSortOrder('desc');
+                  setPageNumber(1);
                 }}
                 className="h-12 border-2 border-gray-200 hover:border-red-500 hover:text-red-600 rounded-xl"
               >
@@ -201,9 +275,12 @@ export function QuestionBankPage() {
             {/* Results count */}
             <div className="mt-4 flex items-center justify-between">
               <p className="text-sm text-gray-600">
-                Showing <span className="font-semibold text-blue-600">{filteredQuestions.length}</span> of <span className="font-semibold">{questions.length}</span> questions
+                Showing <span className="font-semibold text-blue-600">{filteredQuestions.length}</span> of <span className="font-semibold">{totalItems}</span> questions
+                {totalPages > 1 && (
+                  <span className="ml-2">(Page {pageNumber} of {totalPages})</span>
+                )}
               </p>
-              {filteredQuestions.length !== questions.length && (
+              {(searchQuery || difficultyFilter !== 'all') && (
                 <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                   Filtered Results
                 </Badge>
@@ -288,9 +365,9 @@ export function QuestionBankPage() {
                   
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge 
-                      className={`${getDifficultyColor(question.difficultyLevel)} border-0 font-semibold`}
+                      className={`${getDifficultyInfo(question.difficultyLevelId).color} border-0 font-semibold`}
                     >
-                      {question.difficultyLevel}
+                      {getDifficultyInfo(question.difficultyLevelId).text}
                     </Badge>
                     <Badge variant="secondary" className="bg-gray-100 text-gray-700">
                       {question.questionSource}
@@ -314,6 +391,47 @@ export function QuestionBankPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        )}
+        
+        {/* Enhanced Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-12 flex justify-center">
+            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 shadow-lg">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
+                disabled={pageNumber === 1}
+                className="rounded-lg"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={page === pageNumber ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPageNumber(page)}
+                  className={`min-w-[40px] rounded-lg ${
+                    page === pageNumber 
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0' 
+                      : ''
+                  }`}
+                >
+                  {page}
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPageNumber(Math.min(totalPages, pageNumber + 1))}
+                disabled={pageNumber === totalPages}
+                className="rounded-lg"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
       </div>

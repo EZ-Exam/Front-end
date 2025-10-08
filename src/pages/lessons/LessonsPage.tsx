@@ -255,12 +255,12 @@ export function LessonsPage() {
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="createdAt:desc">Mới nhất trước</SelectItem>
-                  <SelectItem value="createdAt:asc">Cũ nhất trước</SelectItem>
-                  <SelectItem value="updatedAt:desc">Cập nhật gần nhất trước</SelectItem>
-                  <SelectItem value="updatedAt:asc">Cập nhật lâu nhất trước</SelectItem>
-                  <SelectItem value="title:asc">Tên A→Z</SelectItem>
-                  <SelectItem value="title:desc">Tên Z→A</SelectItem>
+                  <SelectItem value="createdAt:desc">Newest first</SelectItem>
+                  <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+                  <SelectItem value="updatedAt:desc">Most recent update first</SelectItem>
+                  <SelectItem value="updatedAt:asc">Longest update first</SelectItem>
+                  <SelectItem value="title:asc">Name A→Z</SelectItem>
+                  <SelectItem value="title:desc">Name Z→A</SelectItem>
                 </SelectContent>
               </Select>
 

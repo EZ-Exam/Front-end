@@ -73,6 +73,7 @@ export interface Question {
   content: string;
   questionSource: string;
   difficultyLevel: 'Easy' | 'Medium' | 'Hard';
+  difficultyLevelId: number;
   createdByUserName: string;
   lessonName: string;
   chapterName?: string;
