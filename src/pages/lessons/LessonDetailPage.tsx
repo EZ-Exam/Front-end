@@ -308,7 +308,7 @@ export function LessonDetailPage() {
 
       {/* Lesson Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="pdf" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             PDF Lesson
@@ -316,10 +316,6 @@ export function LessonDetailPage() {
           <TabsTrigger value="quiz" className="flex items-center gap-2">
             <RotateCcw className="h-4 w-4" />
             Quiz
-          </TabsTrigger>
-          <TabsTrigger value="comments" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Comments ({mockComments.length})
           </TabsTrigger>
         </TabsList>
 
@@ -488,83 +484,6 @@ export function LessonDetailPage() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="comments" className="space-y-6">
-          {/* Add Comment */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Join the Discussion</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmitComment} className="space-y-4">
-                <Textarea
-                  placeholder="Share your thoughts or ask a question..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="resize-none"
-                />
-                <Button type="submit" disabled={!newComment.trim()}>
-                  Post Comment
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Comments List */}
-          <div className="space-y-4">
-            {mockComments.map((comment) => (
-              <Card key={comment.id}>
-                <CardContent className="pt-4">
-                  <div className="flex items-start gap-3">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src="" />
-                      <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{comment.userName}</span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(comment.timestamp).toLocaleDateString()}
-                        </span>
-                      </div>
-                      
-                      <p className="text-sm text-gray-700">{comment.content}</p>
-                      
-                      {comment.replies && comment.replies.length > 0 && (
-                        <div className="mt-4 pl-4 border-l-2 border-gray-100 space-y-3">
-                          {comment.replies.map((reply) => (
-                            <div key={reply.id} className="flex items-start gap-3">
-                              <Avatar className="w-6 h-6">
-                                <AvatarImage src="" />
-                                <AvatarFallback className="text-xs">{reply.userName.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-xs">{reply.userName}</span>
-                                  <span className="text-xs text-gray-500">
-                                    {new Date(reply.timestamp).toLocaleDateString()}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-gray-700 mt-1">{reply.content}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <Button variant="ghost" size="sm" className="text-xs h-8 px-2">
-                        Reply
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
       </Tabs>
     </div>
   );

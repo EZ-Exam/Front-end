@@ -8,33 +8,25 @@ import {
   Camera, 
   Mail, 
   Calendar, 
-  Target, 
   Phone, 
   User, 
   Edit3, 
   Save, 
   X, 
-  Shield, 
-  Award, 
   TrendingUp,
   BookOpen,
   Trophy,
-  Clock,
-  CheckCircle,
-  Sparkles,
-  Settings,
-  Bell,
-  Lock
+  CheckCircle
 } from 'lucide-react';
-import { mockProgressData } from '@/data/mockData';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import api from '@/services/axios';
-import { toast, ToastContainer } from 'react-toastify';
 import { uploadImgBBOneFile } from '@/services/imgBB';
+import { useToast } from '@/contexts/ToastContext';
 
 export function ProfilePage() {
   const { user, setUser, isAuthenticated } = useAuth();
+  const { success, error } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -91,11 +83,7 @@ export function ProfilePage() {
         }
       } catch (error: any) {
         console.error('Error fetching user data:', error);
-        toast.error(error.response?.data?.message || "Failed to load profile data", {
-          position: "top-center",
-          theme: "light",
-          autoClose: 2000
-        });
+        error(error.response?.data?.message || "Không thể tải dữ liệu hồ sơ", "Lỗi tải dữ liệu");
       } finally {
         setIsLoading(false);
       }
@@ -118,11 +106,7 @@ export function ProfilePage() {
         // Lấy userId từ user context
         const userId = user?.id;
         if (!userId) {
-          toast.error("User ID not found", {
-            position: "top-center",
-            theme: "light",
-            autoClose: 2000
-          });
+          error("Không tìm thấy ID người dùng", "Lỗi xác thực");
           return;
         }
     
@@ -135,11 +119,7 @@ export function ProfilePage() {
             console.log("Uploaded ImgBB URL:", avatarUrlToSave);
           } catch (uploadError) {
             console.error("Image upload failed:", uploadError);
-            toast.error("Failed to upload image", {
-              position: "top-center",
-              theme: "light",
-              autoClose: 2000
-            });
+            error("Tải ảnh lên thất bại", "Lỗi tải ảnh");
             return;
           }
         }
@@ -171,11 +151,7 @@ export function ProfilePage() {
               : null
           );
     
-          toast.success("Profile updated successfully", {
-            position: "top-center",
-            theme: "light",
-            autoClose: 2000
-          });
+          success("Cập nhật hồ sơ thành công!", "Thành công");
 
           setTimeout(() => {
             window.location.reload();
@@ -184,11 +160,7 @@ export function ProfilePage() {
         }
       } catch (error: any) {
         console.error('Error updating profile:', error);
-        toast.error(error.response?.data?.message || "Failed to update profile", {
-          position: "top-center",
-          theme: "light",
-          autoClose: 2000
-        });
+        error(error.response?.data?.message || "Cập nhật hồ sơ thất bại", "Lỗi cập nhật");
       } finally {
         setIsLoading(false);
       }
@@ -210,21 +182,13 @@ export function ProfilePage() {
     if (file) {
       // Kiểm tra loại file
       if (!file.type.startsWith('image/')) {
-        toast.error("Please select an image file", {
-          position: "top-center",
-          theme: "light",
-          autoClose: 2000
-        });
+        error("Vui lòng chọn file ảnh", "Thiếu file ảnh");
         return;
       }
 
       // Kiểm tra kích thước file (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size should be less than 5MB", {
-          position: "top-center",
-          theme: "light",
-          autoClose: 2000
-        });
+        error("Kích thước ảnh phải nhỏ hơn 5MB", "File quá lớn");
         return;
       }
 
@@ -266,7 +230,6 @@ export function ProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
-        <ToastContainer />
         
         {/* Enhanced Header */}
         <div className="text-center mb-12">

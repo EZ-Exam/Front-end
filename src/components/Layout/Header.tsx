@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Search, Menu, Crown, User, Star, Infinity } from 'lucide-react';
+import { Search, Menu, Crown, User, Star, Infinity, LogIn, UserPlus } from 'lucide-react';
 import EZEXAMLogo from '@/assest/EZEXAM_Icon.png';
 import {NotificationDropdown} from '@/components/Layout/NotificationDropdown';
 import { CreateContentDropdown } from './CreateContentDropdown';
@@ -118,7 +118,35 @@ export function Header({ onMenuToggle }: HeaderProps) {
           );
         })()}
 
-        <AccountDropdown />
+        {/* Authentication Buttons for Unauthenticated Users */}
+        {!checkUserAuthentication() && (
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="hidden sm:flex items-center gap-2 px-4 py-2 border-2 border-blue-200 hover:border-blue-500 hover:bg-blue-50 text-blue-600 hover:text-blue-700 font-semibold transition-all duration-300 hover:scale-105 rounded-xl shadow-md hover:shadow-lg"
+              asChild
+            >
+              <Link to="/login">
+                <LogIn className="h-4 w-4" />
+                Đăng nhập
+              </Link>
+            </Button>
+            
+            <Button 
+              size="sm" 
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold transition-all duration-300 hover:scale-105 rounded-xl shadow-lg hover:shadow-xl"
+              asChild
+            >
+              <Link to="/register">
+                <UserPlus className="h-4 w-4" />
+                Đăng ký
+              </Link>
+            </Button>
+          </div>
+        )}
+
+        {checkUserAuthentication() && <AccountDropdown />}
       </div>
     </header>
   );

@@ -18,6 +18,8 @@ import { CreateMockTestPage } from '@/pages/mock-tests/CreateMockTestPage';
 import { QuestionBankPage } from '@/pages/question-bank/QuestionBankPage';
 import { NotificationsPage } from '@/pages/NotificationPage';
 import { QuestionBankDetailPage } from '@/pages/question-bank/QuestionBankDetailPage';
+import { TermsOfServicePage } from '@/pages/TermsOfServicePage';
+import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
 
 export function AppRouter() {
   return (
@@ -26,6 +28,10 @@ export function AppRouter() {
         {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        
+        {/* Legal Pages */}
+        <Route path="/terms" element={<TermsOfServicePage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
         
         {/* Protected Routes */}
         <Route path="/" element={<Layout />}>

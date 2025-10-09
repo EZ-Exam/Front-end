@@ -11,13 +11,14 @@ import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import { ArrowLeft, Save } from 'lucide-react';
 // import { mockQuestionSets } from '@/data/mockData';
 import api from '@/services/axios';
-import { toast, ToastContainer } from 'react-toastify';
+import { useToast } from '@/contexts/ToastContext';
 
 export function CreateMockTestPage() {
   const navigate = useNavigate();
   
   // Global loading hook
   const { withLoading } = useGlobalLoading();
+  const { success, error } = useToast();
   
   const [mockTestForm, setMockTestForm] = useState({
     name: '',
@@ -236,25 +237,17 @@ export function CreateMockTestPage() {
         
         // Success - show toast and navigate
         console.log('Showing success toast...');
-        toast.success("Mock test created successfully", {
-          position: "top-center",
-          theme: "light",
-          autoClose: 3000
-        });
+        success("Tạo bài thi thử thành công!", "Thành công");
         
         // Delay navigation to allow toast to show
         setTimeout(() => {
           navigate('/mock-tests');
         }, 1000);
         
-      } catch (error) {
-        console.error('Error creating mock test:', error);
+      } catch (err: any) {
+        console.error('Error creating mock test:', err);
         console.log('Showing error toast...');
-        toast.error("Failed to create mock test. Please try again.", {
-          position: "top-center",
-          theme: "light",
-          autoClose: 5000
-        });
+        error("Tạo bài thi thử thất bại. Vui lòng thử lại.", "Lỗi");
       }
     }, "Đang tạo bài thi thử mới...");
   };
@@ -267,7 +260,6 @@ export function CreateMockTestPage() {
 
   return (
     <div className="space-y-6 flex flex-col items-center">
-      <ToastContainer />
       <div className="flex items-center gap-4 w-full">
         <Button variant="ghost" size="sm" asChild>
           <Link to="/mock-tests">

@@ -13,7 +13,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -21,17 +20,15 @@ import {
   LogOut, 
   Settings, 
   PlusCircle, 
-  MinusCircle, 
   TrendingUp,
-  Building2,
   Crown,
   Sparkles,
   Zap,
   Star,
   Infinity
 } from 'lucide-react';
-import { mockUserAccount, mockBankAccounts } from '@/data/mockData';
 import { useAuth } from '@/pages/auth/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
 
 // Define subscription type interface
 interface SubscriptionType {
@@ -51,16 +48,52 @@ interface SubscriptionType {
   updatedByName: string | null;
 }
 
+// Define current subscription interface from API response
+interface CurrentSubscription {
+  userId: number;
+  userEmail: string;
+  subscriptionTypeId: number;
+  subscriptionCode: string;
+  subscriptionName: string;
+  subscriptionPrice: number;
+  startDate: string;
+  endDate: string | null;
+  paymentStatus: string;
+  isActive: boolean;
+  message: string;
+}
+
 export function AccountDropdown() {
   const { user, logout, isAuthenticated } = useAuth();
+  const { success, error } = useToast();
   const navigate = useNavigate();
-  const [activeDialog, setActiveDialog] = useState<'bank' | 'deposit' | 'withdrawal' | 'upgrade' | null>(null);
+  const [activeDialog, setActiveDialog] = useState<'deposit' | 'upgrade' | null>(null);
   const [depositAmount, setDepositAmount] = useState('');
-  const [withdrawalAmount, setWithdrawalAmount] = useState('');
-  const [selectedBank, setSelectedBank] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [subscriptionTypes, setSubscriptionTypes] = useState<SubscriptionType[]>([]);
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(false);
+  const [currentSubscription, setCurrentSubscription] = useState<CurrentSubscription | null>(null);
+  const [isLoadingCurrentSubscription, setIsLoadingCurrentSubscription] = useState(false);
+
+  // Predefined deposit amounts
+  const predefinedAmounts = [2000, 5000, 10000, 50000, 100000, 500000];
+
+  // Function to format number with Vietnamese locale
+  const formatCurrency = (amount: number | string): string => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(numAmount)) return '0';
+    return numAmount.toLocaleString('vi-VN');
+  };
+
+  // Function to parse formatted currency back to number
+  const parseCurrency = (formattedAmount: string): number => {
+    return parseFloat(formattedAmount.replace(/[.,]/g, '')) || 0;
+  };
+
+  // Function to handle predefined amount selection
+  const handlePredefinedAmount = (amount: number) => {
+    setDepositAmount(formatCurrency(amount));
+  };
 
   // User data is now managed by AuthContext, no need to fetch here
 
@@ -80,12 +113,36 @@ export function AccountDropdown() {
     }
   };
 
+  // Fetch current subscription from API
+  const fetchCurrentSubscription = async () => {
+    setIsLoadingCurrentSubscription(true);
+    try {
+      const response = await api.get('/subscription/current');
+      if (response.status === 200) {
+        setCurrentSubscription(response.data);
+        console.log('Current subscription loaded:', response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching current subscription:', error);
+      setCurrentSubscription(null);
+    } finally {
+      setIsLoadingCurrentSubscription(false);
+    }
+  };
+
   // Load subscription types when upgrade dialog opens
   useEffect(() => {
     if (activeDialog === 'upgrade' && subscriptionTypes.length === 0) {
       fetchSubscriptionTypes();
     }
   }, [activeDialog]);
+
+  // Load current subscription when component mounts and user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchCurrentSubscription();
+    }
+  }, [isAuthenticated, user]);
 
 
   const handleLogin = () => {
@@ -105,41 +162,42 @@ export function AccountDropdown() {
     navigate('/settings');
   };
 
-  const handleDeposit = (e: React.FormEvent) => {
+  const handleDeposit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Deposit:', depositAmount);
-    setActiveDialog(null);
-    setDepositAmount('');
-  };
+    
+    const amount = parseCurrency(depositAmount);
+    
+    // Validation
+    if (amount < 2000) {
+      error('Minimum deposit amount is 2,000 VND', 'Invalid Amount');
+      return;
+    }
 
-  const handleWithdrawal = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Withdrawal:', withdrawalAmount, 'to bank:', selectedBank);
-    setActiveDialog(null);
-    setWithdrawalAmount('');
-    setSelectedBank('');
-  };
+    if (amount > 10000000) {
+      error('Maximum deposit amount is 10,000,000 VND', 'Invalid Amount');
+      return;
+    }
 
-  // Function to handle subscription upgrade
-  const handleUpgradeSubscription = async (subscriptionType: SubscriptionType) => {
-    if (!user) {
-      console.error('User not found');
+    if (!user?.id) {
+      error('User not found. Please login again.', 'Authentication Error');
       return;
     }
 
     setIsLoading(true);
     try {
+      // Prepare payload according to API specification
       const payload = {
         userId: parseInt(user.id),
-        subscriptionTypeId: subscriptionType.id,
-        itemName: subscriptionType.subscriptionName,
+        subscriptionTypeId: 1,
+        itemName: "Deposit",
         quantity: 1,
-        amount: subscriptionType.subscriptionPrice * 100, // Convert to cents if needed
-        description: `${user.fullName} mua gói ${subscriptionType.subscriptionName}`
+        amount: Math.floor(amount), // Convert to integer, no decimal points
+        description: "Deposit for EZEXAM"
       };
 
-      console.log('Creating payment with payload:', payload);
+      console.log('Creating deposit payment with payload:', payload);
       
+      // Call the deposit API
       const response = await api.post('/payments/create-payment', payload);
       
       if (response.status === 200 || response.status === 201) {
@@ -151,13 +209,74 @@ export function AccountDropdown() {
           window.location.href = response.data.checkoutUrl;
         } else {
           console.warn('No checkoutUrl found in response:', response.data);
-          alert('Payment created but no checkout URL provided');
+          success(`Deposit payment created successfully for ${formatCurrency(amount)} VND`, 'Success');
+          setActiveDialog(null);
+          setDepositAmount('');
         }
       }
-    } catch (error) {
-      console.error('Error creating payment:', error);
-      // You can add error notification here
-      alert('Error creating payment. Please try again.');
+    } catch (err: any) {
+      console.error('Error creating deposit payment:', err);
+      
+      // Handle different error scenarios
+      if (err.response?.data?.message) {
+        error(err.response.data.message, 'Deposit Error');
+      } else if (err.response?.status === 401) {
+        error('Authentication failed. Please login again.', 'Authentication Error');
+      } else if (err.response?.status === 400) {
+        error('Invalid deposit amount or user data.', 'Validation Error');
+      } else {
+        error('An error occurred while creating deposit payment. Please try again.', 'Deposit Error');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  // Function to handle subscription upgrade
+  const handleUpgradeSubscription = async (subscriptionType: SubscriptionType) => {
+    if (!user) {
+      error('User not found. Please login again.', 'Authentication Error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const payload = {
+        subscriptionTypeId: subscriptionType.id,
+        description: `${user.fullName} subscribed to ${subscriptionType.subscriptionName} plan`
+      };
+
+      console.log('Subscribing to subscription with payload:', payload);
+      
+      const response = await api.post('/subscription/subscribe', payload);
+      
+      if (response.status === 200 || response.status === 201) {
+        console.log('Subscription created successfully:', response.data);
+        
+        success(`Successfully subscribed to ${subscriptionType.subscriptionName} plan!`, 'Subscription Success');
+        
+        // Close the modal
+        setActiveDialog(null);
+        
+        // Refresh current subscription data
+        await fetchCurrentSubscription();
+      }
+    } catch (err: any) {
+      console.error('Error subscribing to plan:', err);
+      
+      // Handle different error scenarios
+      if (err.response?.data?.message) {
+        error(err.response.data.message, 'Subscription Error');
+      } else if (err.response?.status === 401) {
+        error('Authentication failed. Please login again.', 'Authentication Error');
+      } else if (err.response?.status === 400) {
+        error('Invalid subscription data or user already subscribed.', 'Validation Error');
+      } else if (err.response?.status === 403) {
+        error('You do not have permission to subscribe to this plan.', 'Permission Error');
+      } else {
+        error('An error occurred while subscribing. Please try again.', 'Subscription Error');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -166,8 +285,8 @@ export function AccountDropdown() {
 
   // Function to check if a package is the current plan
   const isCurrentPlan = (subscriptionType: SubscriptionType) => {
-    const currentSubscription = user?.subscriptionName?.toLowerCase() || 'free';
-    return currentSubscription === subscriptionType.subscriptionName.toLowerCase();
+    if (!currentSubscription || !currentSubscription.isActive) return false;
+    return currentSubscription.subscriptionTypeId === subscriptionType.id;
   };
 
   // Function to get package styling based on subscription type
@@ -266,24 +385,31 @@ export function AccountDropdown() {
                     {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <div>
+                <div className="flex-1">
                   <p className="font-bold text-gray-800">{user?.fullName || 'User'}</p>
                   <p className="text-sm text-gray-600">{user?.email || 'No email'}</p>
+                  {isLoadingCurrentSubscription ? (
+                    <div className="flex items-center gap-1 mt-1">
+                      <div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs text-gray-500">Loading subscription...</span>
+                    </div>
+                  ) : currentSubscription && currentSubscription.isActive ? (
+                    <div className="mt-1">
+                      <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 text-xs px-2 py-1">
+                        {currentSubscription.subscriptionName || 'Active Plan'}
+                      </Badge>
+                    </div>
+                  ) : (
+                    <div className="mt-1">
+                      <Badge variant="outline" className="text-xs px-2 py-1 border-gray-300 text-gray-600">
+                        Free Plan
+                      </Badge>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             <DropdownMenuSeparator className="my-2" />
-            <DropdownMenuItem onClick={() => setActiveDialog('bank')} className="p-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 rounded-lg transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
-                  <Building2 className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <div className="font-semibold text-blue-600">Bank Accounts</div>
-                  <div className="text-xs text-gray-500">Manage your accounts</div>
-                </div>
-              </div>
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setActiveDialog('deposit')} className="p-3 hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 rounded-lg transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg">
@@ -292,17 +418,6 @@ export function AccountDropdown() {
                 <div>
                   <div className="font-semibold text-green-600">Deposit Funds</div>
                   <div className="text-xs text-gray-500">Add money to account</div>
-                </div>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setActiveDialog('withdrawal')} className="p-3 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 rounded-lg transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg">
-                  <MinusCircle className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <div className="font-semibold text-orange-600">Withdraw Funds</div>
-                  <div className="text-xs text-gray-500">Transfer to bank</div>
                 </div>
               </div>
             </DropdownMenuItem>
@@ -360,48 +475,9 @@ export function AccountDropdown() {
         </Button>
       )}
 
-      {/* Bank Accounts Dialog */}
-      <Dialog open={activeDialog === 'bank'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl">
-          <DialogHeader className="pb-6">
-            <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
-                <Building2 className="h-6 w-6 text-white" />
-              </div>
-              Bank Accounts
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {mockBankAccounts.map((account) => (
-              <Card key={account.id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-gray-800 text-lg">{account.bankName}</h4>
-                      <p className="text-sm text-gray-600 font-medium">{account.accountNumber}</p>
-                      <p className="text-sm text-gray-600">{account.accountHolder}</p>
-                    </div>
-                    {account.isDefault && (
-                      <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-md">
-                        <Star className="w-3 h-3 mr-1" />
-                        Default
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            <Button className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold">
-              <PlusCircle className="mr-2 h-5 w-5" />
-              Add Bank Account
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Deposit Dialog */}
       <Dialog open={activeDialog === 'deposit'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl">
+        <DialogContent className="bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl max-w-md">
           <DialogHeader className="pb-6">
             <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
               <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg">
@@ -411,103 +487,107 @@ export function AccountDropdown() {
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleDeposit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="deposit-amount" className="text-sm font-semibold text-gray-700">Amount ($)</Label>
-              <Input
-                id="deposit-amount"
-                type="number"
-                step="0.01"
-                min="10"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                placeholder="Enter amount to deposit"
-                required
-                className="border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 h-12 text-lg"
-              />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="deposit-amount" className="text-sm font-semibold text-gray-700">
+                  Deposit Amount (VND)
+                </Label>
+                <Input
+                  id="deposit-amount"
+                  type="text"
+                  value={depositAmount}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    if (value) {
+                      setDepositAmount(formatCurrency(value));
+                    } else {
+                      setDepositAmount('');
+                    }
+                  }}
+                  placeholder="Enter amount to deposit"
+                  required
+                  className="border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 h-12 text-lg font-semibold"
+                />
+                <p className="text-xs text-gray-500">
+                  Minimum: 2,000 VND - Maximum: 10,000,000 VND
+                </p>
+              </div>
+
+              {/* Predefined Amount Buttons */}
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-gray-700">
+                  Quick Select Amount
+                </Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {predefinedAmounts.map((amount) => (
+                    <Button
+                      key={amount}
+                      type="button"
+                      variant="outline"
+                      onClick={() => handlePredefinedAmount(amount)}
+                      className={`h-12 border-2 transition-all duration-300 hover:scale-105 ${
+                        parseCurrency(depositAmount) === amount
+                          ? 'border-green-500 bg-green-50 text-green-700 font-semibold'
+                          : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                      }`}
+                    >
+                      <span className="font-semibold">{formatCurrency(amount)} VND</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Current Balance Display */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Current Balance</p>
+                    <p className="text-lg font-bold text-green-600">
+                      {user?.balance ? formatCurrency(user.balance) : '0'} VND
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-600">After Deposit</p>
+                    <p className="text-lg font-bold text-blue-600">
+                      {depositAmount ? formatCurrency(parseCurrency(depositAmount) + (user?.balance || 0)) : formatCurrency(user?.balance || 0)} VND
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-gray-700">Payment Method</Label>
-              <Select>
-                <SelectTrigger className="border-2 border-gray-200 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 h-12">
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 backdrop-blur-sm border-0 shadow-xl rounded-xl">
-                  <SelectItem value="card">Credit/Debit Card</SelectItem>
-                  <SelectItem value="bank">Bank Transfer</SelectItem>
-                  <SelectItem value="paypal">PayPal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
             <div className="flex justify-end gap-4 pt-4">
-              <Button type="button" variant="outline" onClick={() => setActiveDialog(null)} className="h-12 px-6 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 transition-all duration-300 rounded-xl">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setActiveDialog(null)} 
+                className="h-12 px-6 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 transition-all duration-300 rounded-xl"
+                disabled={isLoading}
+              >
                 Cancel
               </Button>
-              <Button type="submit" className="h-12 px-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold">
-                <Zap className="mr-2 h-5 w-5" />
-                Deposit
+              <Button 
+                type="submit" 
+                className="h-12 px-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold disabled:opacity-50"
+                disabled={isLoading || !depositAmount || parseCurrency(depositAmount) < 2000}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Zap className="mr-2 h-5 w-5" />
+                    Deposit
+                  </div>
+                )}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Withdrawal Dialog */}
-      <Dialog open={activeDialog === 'withdrawal'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl">
-          <DialogHeader className="pb-6">
-            <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg">
-                <MinusCircle className="h-6 w-6 text-white" />
-              </div>
-              Withdraw Funds
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleWithdrawal} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="withdrawal-amount" className="text-sm font-semibold text-gray-700">Amount ($)</Label>
-              <Input
-                id="withdrawal-amount"
-                type="number"
-                step="0.01"
-                min="10"
-                max={mockUserAccount.balance}
-                value={withdrawalAmount}
-                onChange={(e) => setWithdrawalAmount(e.target.value)}
-                placeholder="Enter amount to withdraw"
-                required
-                className="border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-300 h-12 text-lg"
-              />
-              <p className="text-xs text-gray-500 bg-gray-100 px-3 py-2 rounded-lg">
-                Available balance: ${mockUserAccount.balance.toFixed(2)}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold text-gray-700">Bank Account</Label>
-              <Select value={selectedBank} onValueChange={setSelectedBank}>
-                <SelectTrigger className="border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all duration-300 h-12">
-                  <SelectValue placeholder="Select bank account" />
-                </SelectTrigger>
-                <SelectContent className="bg-white/95 backdrop-blur-sm border-0 shadow-xl rounded-xl">
-                  {mockBankAccounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.bankName} - {account.accountNumber}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-4 pt-4">
-              <Button type="button" variant="outline" onClick={() => setActiveDialog(null)} className="h-12 px-6 border-2 border-gray-300 hover:border-red-500 hover:bg-red-50 transition-all duration-300 rounded-xl">
-                Cancel
-              </Button>
-              <Button type="submit" className="h-12 px-8 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold">
-                <Zap className="mr-2 h-5 w-5" />
-                Withdraw
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
 
       {/* Upgrade Package Dialog */}
       <Dialog open={activeDialog === 'upgrade'} onOpenChange={() => setActiveDialog(null)}>

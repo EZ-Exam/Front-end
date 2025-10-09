@@ -15,11 +15,19 @@ import {
   Sparkles,
   Rocket,
   Award,
-  Lightbulb
+  Lightbulb,
+  LogIn,
+  UserPlus,
+  Star,
+  Shield,
+  CheckCircle
 } from 'lucide-react';
 import EZEXAMLogo from '@/assest/EZEXAM_Icon.png';
+import { useAuth } from '@/pages/auth/AuthContext';
 
 export function HomePage() {
+  const { isAuthenticated } = useAuth();
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
@@ -99,6 +107,104 @@ export function HomePage() {
                 </Link>
               </Button>
             </div>
+
+            {/* Authentication Section for Unauthenticated Users */}
+            {!isAuthenticated && (
+              <div className="mb-12">
+                <Card className="max-w-4xl mx-auto bg-gradient-to-r from-blue-50 via-white to-purple-50 border-0 shadow-2xl">
+                  <CardHeader className="text-center pb-6">
+                    <CardTitle className="text-3xl font-bold mb-2">
+                      <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        Bắt đầu hành trình học tập của bạn
+                      </span>
+                    </CardTitle>
+                    <CardDescription className="text-lg text-gray-600">
+                      Tham gia cùng hàng nghìn học sinh đã cải thiện điểm số với EZEXAM
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-8">
+                    <div className="grid md:grid-cols-2 gap-8">
+                      {/* Login Card */}
+                      <Card className="border-2 border-blue-200 hover:border-blue-400 transition-all duration-300 hover:shadow-lg bg-white/80">
+                        <CardHeader className="text-center pb-4">
+                          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <LogIn className="h-8 w-8 text-white" />
+                          </div>
+                          <CardTitle className="text-xl font-bold text-blue-800">Đã có tài khoản?</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-center">
+                          <p className="text-gray-600 mb-6 leading-relaxed">
+                            Đăng nhập để tiếp tục hành trình học tập và truy cập vào tất cả tính năng của EZEXAM
+                          </p>
+                          <Button 
+                            size="lg" 
+                            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+                            asChild
+                          >
+                            <Link to="/login">
+                              <LogIn className="mr-2 h-5 w-5" />
+                              Đăng nhập ngay
+                            </Link>
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      {/* Register Card */}
+                      <Card className="border-2 border-purple-200 hover:border-purple-400 transition-all duration-300 hover:shadow-lg bg-white/80">
+                        <CardHeader className="text-center pb-4">
+                          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <UserPlus className="h-8 w-8 text-white" />
+                          </div>
+                          <CardTitle className="text-xl font-bold text-purple-800">Chưa có tài khoản?</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-center">
+                          <p className="text-gray-600 mb-6 leading-relaxed">
+                            Tạo tài khoản miễn phí và khám phá thế giới học tập AI-powered của EZEXAM
+                          </p>
+                          <Button 
+                            size="lg" 
+                            className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
+                            asChild
+                          >
+                            <Link to="/register">
+                              <UserPlus className="mr-2 h-5 w-5" />
+                              Đăng ký miễn phí
+                            </Link>
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Benefits List */}
+                    <div className="mt-8 pt-8 border-t border-gray-200">
+                      <h3 className="text-xl font-bold text-center mb-6 text-gray-800">
+                        Tại sao chọn EZEXAM?
+                      </h3>
+                      <div className="grid md:grid-cols-3 gap-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                          </div>
+                          <span className="text-gray-700 font-medium">Học tập AI-powered</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Star className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <span className="text-gray-700 font-medium">Nội dung chất lượng cao</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                            <Shield className="h-5 w-5 text-purple-600" />
+                          </div>
+                          <span className="text-gray-700 font-medium">Bảo mật tuyệt đối</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">

@@ -17,11 +17,12 @@ import api from '@/services/axios';
 import { uploadImgBBMultipleFile } from '@/services/imgBB';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { addStyles, EditableMathField } from 'react-mathquill';
-import { toast, ToastContainer } from 'react-toastify';
+import { useToast } from '@/contexts/ToastContext';
 addStyles();
 
 export function CreateContentDropdown() {
   const { user } = useAuth();
+  const { success, error } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [activeDialog, setActiveDialog] = useState<'single-question' | null>(null);
   const [singleQuestionForm, setSingleQuestionForm] = useState({
@@ -54,51 +55,51 @@ export function CreateContentDropdown() {
     try {
       // Required field validation
       if (!singleQuestionForm.content || singleQuestionForm.content.trim() === '') {
-        toast.error('Question is required');
+        error('Câu hỏi là bắt buộc', 'Thiếu thông tin');
         return;
       }
       if (!singleQuestionForm.subjectId) {
-        toast.error('Subject is required');
+        error('Môn học là bắt buộc', 'Thiếu thông tin');
         return;
       }
       if (!singleQuestionForm.difficultyLevelId) {
-        toast.error('Difficulty is required');
+        error('Độ khó là bắt buộc', 'Thiếu thông tin');
         return;
       }
       if (!singleQuestionForm.gradeId) {
-        toast.error('Grade is required');
+        error('Khối lớp là bắt buộc', 'Thiếu thông tin');
         return;
       }
       if (!singleQuestionForm.semesterId) {
-        toast.error('Semester is required');
+        error('Học kỳ là bắt buộc', 'Thiếu thông tin');
         return;
       }
       if (!singleQuestionForm.chapterId) {
-        toast.error('Chapter is required');
+        error('Chương là bắt buộc', 'Thiếu thông tin');
         return;
       }
       if (!singleQuestionForm.lessonId) {
-        toast.error('Lesson is required');
+        error('Bài học là bắt buộc', 'Thiếu thông tin');
         return;
       }
       if (!singleQuestionForm.textbookId) {
-        toast.error('Textbook is required');
+        error('Sách giáo khoa là bắt buộc', 'Thiếu thông tin');
         return;
       }
 
       const trimmedOptionsFull = singleQuestionForm.options.map(o => o.trim());
       const nonEmptyOptions = trimmedOptionsFull.filter(o => o.length > 0);
       if (nonEmptyOptions.length < 2) {
-        toast.error('At least 2 answer options are required');
+        error('Cần ít nhất 2 phương án trả lời', 'Thiếu thông tin');
         return;
       }
       const selectedOptionValue = trimmedOptionsFull[singleQuestionForm.correctAnswerIndex];
       if (!selectedOptionValue || selectedOptionValue.trim() === '') {
-        toast.error('Please select a valid correct answer among the options');
+        error('Vui lòng chọn đáp án đúng hợp lệ', 'Thiếu thông tin');
         return;
       }
       if (!singleQuestionForm.explanation || singleQuestionForm.explanation.trim() === '') {
-        toast.error('Explanation is required');
+        error('Giải thích là bắt buộc', 'Thiếu thông tin');
         return;
       }
 
@@ -134,7 +135,7 @@ export function CreateContentDropdown() {
 
       const response = await api.post('/questions', payload);
       if (response.status >= 200 && response.status < 300) {
-        toast.success('Question created successfully');
+        success('Tạo câu hỏi thành công!', 'Thành công');
       }
      
 
@@ -160,9 +161,9 @@ export function CreateContentDropdown() {
       setLessonOptions([]);
       setTextbookOptions([]);
     } catch (error: any) {
-      const message = error?.response?.data?.message || error?.response?.data || error?.message || 'Failed to create question';
+      const message = error?.response?.data?.message || error?.response?.data || error?.message || 'Tạo câu hỏi thất bại';
       console.error('Failed to create question', message);
-      toast.error(typeof message === 'string' ? message : 'Failed to create question');
+      error(typeof message === 'string' ? message : 'Tạo câu hỏi thất bại', 'Lỗi');
     }
   };
 
@@ -243,7 +244,6 @@ export function CreateContentDropdown() {
 
   return (
     <>
-      <ToastContainer />
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
           <Button 
