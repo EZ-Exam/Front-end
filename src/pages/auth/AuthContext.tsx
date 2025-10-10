@@ -18,6 +18,7 @@ const decodeJWT = (token: string): DecodedToken | null => {
   }
 };
 
+
 // Định nghĩa kiểu cho token đã decode (cho login flow)
 export interface DecodedToken {
   sub: string;    // email
@@ -37,6 +38,7 @@ export interface DecodedToken {
   aud: string;    // audience
   [key: string]: any; // fallback cho các field khác
 }
+
 
 // Định nghĩa kiểu cho user data từ API
 export interface UserData {

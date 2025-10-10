@@ -25,10 +25,15 @@ import {
   Sparkles,
   Zap,
   Star,
-  Infinity
+  Infinity,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
+
+interface AccountDropdownProps {
+  onSubscriptionUpdated?: () => void; // Callback để thông báo Header refresh
+}
 
 // Define subscription type interface
 interface SubscriptionType {
@@ -48,9 +53,22 @@ interface SubscriptionType {
   updatedByName: string | null;
 }
 
-// Current subscription data is now available in user object from useAuth
+// Define current subscription interface from API
+interface CurrentSubscription {
+  userId: number;
+  userEmail: string;
+  subscriptionTypeId: number;
+  subscriptionCode: string;
+  subscriptionName: string;
+  subscriptionPrice: number;
+  startDate: string;
+  endDate: string;
+  paymentStatus: string;
+  isActive: boolean;
+  message: string;
+}
 
-export function AccountDropdown() {
+export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps = {}) {
   const { user, logout, isAuthenticated } = useAuth();
   const { success, error } = useToast();
   const navigate = useNavigate();
@@ -59,6 +77,8 @@ export function AccountDropdown() {
   const [isLoading, setIsLoading] = useState(false);
   const [subscriptionTypes, setSubscriptionTypes] = useState<SubscriptionType[]>([]);
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(false);
+  const [currentSubscription, setCurrentSubscription] = useState<CurrentSubscription | null>(null);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
   // Predefined deposit amounts
   const predefinedAmounts = [2000, 5000, 10000, 50000, 100000, 500000];
@@ -98,14 +118,38 @@ export function AccountDropdown() {
     }
   };
 
+  // Fetch current subscription from API
+  const fetchCurrentSubscription = async () => {
+    try {
+      const response = await api.get('/subscription/current');
+      if (response.status === 200) {
+        setCurrentSubscription(response.data);
+        console.log('Current subscription loaded:', response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching current subscription:', error);
+      setCurrentSubscription(null);
+    }
+  };
 
 
-  // Load subscription types when upgrade dialog opens
+
+  // Load subscription types and current subscription when upgrade dialog opens
   useEffect(() => {
-    if (activeDialog === 'upgrade' && subscriptionTypes.length === 0) {
-      fetchSubscriptionTypes();
+    if (activeDialog === 'upgrade') {
+      if (subscriptionTypes.length === 0) {
+        fetchSubscriptionTypes();
+      }
+      fetchCurrentSubscription();
     }
   }, [activeDialog]);
+
+  // Load current subscription when component mounts
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCurrentSubscription();
+    }
+  }, [isAuthenticated]);
 
 
   const handleLogin = () => {
@@ -196,6 +240,77 @@ export function AccountDropdown() {
   };
 
 
+  // Function to show cancellation confirmation modal
+  const handleCancelSubscriptionClick = () => {
+    setShowCancelConfirmation(true);
+  };
+
+  // Function to handle subscription cancellation
+  const handleCancelSubscription = async () => {
+    if (!user) {
+      error('User not found. Please login again.', 'Authentication Error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      console.log('Cancelling subscription...');
+      
+      // Step 1: Cancel current subscription
+      const cancelResponse = await api.post('/subscription/cancel');
+      
+      if (cancelResponse.status === 200) {
+        console.log('Subscription cancelled successfully:', cancelResponse.data);
+        
+        // Step 2: Subscribe to FREE plan (subscriptionTypeId = 1)
+        console.log('Subscribing to FREE plan...');
+        const subscribePayload = {
+          subscriptionTypeId: 1, // FREE plan
+          description: `${user.fullName} downgraded to FREE plan`
+        };
+        
+        const subscribeResponse = await api.post('/subscription/subscribe', subscribePayload);
+        
+        if (subscribeResponse.status === 200 || subscribeResponse.status === 201) {
+          console.log('Successfully subscribed to FREE plan:', subscribeResponse.data);
+          
+          success('Subscription cancelled and moved to FREE plan successfully!', 'Cancellation Success');
+          
+          // Refresh current subscription data
+          await fetchCurrentSubscription();
+          
+          // Notify Header to refresh its data
+          if (onSubscriptionUpdated) {
+            onSubscriptionUpdated();
+          }
+          
+          // Close modals
+          setShowCancelConfirmation(false);
+          setActiveDialog(null);
+        } else {
+          throw new Error('Failed to subscribe to FREE plan');
+        }
+      }
+    } catch (err: any) {
+      console.error('Error cancelling subscription:', err);
+      
+      // Handle different error scenarios
+      if (err.response?.data?.message) {
+        error(err.response.data.message, 'Cancellation Error');
+      } else if (err.response?.status === 401) {
+        error('Authentication failed. Please login again.', 'Authentication Error');
+      } else if (err.response?.status === 400) {
+        error('Invalid request or no active subscription to cancel.', 'Validation Error');
+      } else if (err.response?.status === 404) {
+        error('No active subscription found to cancel.', 'Not Found');
+      } else {
+        error('An error occurred while cancelling subscription. Please try again.', 'Cancellation Error');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Function to handle subscription upgrade
   const handleUpgradeSubscription = async (subscriptionType: SubscriptionType) => {
     if (!user) {
@@ -219,10 +334,16 @@ export function AccountDropdown() {
         
         success(`Successfully subscribed to ${subscriptionType.subscriptionName} plan!`, 'Subscription Success');
         
+        // Refresh current subscription data
+        await fetchCurrentSubscription();
+        
+        // Notify Header to refresh its data
+        if (onSubscriptionUpdated) {
+          onSubscriptionUpdated();
+        }
+        
         // Close the modal
         setActiveDialog(null);
-        
-        // Note: User data will be refreshed automatically on next login/profile fetch
       }
     } catch (err: any) {
       console.error('Error subscribing to plan:', err);
@@ -260,15 +381,46 @@ export function AccountDropdown() {
 
   // Function to check if a package is the current plan
   const isCurrentPlan = (subscriptionType: SubscriptionType) => {
-    if (!user?.subscriptionTypeId) return false;
-    return parseInt(user.subscriptionTypeId) === subscriptionType.id;
+    // Ưu tiên dữ liệu từ API, fallback về token data
+    const currentSubscriptionId = currentSubscription?.subscriptionTypeId || user?.subscriptionTypeId;
+    const currentSubscriptionName = currentSubscription?.subscriptionName || user?.subscriptionName;
+    
+    // Nếu không có subscription ID và không có subscription name, coi như đang ở gói Free
+    if (!currentSubscriptionId && !currentSubscriptionName) {
+      return subscriptionType.subscriptionName.toLowerCase() === 'free';
+    }
+    
+    // Nếu có subscription name là "Free" hoặc không có subscription, coi như đang ở gói Free
+    if (!currentSubscriptionId || currentSubscriptionName?.toLowerCase() === 'free') {
+      return subscriptionType.subscriptionName.toLowerCase() === 'free';
+    }
+    
+    // Kiểm tra bằng subscription name nếu có
+    if (currentSubscriptionName) {
+      return currentSubscriptionName.toLowerCase() === subscriptionType.subscriptionName.toLowerCase();
+    }
+    
+    // Fallback về subscription ID
+    return parseInt(currentSubscriptionId.toString()) === subscriptionType.id;
   };
 
   // Function to check if a package should be disabled (lower priority than current)
   const isPackageDisabled = (subscriptionType: SubscriptionType) => {
-    if (!user?.subscriptionName) return false;
+    // Ưu tiên dữ liệu từ API, fallback về token data
+    const currentSubscriptionName = currentSubscription?.subscriptionName || user?.subscriptionName;
+    const currentSubscriptionId = currentSubscription?.subscriptionTypeId || user?.subscriptionTypeId;
     
-    const currentPriority = getSubscriptionPriority(user.subscriptionName);
+    // Nếu không có subscription hoặc đang ở gói Free, không disable gói nào
+    if (!currentSubscriptionName && !currentSubscriptionId) {
+      return false;
+    }
+    
+    // Nếu đang ở gói Free, không disable gói nào
+    if (!currentSubscriptionId || currentSubscriptionName?.toLowerCase() === 'free') {
+      return false;
+    }
+    
+    const currentPriority = getSubscriptionPriority(currentSubscriptionName || 'free');
     const packagePriority = getSubscriptionPriority(subscriptionType.subscriptionName);
     
     return packagePriority < currentPriority;
@@ -392,10 +544,10 @@ export function AccountDropdown() {
                 <div className="flex-1">
                   <p className="font-bold text-gray-800">{user?.fullName || 'User'}</p>
                   <p className="text-sm text-gray-600">{user?.email || 'No email'}</p>
-                  {user?.subscriptionName ? (
+                  {(currentSubscription?.subscriptionName || user?.subscriptionName) ? (
                     <div className="mt-1">
                       <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 text-xs px-2 py-1">
-                        {user.subscriptionName}
+                        {currentSubscription?.subscriptionName || user?.subscriptionName}
                       </Badge>
                     </div>
                   ) : (
@@ -548,7 +700,7 @@ export function AccountDropdown() {
                   <div className="text-right">
                     <p className="text-sm font-medium text-gray-600">After Deposit</p>
                     <p className="text-lg font-bold text-blue-600">
-                      {depositAmount ? formatCurrency(parseCurrency(depositAmount) + (user?.balance || 0)) : formatCurrency(user?.balance || 0)} VND
+                      {depositAmount ? formatCurrency(parseCurrency(depositAmount) + (typeof user?.balance === 'string' ? parseInt(user.balance) : user?.balance || 0)) : formatCurrency(user?.balance || 0)} VND
                     </p>
                   </div>
                 </div>
@@ -616,7 +768,7 @@ export function AccountDropdown() {
                   <Card 
                     key={subscriptionType.id} 
                     className={`border-2 ${styling.borderColor} transition-all duration-300 ${styling.shadow} ${styling.bgGradient} ${styling.opacity} ${isCurrent ? 'relative' : ''} ${isDisabled ? 'cursor-not-allowed' : 'hover:scale-105'}`}
-                    title={isDisabled ? `Bạn đang sử dụng gói ${user?.subscriptionName} cao hơn. Không thể downgrade xuống gói ${subscriptionType.subscriptionName}.` : ''}
+                    title={isDisabled ? `Bạn đang sử dụng gói ${currentSubscription?.subscriptionName || user?.subscriptionName} cao hơn. Không thể downgrade xuống gói ${subscriptionType.subscriptionName}.` : ''}
                   >
                     {isCurrent && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -672,7 +824,7 @@ export function AccountDropdown() {
                         variant="default"
                         disabled={isCurrent || isLoading || isDisabled}
                         onClick={() => !isCurrent && !isDisabled && handleUpgradeSubscription(subscriptionType)}
-                        title={isDisabled ? `Không thể downgrade từ ${user?.subscriptionName} xuống ${subscriptionType.subscriptionName}` : ''}
+                        title={isDisabled ? `Không thể downgrade từ ${currentSubscription?.subscriptionName || user?.subscriptionName} xuống ${subscriptionType.subscriptionName}` : ''}
                       >
                         {isCurrent ? (
                           <div className="flex items-center">
@@ -706,6 +858,127 @@ export function AccountDropdown() {
               })}
             </div>
           )}
+          
+          {/* Cancel Subscription Button */}
+          {(currentSubscription?.isActive || user?.subscriptionName) && (
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-4">
+                  Want to cancel your current subscription?
+                </p>
+                <Button
+                  onClick={handleCancelSubscriptionClick}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="h-12 px-8 border-2 border-red-300 hover:border-red-500 hover:bg-red-50 text-red-600 hover:text-red-700 transition-all duration-300 hover:scale-105 rounded-xl font-semibold disabled:opacity-50"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                      Cancelling...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <X className="h-4 w-4" />
+                      Cancel Subscription
+                    </div>
+                  )}
+                </Button>
+                <p className="text-xs text-gray-500 mt-2">
+                  This will cancel your current subscription and you'll be moved to the Free plan.
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Subscription Confirmation Modal */}
+      <Dialog open={showCancelConfirmation} onOpenChange={setShowCancelConfirmation}>
+        <DialogContent className="max-w-2xl w-full bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl">
+          <DialogHeader className="pb-6">
+            <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-red-500 to-red-600 rounded-lg">
+                <X className="h-6 w-6 text-white" />
+              </div>
+              Cancel Subscription
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-8">
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-6 border border-red-200">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-red-100 rounded-lg flex-shrink-0">
+                  <X className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-red-800 mb-3 text-lg">Important Notice</h3>
+                  <p className="text-base text-red-700 leading-relaxed">
+                    Are you sure you want to cancel your current subscription? 
+                    <strong className="text-red-800"> We do not offer refunds for cancelled subscriptions.</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-blue-100 rounded-lg flex-shrink-0">
+                  <User className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-blue-800 mb-3 text-lg">What happens next?</h3>
+                  <ul className="text-base text-blue-700 space-y-2">
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      Your current subscription will be cancelled immediately
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      Your account will be moved to the FREE plan
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      You'll lose access to premium features
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      You can upgrade again anytime
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-6 pt-6">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowCancelConfirmation(false)} 
+                className="h-14 px-8 border-2 border-gray-300 hover:border-gray-500 hover:bg-gray-50 transition-all duration-300 rounded-xl text-base font-semibold"
+                disabled={isLoading}
+              >
+                Keep Subscription
+              </Button>
+              <Button 
+                onClick={handleCancelSubscription}
+                className="h-14 px-10 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold disabled:opacity-50"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Processing...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <X className="h-5 w-5" />
+                    Yes, Cancel Subscription
+                  </div>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

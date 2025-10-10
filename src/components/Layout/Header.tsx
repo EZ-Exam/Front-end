@@ -6,17 +6,104 @@ import {NotificationDropdown} from '@/components/Layout/NotificationDropdown';
 import { CreateContentDropdown } from './CreateContentDropdown';
 import { AccountDropdown } from './AccountDropdown';
 import { useAuth } from '@/pages/auth/AuthContext';
+import { useState, useEffect } from 'react';
+import api from '@/services/axios';
 interface HeaderProps {
   onMenuToggle: () => void;
+  onRefreshData?: (refreshFn: () => void) => void;
+  refreshTrigger?: number; // Trigger để refresh data từ bên ngoài
 }
 
-export function Header({ onMenuToggle }: HeaderProps) {
+// Định nghĩa kiểu cho balance API response
+interface BalanceResponse {
+  userId: number;
+  userEmail: string;
+  userName: string;
+  previousBalance: number;
+  addedAmount: number;
+  newBalance: number;
+  description: string;
+  updatedAt: string;
+}
+
+// Định nghĩa kiểu cho subscription API response
+interface SubscriptionResponse {
+  userId: number;
+  userEmail: string;
+  subscriptionTypeId: number;
+  subscriptionCode: string;
+  subscriptionName: string;
+  subscriptionPrice: number;
+  startDate: string;
+  endDate: string;
+  paymentStatus: string;
+  isActive: boolean;
+  message: string;
+}
+
+export function Header({ onMenuToggle, onRefreshData, refreshTrigger }: HeaderProps) {
   const { isAuthenticated, user } = useAuth();
+  
+  // State cho balance và subscription từ API
+  const [balanceData, setBalanceData] = useState<BalanceResponse | null>(null);
+  const [subscriptionData, setSubscriptionData] = useState<SubscriptionResponse | null>(null);
 
   // Function to check if user is authenticated
   const checkUserAuthentication = (): boolean => {
     return isAuthenticated;
   };
+
+  // Function to fetch balance and subscription from APIs
+  const fetchBalanceAndSubscription = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      const [balanceResponse, subscriptionResponse] = await Promise.all([
+        api.get('/balance/current'),
+        api.get('/subscription/current')
+      ]);
+
+      if (balanceResponse.status === 200) {
+        setBalanceData(balanceResponse.data);
+      }
+      
+      if (subscriptionResponse.status === 200) {
+        setSubscriptionData(subscriptionResponse.data);
+      }
+    } catch (error) {
+      console.error('Error fetching balance and subscription:', error);
+    }
+  };
+
+  // Function to refresh data (có thể gọi từ bên ngoài)
+  const refreshData = () => {
+    fetchBalanceAndSubscription();
+  };
+
+  // Load balance and subscription data when component mounts or authentication changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchBalanceAndSubscription();
+    } else {
+      // Clear data when user logs out
+      setBalanceData(null);
+      setSubscriptionData(null);
+    }
+  }, [isAuthenticated]);
+
+  // Expose refresh function to parent component
+  useEffect(() => {
+    if (onRefreshData) {
+      onRefreshData(refreshData);
+    }
+  }, [onRefreshData]);
+
+  // Listen for refresh trigger from parent
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      fetchBalanceAndSubscription();
+    }
+  }, [refreshTrigger]);
 
   // Function to get subscription icon and colors
   const getSubscriptionInfo = (subscriptionName: string | null) => {
@@ -97,10 +184,11 @@ export function Header({ onMenuToggle }: HeaderProps) {
 
         {/* Enhanced Account Balance & Package */}
         {checkUserAuthentication() && user && (() => {
-          const subscriptionName = user.subscriptionName || 'Free';
+          // Sử dụng dữ liệu từ API nếu có, fallback về token data
+          const subscriptionName = subscriptionData?.subscriptionName || user.subscriptionName || 'Free';
           const subscriptionInfo = getSubscriptionInfo(subscriptionName);
           const IconComponent = subscriptionInfo.icon;
-          const balanceVND = user.balance || 0;
+          const balanceVND = balanceData?.newBalance || user.balance || 0;
           
           return (
             <div className="hidden md:flex items-center gap-4 px-4 py-2 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
@@ -150,7 +238,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
           </div>
         )}
 
-        {checkUserAuthentication() && <AccountDropdown />}
+        {checkUserAuthentication() && <AccountDropdown onSubscriptionUpdated={refreshData} />}
       </div>
     </header>
   );
