@@ -97,7 +97,8 @@ export function Header({ onMenuToggle }: HeaderProps) {
 
         {/* Enhanced Account Balance & Package */}
         {checkUserAuthentication() && user && (() => {
-          const subscriptionInfo = getSubscriptionInfo(user.subscriptionName || null);
+          const subscriptionName = user.subscriptionName || 'Free';
+          const subscriptionInfo = getSubscriptionInfo(subscriptionName);
           const IconComponent = subscriptionInfo.icon;
           const balanceVND = user.balance || 0;
           
@@ -108,11 +109,14 @@ export function Header({ onMenuToggle }: HeaderProps) {
                   <IconComponent className="h-4 w-4 text-white" />
                 </div>
                 <span className={`text-sm font-semibold capitalize ${subscriptionInfo.textColor}`}>
-                  {user.subscriptionName || 'Free'}
+                  {subscriptionName}
                 </span>
               </div>
               <div className="text-sm font-bold text-green-600 bg-gradient-to-r from-green-100 to-green-200 px-3 py-1 rounded-lg shadow-md">
-                {balanceVND.toLocaleString('vi-VN')}₫
+                {typeof balanceVND === 'string' 
+                  ? parseInt(balanceVND).toLocaleString('vi-VN', { useGrouping: true }).replace(/,/g, '.')
+                  : balanceVND.toLocaleString('vi-VN', { useGrouping: true }).replace(/,/g, '.')
+                }₫
               </div>
             </div>
           );

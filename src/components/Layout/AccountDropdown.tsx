@@ -48,20 +48,7 @@ interface SubscriptionType {
   updatedByName: string | null;
 }
 
-// Define current subscription interface from API response
-interface CurrentSubscription {
-  userId: number;
-  userEmail: string;
-  subscriptionTypeId: number;
-  subscriptionCode: string;
-  subscriptionName: string;
-  subscriptionPrice: number;
-  startDate: string;
-  endDate: string | null;
-  paymentStatus: string;
-  isActive: boolean;
-  message: string;
-}
+// Current subscription data is now available in user object from useAuth
 
 export function AccountDropdown() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -72,8 +59,6 @@ export function AccountDropdown() {
   const [isLoading, setIsLoading] = useState(false);
   const [subscriptionTypes, setSubscriptionTypes] = useState<SubscriptionType[]>([]);
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(false);
-  const [currentSubscription, setCurrentSubscription] = useState<CurrentSubscription | null>(null);
-  const [isLoadingCurrentSubscription, setIsLoadingCurrentSubscription] = useState(false);
 
   // Predefined deposit amounts
   const predefinedAmounts = [2000, 5000, 10000, 50000, 100000, 500000];
@@ -113,22 +98,7 @@ export function AccountDropdown() {
     }
   };
 
-  // Fetch current subscription from API
-  const fetchCurrentSubscription = async () => {
-    setIsLoadingCurrentSubscription(true);
-    try {
-      const response = await api.get('/subscription/current');
-      if (response.status === 200) {
-        setCurrentSubscription(response.data);
-        console.log('Current subscription loaded:', response.data);
-      }
-    } catch (error) {
-      console.error('Error fetching current subscription:', error);
-      setCurrentSubscription(null);
-    } finally {
-      setIsLoadingCurrentSubscription(false);
-    }
-  };
+
 
   // Load subscription types when upgrade dialog opens
   useEffect(() => {
@@ -136,13 +106,6 @@ export function AccountDropdown() {
       fetchSubscriptionTypes();
     }
   }, [activeDialog]);
-
-  // Load current subscription when component mounts and user is authenticated
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchCurrentSubscription();
-    }
-  }, [isAuthenticated, user]);
 
 
   const handleLogin = () => {
@@ -259,8 +222,7 @@ export function AccountDropdown() {
         // Close the modal
         setActiveDialog(null);
         
-        // Refresh current subscription data
-        await fetchCurrentSubscription();
+        // Note: User data will be refreshed automatically on next login/profile fetch
       }
     } catch (err: any) {
       console.error('Error subscribing to plan:', err);
@@ -283,16 +245,52 @@ export function AccountDropdown() {
   };
 
 
+  // Function to get subscription priority order (higher number = higher priority)
+  const getSubscriptionPriority = (subscriptionName: string): number => {
+    const name = subscriptionName.toLowerCase();
+    switch (name) {
+      case 'free': return 1;
+      case 'basic': return 2;
+      case 'premium': return 3;
+      case 'pro': return 4;
+      case 'unlimited': return 5;
+      default: return 0;
+    }
+  };
+
   // Function to check if a package is the current plan
   const isCurrentPlan = (subscriptionType: SubscriptionType) => {
-    if (!currentSubscription || !currentSubscription.isActive) return false;
-    return currentSubscription.subscriptionTypeId === subscriptionType.id;
+    if (!user?.subscriptionTypeId) return false;
+    return parseInt(user.subscriptionTypeId) === subscriptionType.id;
+  };
+
+  // Function to check if a package should be disabled (lower priority than current)
+  const isPackageDisabled = (subscriptionType: SubscriptionType) => {
+    if (!user?.subscriptionName) return false;
+    
+    const currentPriority = getSubscriptionPriority(user.subscriptionName);
+    const packagePriority = getSubscriptionPriority(subscriptionType.subscriptionName);
+    
+    return packagePriority < currentPriority;
   };
 
   // Function to get package styling based on subscription type
   const getPackageStyling = (subscriptionType: SubscriptionType) => {
     const isCurrent = isCurrentPlan(subscriptionType);
+    const isDisabled = isPackageDisabled(subscriptionType);
     const packageName = subscriptionType.subscriptionName.toLowerCase();
+    
+    // Base styling for disabled packages
+    if (isDisabled) {
+      return {
+        borderColor: 'border-gray-300',
+        bgGradient: 'bg-gradient-to-b from-gray-50 to-gray-100',
+        shadow: 'shadow-sm',
+        titleColor: 'text-gray-400',
+        priceColor: 'text-gray-400',
+        opacity: 'opacity-60'
+      };
+    }
     
     switch (packageName) {
       case 'free':
@@ -301,7 +299,8 @@ export function AccountDropdown() {
           bgGradient: isCurrent ? 'bg-gradient-to-b from-gray-50 to-gray-100' : '',
           shadow: isCurrent ? 'shadow-xl hover:shadow-2xl' : 'hover:shadow-lg',
           titleColor: 'text-gray-800',
-          priceColor: 'text-gray-600'
+          priceColor: 'text-gray-600',
+          opacity: ''
         };
       case 'basic':
         return {
@@ -309,7 +308,8 @@ export function AccountDropdown() {
           bgGradient: isCurrent ? 'bg-gradient-to-b from-green-50 to-green-100' : '',
           shadow: isCurrent ? 'shadow-xl hover:shadow-2xl' : 'hover:shadow-lg',
           titleColor: 'text-green-800',
-          priceColor: 'text-green-600'
+          priceColor: 'text-green-600',
+          opacity: ''
         };
       case 'premium':
         return {
@@ -317,7 +317,8 @@ export function AccountDropdown() {
           bgGradient: isCurrent ? 'bg-gradient-to-b from-blue-50 to-blue-100' : '',
           shadow: isCurrent ? 'shadow-xl hover:shadow-2xl' : 'hover:shadow-lg',
           titleColor: 'text-blue-800',
-          priceColor: 'text-blue-600'
+          priceColor: 'text-blue-600',
+          opacity: ''
         };
       case 'pro':
         return {
@@ -325,7 +326,8 @@ export function AccountDropdown() {
           bgGradient: isCurrent ? 'bg-gradient-to-b from-purple-50 to-purple-100' : '',
           shadow: isCurrent ? 'shadow-xl hover:shadow-2xl' : 'hover:shadow-lg',
           titleColor: 'text-purple-800',
-          priceColor: 'text-purple-600'
+          priceColor: 'text-purple-600',
+          opacity: ''
         };
       case 'unlimited':
         return {
@@ -333,7 +335,8 @@ export function AccountDropdown() {
           bgGradient: isCurrent ? 'bg-gradient-to-b from-indigo-50 to-indigo-100' : '',
           shadow: isCurrent ? 'shadow-xl hover:shadow-2xl' : 'hover:shadow-lg',
           titleColor: 'text-indigo-800',
-          priceColor: 'text-indigo-600'
+          priceColor: 'text-indigo-600',
+          opacity: ''
         };
       default:
         return {
@@ -341,7 +344,8 @@ export function AccountDropdown() {
           bgGradient: '',
           shadow: 'hover:shadow-lg',
           titleColor: 'text-gray-800',
-          priceColor: 'text-gray-600'
+          priceColor: 'text-gray-600',
+          opacity: ''
         };
     }
   };
@@ -388,15 +392,10 @@ export function AccountDropdown() {
                 <div className="flex-1">
                   <p className="font-bold text-gray-800">{user?.fullName || 'User'}</p>
                   <p className="text-sm text-gray-600">{user?.email || 'No email'}</p>
-                  {isLoadingCurrentSubscription ? (
-                    <div className="flex items-center gap-1 mt-1">
-                      <div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-xs text-gray-500">Loading subscription...</span>
-                    </div>
-                  ) : currentSubscription && currentSubscription.isActive ? (
+                  {user?.subscriptionName ? (
                     <div className="mt-1">
                       <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 text-xs px-2 py-1">
-                        {currentSubscription.subscriptionName || 'Active Plan'}
+                        {user.subscriptionName}
                       </Badge>
                     </div>
                   ) : (
@@ -611,11 +610,13 @@ export function AccountDropdown() {
                 const styling = getPackageStyling(subscriptionType);
                 const IconComponent = getSubscriptionIcon(subscriptionType);
                 const isCurrent = isCurrentPlan(subscriptionType);
+                const isDisabled = isPackageDisabled(subscriptionType);
                 
                 return (
                   <Card 
                     key={subscriptionType.id} 
-                    className={`border-2 ${styling.borderColor} transition-all duration-300 ${styling.shadow} hover:scale-105 ${styling.bgGradient} ${isCurrent ? 'relative' : ''}`}
+                    className={`border-2 ${styling.borderColor} transition-all duration-300 ${styling.shadow} ${styling.bgGradient} ${styling.opacity} ${isCurrent ? 'relative' : ''} ${isDisabled ? 'cursor-not-allowed' : 'hover:scale-105'}`}
+                    title={isDisabled ? `Bạn đang sử dụng gói ${user?.subscriptionName} cao hơn. Không thể downgrade xuống gói ${subscriptionType.subscriptionName}.` : ''}
                   >
                     {isCurrent && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -664,16 +665,28 @@ export function AccountDropdown() {
                         className={`w-full mt-6 h-20 flex flex-col items-center justify-center px-2 ${
                           isCurrent 
                             ? 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105' 
+                            : isDisabled
+                            ? 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-500 border-0 shadow-sm cursor-not-allowed'
                             : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'
                         }`}
                         variant="default"
-                        disabled={isCurrent || isLoading}
-                        onClick={() => !isCurrent && handleUpgradeSubscription(subscriptionType)}
+                        disabled={isCurrent || isLoading || isDisabled}
+                        onClick={() => !isCurrent && !isDisabled && handleUpgradeSubscription(subscriptionType)}
+                        title={isDisabled ? `Không thể downgrade từ ${user?.subscriptionName} xuống ${subscriptionType.subscriptionName}` : ''}
                       >
                         {isCurrent ? (
                           <div className="flex items-center">
                             <IconComponent className="mr-2 h-4 w-4 flex-shrink-0" />
                             <span className="text-sm font-semibold">Current Plan</span>
+                          </div>
+                        ) : isDisabled ? (
+                          <div className="flex flex-col items-center">
+                            <div className="flex items-center mb-1">
+                              <span className="text-xs font-medium text-gray-500">Downgrade Not Allowed</span>
+                            </div>
+                            <span className="text-sm font-semibold leading-tight text-center break-words text-gray-500">
+                              {subscriptionType.subscriptionName}
+                            </span>
                           </div>
                         ) : (
                           <div className="flex flex-col items-center">

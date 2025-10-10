@@ -1,16 +1,40 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import api from '@/services/axios';
+
+// Function to decode JWT token
+const decodeJWT = (token: string): DecodedToken | null => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Error decoding JWT:', error);
+    return null;
+  }
+};
 
 // Định nghĩa kiểu cho token đã decode (cho login flow)
 export interface DecodedToken {
-  roleId: string;  // role ID từ backend
-  sub?: string;   // userId
-  name?: string;  // username
-  email?: string;
-  exp?: number;
-  iat?: number;
-  phoneNumber?: string;
-  avatarUrl?: string;
+  sub: string;    // email
+  jti: string;    // JWT ID
+  id: string;     // user ID
+  fullname: string; // full name
+  email: string;  // email
+  roleId: string; // role ID từ backend
+  balance: string; // balance as string
+  subscriptionTypeId: string; // subscription type ID
+  subscriptionCode: string;   // subscription code (PREMIUM, etc.)
+  subscriptionName: string;   // subscription name
+  subscriptionEndDate: string; // subscription end date
+  subscriptionIsActive: string; // subscription active status
+  exp: number;    // expiration timestamp
+  iss: string;    // issuer
+  aud: string;    // audience
   [key: string]: any; // fallback cho các field khác
 }
 
@@ -22,8 +46,12 @@ export interface UserData {
   phoneNumber?: string;
   avatarUrl?: string;
   roleId?: string;
-  balance?: number | null;
+  balance?: number | string | null;
   subscriptionName?: string | null;
+  subscriptionTypeId?: string | null;
+  subscriptionCode?: string | null;
+  subscriptionEndDate?: string | null;
+  subscriptionIsActive?: string | boolean | null;
   [key: string]: any; // fallback cho các field khác
 }
 
@@ -64,11 +92,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const isAuthenticated = !!localStorage.getItem('token');
 
   useEffect(() => {
-    // Kiểm tra token và gọi API my-profile nếu có
+    // Kiểm tra token và decode để lấy user info
     const token = localStorage.getItem('token');
     if (token) {
-      // Gọi API my-profile để lấy user data đầy đủ
-      fetchUserProfile();
+      const decodedToken = decodeJWT(token);
+      if (decodedToken) {
+        // Sử dụng thông tin từ token để set user
+        setUser({
+          id: decodedToken.id,
+          fullName: decodedToken.fullname,
+          email: decodedToken.email,
+          roleId: decodedToken.roleId,
+          balance: decodedToken.balance,
+          subscriptionName: decodedToken.subscriptionName,
+          subscriptionTypeId: decodedToken.subscriptionTypeId,
+          subscriptionCode: decodedToken.subscriptionCode,
+          subscriptionEndDate: decodedToken.subscriptionEndDate,
+          subscriptionIsActive: decodedToken.subscriptionIsActive,
+        });
+      } else {
+        // Nếu không decode được token thì xóa token và logout
+        localStorage.removeItem('token');
+        setUser(null);
+      }
     } else {
       setUser(null);
     }
@@ -78,43 +124,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = (token: string, navigate?: (path: string) => void) => {
     localStorage.setItem('token', token);
     
-    // Gọi API my-profile để lấy user data đầy đủ
-    fetchUserProfile(navigate);
-  };
-
-  const fetchUserProfile = async (navigate?: (path: string) => void) => {
-    try {
-      const response = await api.get('/users/my-profile');
+    // Decode token để lấy user info
+    const decodedToken = decodeJWT(token);
+    if (decodedToken) {
+      // Sử dụng thông tin từ token để set user
+      setUser({
+        id: decodedToken.id,
+        fullName: decodedToken.fullname,
+        email: decodedToken.email,
+        roleId: decodedToken.roleId,
+        balance: decodedToken.balance,
+        subscriptionName: decodedToken.subscriptionName,
+        subscriptionTypeId: decodedToken.subscriptionTypeId,
+        subscriptionCode: decodedToken.subscriptionCode,
+        subscriptionEndDate: decodedToken.subscriptionEndDate,
+        subscriptionIsActive: decodedToken.subscriptionIsActive,
+      });
       
-      if (response.status === 200) {
-        const userData = response.data;
-        console.log('User profile from API:', userData);
+      // Role-based navigation nếu có navigate function
+      if (navigate) {
+        const roleId = decodedToken.roleId;
         
-        setUser({
-          id: userData.id || userData._id || '',
-          fullName: userData.fullName || '',
-          email: userData.email || '',
-          phoneNumber: userData.phoneNumber || '',
-          avatarUrl: userData.avatarUrl || '',
-          roleId: userData.roleId || '',
-          balance: userData.balance || null,
-          subscriptionName: userData.subscriptionName || null,
-        });
-        
-        // Role-based navigation nếu có navigate function
-        if (navigate) {
-          const roleId = userData.roleId;
-          
-          setTimeout(() => {
-            if (roleId === "1") navigate('/');
-            else if (roleId === "2") navigate('/admin');
-            else if (roleId === "3") navigate('/mod');
-            else navigate('/');
-          }, 2000);
-        }
+        setTimeout(() => {
+          if (roleId === "1") navigate('/');
+          else if (roleId === "2") navigate('/admin');
+          else if (roleId === "3") navigate('/mod');
+          else navigate('/');
+        }, 2000);
       }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
+    } else {
+      // Nếu không decode được token thì xóa token và logout
+      localStorage.removeItem('token');
       setUser(null);
       
       // Fallback navigation
@@ -125,6 +165,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     }
   };
+
 
   const logout = () => {
     localStorage.removeItem('token');

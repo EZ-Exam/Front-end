@@ -135,7 +135,7 @@ export function QuestionBankDetailPage() {
                   {question.difficultyLevel}
                 </Badge>
                 <Badge variant="outline" className="text-xs">
-                  ID: #{question.id}
+                  Question: #{question.id}
                 </Badge>
               </div>
             </div>

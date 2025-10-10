@@ -18,14 +18,12 @@ import {
   Trophy,
   CheckCircle
 } from 'lucide-react';
-import { useAuth } from '@/pages/auth/AuthContext';
 import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import api from '@/services/axios';
 import { uploadImgBBOneFile } from '@/services/imgBB';
 import { useToast } from '@/contexts/ToastContext';
 
 export function ProfilePage() {
-  const { user, setUser, isAuthenticated } = useAuth();
   const { success, error } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,6 +40,7 @@ export function ProfilePage() {
     avatarUrl: '',
   });
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [userId, setUserId] = useState<string>('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string>('');
 
@@ -70,16 +69,7 @@ export function ProfilePage() {
           setFormData(newFormData);
           setOriginalData(newFormData);
           setUserProfile(userData); // Lưu toàn bộ user data để sử dụng createdAt
-          
-          // Update AuthContext with fresh data
-          setUser({
-            id: userData.id || userData._id || '',
-            fullName: userData.fullName || '',
-            email: userData.email || '',
-            phoneNumber: userData.phoneNumber || '',
-            avatarUrl: userData.avatarUrl || '',
-            roleId: userData.roleId || '',
-          });
+          setUserId(userData.id || userData._id || ''); // Lưu userId để sử dụng khi update
         }
       } catch (error: any) {
         console.error('Error fetching user data:', error);
@@ -92,10 +82,8 @@ export function ProfilePage() {
 
   // Load user profile data when component mounts
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchUserData();
-    }
-  }, [isAuthenticated, withLoading]); // Include withLoading in dependencies
+    fetchUserData();
+  }, [withLoading]); // Include withLoading in dependencies
 
   const handleSave = async () => {
     await withLoading(async () => {
@@ -103,8 +91,7 @@ export function ProfilePage() {
         setIsLoading(true);
         console.log('Saving profile:', formData);
     
-        // Lấy userId từ user context
-        const userId = user?.id;
+        // Lấy userId từ state
         if (!userId) {
           error("Không tìm thấy ID người dùng", "Lỗi xác thực");
           return;
@@ -138,24 +125,10 @@ export function ProfilePage() {
           setPreviewImage('');
           setIsEditing(false);
     
-          // 👉 Update lại AuthContext để UI (Header, Profile, Avatar) sync theo
-          setUser((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  fullName: formData.fullName,
-                  email: formData.email,
-                  phoneNumber: formData.phoneNumber,
-                  avatarUrl: avatarUrlToSave,
-                }
-              : null
-          );
+          // Refresh user profile data from API để sync với AuthContext
+          await fetchUserData();
     
           success("Cập nhật hồ sơ thành công!", "Thành công");
-
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
 
         }
       } catch (error: any) {

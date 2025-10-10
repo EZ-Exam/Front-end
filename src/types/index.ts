@@ -166,3 +166,17 @@ export interface Transaction {
   timestamp: string;
   status: 'pending' | 'completed' | 'failed';
 }
+
+export interface SubscriptionData {
+  userId: number;
+  userEmail: string;
+  subscriptionTypeId: number;
+  subscriptionCode: string;
+  subscriptionName: string;
+  subscriptionPrice: number;
+  startDate: string;
+  endDate: string;
+  paymentStatus: string;
+  isActive: boolean;
+  message: string;
+}
