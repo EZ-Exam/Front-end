@@ -477,44 +477,6 @@ export function ProfilePage() {
                   </div>
                 </CardContent>
               </Card>
-              
-              <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
-                <CardHeader className="pb-6">
-                  <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <TrendingUp className="h-5 w-5 text-purple-600" />
-                    </div>
-                    Learning Stats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl">
-                      <div className="p-2 bg-blue-500 rounded-lg w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                        <BookOpen className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="text-2xl font-bold text-blue-600">12</div>
-                      <div className="text-sm text-gray-600">Lessons</div>
-                    </div>
-                    <div className="text-center p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-xl">
-                      <div className="p-2 bg-green-500 rounded-lg w-12 h-12 mx-auto mb-3 flex items-center justify-center">
-                        <Trophy className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="text-2xl font-bold text-green-600">8</div>
-                      <div className="text-sm text-gray-600">Tests</div>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">Progress</span>
-                      <span className="text-sm font-semibold text-orange-600">75%</span>
-                    </div>
-                    <div className="w-full bg-orange-200 rounded-full h-3">
-                      <div className="bg-gradient-to-r from-orange-500 to-orange-600 h-3 rounded-full w-3/4"></div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
         </div>
       )}

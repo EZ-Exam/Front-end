@@ -205,43 +205,19 @@ export function MockTestsPage() {
               Mock Tests
             </h1>
           </div>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
-            Practice with realistic exam simulations and track your progress
-          </p>
-          <Badge variant="outline" className="text-sm px-4 py-2 bg-white/80 backdrop-blur-sm">
-            {filteredTests.length} tests available
-          </Badge>
         </div>
 
-        {/* Enhanced Info Banner */}
-        <Card className="mb-8 shadow-lg border-0 bg-gradient-to-r from-amber-50 to-orange-50 backdrop-blur-sm">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl">
-                <AlertTriangle className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-amber-900 mb-2">Exam Simulation</h3>
-                <p className="text-amber-700 leading-relaxed">
-                  Mock tests simulate real exam conditions with time limits and comprehensive scoring. 
-                  Complete the entire test to receive detailed performance analytics and personalized feedback.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Enhanced Filters */}
-        <Card className="mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+        {/* Search Section */}
+        <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-xl">
-              <Filter className="h-5 w-5 text-blue-600" />
-              Search & Filter Tests
+              <Search className="h-5 w-5 text-blue-600" />
+              Search Tests
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-5 gap-4">
-              <div className="relative md:col-span-2">
+            <div className="flex gap-4">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <Input
                   placeholder="Search mock tests by name or description..."
@@ -250,65 +226,189 @@ export function MockTestsPage() {
                   className="pl-12 h-12 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-xl"
                 />
               </div>
-              
-              <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-                <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
-                  <SelectValue placeholder="All Subjects" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Subjects</SelectItem>
-                  <SelectItem value="Toán học">Toán học</SelectItem>
-                  <SelectItem value="Vật lý">Vật lý</SelectItem>
-                  <SelectItem value="Hóa học">Hóa học</SelectItem>
-                  <SelectItem value="Sinh học">Sinh học</SelectItem>
-                  <SelectItem value="Ngữ văn">Ngữ văn</SelectItem>
-                  <SelectItem value="Tiếng Anh">Tiếng Anh</SelectItem>
-                  <SelectItem value="Lịch sử">Lịch sử</SelectItem>
-                  <SelectItem value="Địa lý">Địa lý</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={`${sortBy}:${sortOrder}`} onValueChange={(value) => {
-                const [field, order] = value.split(':');
-                setSortBy(field);
-                setSortOrder(order);
-              }}>
-                <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt:desc">Newest first</SelectItem>
-                  <SelectItem value="createdAt:asc">Oldest first</SelectItem>
-                  <SelectItem value="updatedAt:desc">Most recent update first</SelectItem>
-                  <SelectItem value="updatedAt:asc">Longest update first</SelectItem>
-                  <SelectItem value="name:asc">Name A→Z</SelectItem>
-                  <SelectItem value="name:desc">Name Z→A</SelectItem>
-                  <SelectItem value="totalQuestions:asc">Fewest questions</SelectItem>
-                  <SelectItem value="totalQuestions:desc">Most questions</SelectItem>
-                  <SelectItem value="timeLimit:asc">Shortest time</SelectItem>
-                  <SelectItem value="timeLimit:desc">Longest time</SelectItem>
-                </SelectContent>
-              </Select>
-
               <Button 
                 variant="outline" 
                 onClick={() => {
                   setSearchQuery('');
-                  setSubjectFilter('all');
-                  setDifficultyFilter('all');
-                  setSubjectId('');
-                  setLessonId('');
-                  setExamTypeId('');
-                  setCreatedById('');
-                  setSortBy('name');
-                  setSortOrder('asc');
-                  setPageNumber(1);
                 }}
                 className="h-12 border-2 border-gray-200 hover:border-red-500 hover:text-red-600 rounded-xl"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Clear All
+                Clear
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sort Section */}
+        <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Filter className="h-5 w-5 text-blue-600" />
+              Sort & Filter
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 items-center">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Sort by:</label>
+                <Select value={`${sortBy}:${sortOrder}`} onValueChange={(value) => {
+                  const [field, order] = value.split(':');
+                  setSortBy(field);
+                  setSortOrder(order);
+                }}>
+                  <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="createdAt:desc">Newest first</SelectItem>
+                    <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+                    <SelectItem value="updatedAt:desc">Most recent update first</SelectItem>
+                    <SelectItem value="updatedAt:asc">Longest update first</SelectItem>
+                    <SelectItem value="name:asc">Name A→Z</SelectItem>
+                    <SelectItem value="name:desc">Name Z→A</SelectItem>
+                    <SelectItem value="totalQuestions:asc">Fewest questions</SelectItem>
+                    <SelectItem value="totalQuestions:desc">Most questions</SelectItem>
+                    <SelectItem value="timeLimit:asc">Shortest time</SelectItem>
+                    <SelectItem value="timeLimit:desc">Longest time</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Subject:</label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={subjectFilter === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('all')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'all' 
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-blue-500'
+                    }`}
+                  >
+                    Tất cả
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Toán học' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Toán học')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Toán học' 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-blue-500'
+                    }`}
+                  >
+                    Toán học
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Vật lý' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Vật lý')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Vật lý' 
+                        ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-green-500'
+                    }`}
+                  >
+                    Vật lý
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Hóa học' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Hóa học')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Hóa học' 
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-orange-500'
+                    }`}
+                  >
+                    Hóa học
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Sinh học' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Sinh học')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Sinh học' 
+                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-emerald-500'
+                    }`}
+                  >
+                    Sinh học
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Ngữ văn' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Ngữ văn')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Ngữ văn' 
+                        ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-pink-500'
+                    }`}
+                  >
+                    Ngữ văn
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Tiếng Anh' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Tiếng Anh')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Tiếng Anh' 
+                        ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-purple-500'
+                    }`}
+                  >
+                    Tiếng Anh
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Lịch sử' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Lịch sử')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Lịch sử' 
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-amber-500'
+                    }`}
+                  >
+                    Lịch sử
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Địa lý' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Địa lý')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Địa lý' 
+                        ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-teal-500'
+                    }`}
+                  >
+                    Địa lý
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSubjectFilter('all');
+                    setDifficultyFilter('all');
+                    setSubjectId('');
+                    setLessonId('');
+                    setExamTypeId('');
+                    setCreatedById('');
+                    setSortBy('name');
+                    setSortOrder('asc');
+                    setPageNumber(1);
+                  }}
+                  className="h-12 border-2 border-gray-200 hover:border-red-500 hover:text-red-600 rounded-xl"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Reset Filters
+                </Button>
+              </div>
             </div>
             
             {/* Results count */}

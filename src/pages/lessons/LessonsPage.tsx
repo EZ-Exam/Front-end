@@ -201,25 +201,19 @@ export function LessonsPage() {
               Lessons
             </h1>
           </div>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
-            Explore our comprehensive collection of interactive lessons designed to help you master exam concepts
-          </p>
-          <Badge variant="outline" className="text-sm px-4 py-2 bg-white/80 backdrop-blur-sm">
-            {loading ? 'Loading...' : `${totalItems} lessons available`}
-          </Badge>
         </div>
 
-        {/* Enhanced Filters */}
-        <Card className="mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+        {/* Search Section */}
+        <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-xl">
-              <Filter className="h-5 w-5 text-blue-600" />
-              Search & Filter Lessons
+              <Search className="h-5 w-5 text-blue-600" />
+              Search Lessons
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-5 gap-4">
-              <div className="relative md:col-span-2">
+            <div className="flex gap-4">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <Input
                   placeholder="Search lessons by title or description..."
@@ -228,55 +222,179 @@ export function LessonsPage() {
                   className="pl-12 h-12 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-xl"
                 />
               </div>
-              
-              <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-                <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
-                  <SelectValue placeholder="All Subjects" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Subjects</SelectItem>
-                  <SelectItem value="Math">Math</SelectItem>
-                  <SelectItem value="Physics">Physics</SelectItem>
-                  <SelectItem value="Chemistry">Chemistry</SelectItem>
-                  <SelectItem value="Biology">Biology</SelectItem>
-                  <SelectItem value="Literature">Literature</SelectItem>
-                  <SelectItem value="English">English</SelectItem>
-                  <SelectItem value="History">History</SelectItem>
-                  <SelectItem value="Geography">Geography</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={`${sortBy}:${sortOrder}`} onValueChange={(value) => {
-                const [field, order] = value.split(':');
-                setSortBy(field);
-                setSortOrder(order);
-              }}>
-                <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="createdAt:desc">Newest first</SelectItem>
-                  <SelectItem value="createdAt:asc">Oldest first</SelectItem>
-                  <SelectItem value="updatedAt:desc">Most recent update first</SelectItem>
-                  <SelectItem value="updatedAt:asc">Longest update first</SelectItem>
-                  <SelectItem value="title:asc">Name A→Z</SelectItem>
-                  <SelectItem value="title:desc">Name Z→A</SelectItem>
-                </SelectContent>
-              </Select>
-
               <Button 
                 variant="outline" 
                 onClick={() => {
                   setSearchQuery('');
-                  setSubjectFilter('all');
-                  setSortBy('title');
-                  setSortOrder('asc');
                 }}
                 className="h-12 border-2 border-gray-200 hover:border-red-500 hover:text-red-600 rounded-xl"
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Clear All
+                Clear
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Sort Section */}
+        <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Filter className="h-5 w-5 text-blue-600" />
+              Sort & Filter
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 items-center">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Sort by:</label>
+                <Select value={`${sortBy}:${sortOrder}`} onValueChange={(value) => {
+                  const [field, order] = value.split(':');
+                  setSortBy(field);
+                  setSortOrder(order);
+                }}>
+                  <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="createdAt:desc">Newest first</SelectItem>
+                    <SelectItem value="createdAt:asc">Oldest first</SelectItem>
+                    <SelectItem value="updatedAt:desc">Most recent update first</SelectItem>
+                    <SelectItem value="updatedAt:asc">Longest update first</SelectItem>
+                    <SelectItem value="title:asc">Name A→Z</SelectItem>
+                    <SelectItem value="title:desc">Name Z→A</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">Subject:</label>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant={subjectFilter === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('all')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'all' 
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-blue-500'
+                    }`}
+                  >
+                    Tất cả
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Math' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Math')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Math' 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-blue-500'
+                    }`}
+                  >
+                    Toán học
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Physics' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Physics')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Physics' 
+                        ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-green-500'
+                    }`}
+                  >
+                    Vật lý
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Chemistry' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Chemistry')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Chemistry' 
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-orange-500'
+                    }`}
+                  >
+                    Hóa học
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Biology' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Biology')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Biology' 
+                        ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-emerald-500'
+                    }`}
+                  >
+                    Sinh học
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Literature' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Literature')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Literature' 
+                        ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-pink-500'
+                    }`}
+                  >
+                    Ngữ văn
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'English' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('English')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'English' 
+                        ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-purple-500'
+                    }`}
+                  >
+                    Tiếng Anh
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'History' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('History')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'History' 
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-amber-500'
+                    }`}
+                  >
+                    Lịch sử
+                  </Button>
+                  <Button
+                    variant={subjectFilter === 'Geography' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSubjectFilter('Geography')}
+                    className={`rounded-lg transition-all duration-300 ${
+                      subjectFilter === 'Geography' 
+                        ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white border-0' 
+                        : 'border-2 border-gray-200 hover:border-teal-500'
+                    }`}
+                  >
+                    Địa lý
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setSubjectFilter('all');
+                    setSortBy('title');
+                    setSortOrder('asc');
+                  }}
+                  className="h-12 border-2 border-gray-200 hover:border-red-500 hover:text-red-600 rounded-xl"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Reset Filters
+                </Button>
+              </div>
             </div>
             
             {/* Results count */}

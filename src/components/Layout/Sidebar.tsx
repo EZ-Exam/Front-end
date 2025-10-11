@@ -4,8 +4,6 @@ import {
   Home,
   BookOpen,
   FileText,
-  User,
-  Settings,
   HelpCircle, 
   PenTool,
   X,
@@ -26,8 +24,6 @@ const navigation = [
   { name: 'Question Bank', href: '/question-bank', icon: PenTool, color: 'from-purple-500 to-purple-600' },
   { name: 'Mock Tests', href: '/mock-tests', icon: FileText, color: 'from-orange-500 to-orange-600' },
   { name: 'Mock Test History', href: '/mock-tests/history', icon: History, color: 'from-indigo-500 to-indigo-600' },
-  { name: 'Profile', href: '/profile', icon: User, color: 'from-pink-500 to-pink-600' },
-  { name: 'Settings', href: '/settings', icon: Settings, color: 'from-gray-500 to-gray-600' },
   { name: 'Help & Support', href: '/help', icon: HelpCircle, color: 'from-teal-500 to-teal-600' },
 ];
 
@@ -42,7 +38,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       
       <aside className={cn(
         "fixed left-0 top-16 bottom-0 z-40 w-72 bg-white/95 backdrop-blur-sm border-r border-gray-200/50 transform transition-all duration-300 ease-in-out shadow-2xl",
-        "lg:translate-x-0 lg:static lg:z-0 lg:shadow-none",
+        "lg:translate-x-0 lg:fixed lg:z-0 lg:shadow-none",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         {/* Enhanced Mobile Header */}

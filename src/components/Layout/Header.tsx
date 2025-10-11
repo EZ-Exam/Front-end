@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Search, Menu, Crown, User, Star, Infinity, LogIn, UserPlus } from 'lucide-react';
+import { Menu, Crown, User, Star, Infinity, LogIn, UserPlus } from 'lucide-react';
 import EZEXAMLogo from '@/assest/EZEXAM_Icon.png';
 import {NotificationDropdown} from '@/components/Layout/NotificationDropdown';
 import { CreateContentDropdown } from './CreateContentDropdown';
@@ -167,17 +167,6 @@ export function Header({ onMenuToggle, onRefreshData, refreshTrigger }: HeaderPr
       </div>
 
       <div className="flex items-center gap-4 relative z-10">
-        <div className="hidden md:flex items-center gap-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl px-4 py-3 w-80 border-2 border-gray-200 focus-within:border-blue-500 focus-within:shadow-lg transition-all duration-300 hover:shadow-md">
-          <div className="p-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
-            <Search className="h-4 w-4 text-white" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search lessons, exercises..."
-            className="bg-transparent border-none outline-none flex-1 text-sm font-medium placeholder-gray-500"
-          />
-        </div>
-
         {checkUserAuthentication() && <NotificationDropdown />}
 
         {checkUserAuthentication() && <CreateContentDropdown />}

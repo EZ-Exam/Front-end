@@ -29,7 +29,7 @@ export function Layout() {
         
         {/* Main Content with proper spacing - flex-1 to push footer down */}
         <div className="flex flex-1">
-          <main className="flex-1 lg:ml-64 p-6 pt-24 pb-6" >
+          <main className="flex-1 lg:ml-72 p-6 pt-24 pb-6" >
             <Outlet />
           </main>
         </div>

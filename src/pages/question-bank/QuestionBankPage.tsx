@@ -87,10 +87,10 @@ export function QuestionBankPage() {
 
   const getDifficultyInfo = (difficultyLevelId: number) => {
     switch (difficultyLevelId) {
-      case 1: return { text: 'Dễ', color: 'bg-green-100 text-green-800' };
-      case 2: return { text: 'Trung bình', color: 'bg-yellow-100 text-yellow-800' };
-      case 3: return { text: 'Khó', color: 'bg-red-100 text-red-800' };
-      case 4: return { text: 'Rất khó', color: 'bg-purple-100 text-purple-800' };
+      case 1: return { text: 'Nhận biết', color: 'bg-green-100 text-green-800' };
+      case 2: return { text: 'Thông hiểu', color: 'bg-yellow-100 text-yellow-800' };
+      case 3: return { text: 'Vận dụng', color: 'bg-red-100 text-red-800' };
+      case 4: return { text: 'Vận dụng cao', color: 'bg-purple-100 text-purple-800' };
       default: return { text: 'Unknown', color: 'bg-gray-100 text-gray-800' };
     }
   };
@@ -139,9 +139,6 @@ export function QuestionBankPage() {
               Question Bank
             </h1>
           </div>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Explore our comprehensive collection of practice questions to enhance your learning experience
-          </p>
         </div>
 
         {/* Statistics Cards */}
@@ -162,7 +159,7 @@ export function QuestionBankPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm font-medium">Dễ</p>
+                  <p className="text-green-100 text-sm font-medium">Nhận biết</p>
                   <p className="text-3xl font-bold">{stats.easy}</p>
                 </div>
                 <Target className="h-8 w-8 text-green-200" />
@@ -174,7 +171,7 @@ export function QuestionBankPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-yellow-100 text-sm font-medium">Trung bình</p>
+                  <p className="text-yellow-100 text-sm font-medium">Thông hiểu</p>
                   <p className="text-3xl font-bold">{stats.medium}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-yellow-200" />
@@ -186,7 +183,7 @@ export function QuestionBankPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-red-100 text-sm font-medium">Khó</p>
+                  <p className="text-red-100 text-sm font-medium">Vận dụng</p>
                   <p className="text-3xl font-bold">{stats.hard}</p>
                 </div>
                 <Zap className="h-8 w-8 text-red-200" />
@@ -198,7 +195,7 @@ export function QuestionBankPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100 text-sm font-medium">Rất khó</p>
+                  <p className="text-purple-100 text-sm font-medium">Vận dụng cao</p>
                   <p className="text-3xl font-bold">{stats.veryHard}</p>
                 </div>
                 <Brain className="h-8 w-8 text-purple-200" />
@@ -207,16 +204,16 @@ export function QuestionBankPage() {
           </Card>
         </div>
 
-        {/* Enhanced Filters */}
-        <Card className="mb-8 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+        {/* Search & Sort Section */}
+        <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-xl">
-              <Filter className="h-5 w-5 text-blue-600" />
-              Search & Filter Questions
+              <Search className="h-5 w-5 text-blue-600" />
+              Search & Sort Questions
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-5 gap-4">
+            <div className="grid md:grid-cols-4 gap-4">
               <div className="relative md:col-span-2">
                 <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <Input
@@ -226,19 +223,6 @@ export function QuestionBankPage() {
                   className="pl-12 h-12 text-lg border-2 border-gray-200 focus:border-blue-500 rounded-xl"
                 />
               </div>
-
-              <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-                <SelectTrigger className="h-12 border-2 border-gray-200 focus:border-blue-500 rounded-xl">
-                  <SelectValue placeholder="Tất cả độ khó" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tất cả độ khó</SelectItem>
-                  <SelectItem value="1">Dễ</SelectItem>
-                  <SelectItem value="2">Trung bình</SelectItem>
-                  <SelectItem value="3">Khó</SelectItem>
-                  <SelectItem value="4">Rất khó</SelectItem>
-                </SelectContent>
-              </Select>
 
               <Select value={`${sortBy}:${sortOrder}`} onValueChange={(value) => {
                 const [field, order] = value.split(':');
@@ -260,7 +244,6 @@ export function QuestionBankPage() {
                 variant="outline" 
                 onClick={() => {
                   setSearchQuery('');
-                  setDifficultyFilter('all');
                   setSortBy('createdAt');
                   setSortOrder('desc');
                   setPageNumber(1);
@@ -269,6 +252,80 @@ export function QuestionBankPage() {
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Clear All
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Difficulty Filter Section */}
+        <Card className="mb-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Target className="h-5 w-5 text-blue-600" />
+              Filter by Difficulty
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant={difficultyFilter === 'all' ? 'default' : 'outline'}
+                size="lg"
+                onClick={() => setDifficultyFilter('all')}
+                className={`rounded-xl transition-all duration-300 ${
+                  difficultyFilter === 'all' 
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-lg' 
+                    : 'border-2 border-gray-200 hover:border-blue-500 hover:shadow-md'
+                }`}
+              >
+                Tất cả độ khó
+              </Button>
+              <Button
+                variant={difficultyFilter === '1' ? 'default' : 'outline'}
+                size="lg"
+                onClick={() => setDifficultyFilter('1')}
+                className={`rounded-xl transition-all duration-300 ${
+                  difficultyFilter === '1' 
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg' 
+                    : 'border-2 border-gray-200 hover:border-green-500 hover:shadow-md'
+                }`}
+              >
+                Nhận biết
+              </Button>
+              <Button
+                variant={difficultyFilter === '2' ? 'default' : 'outline'}
+                size="lg"
+                onClick={() => setDifficultyFilter('2')}
+                className={`rounded-xl transition-all duration-300 ${
+                  difficultyFilter === '2' 
+                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 shadow-lg' 
+                    : 'border-2 border-gray-200 hover:border-yellow-500 hover:shadow-md'
+                }`}
+              >
+                Thông hiểu
+              </Button>
+              <Button
+                variant={difficultyFilter === '3' ? 'default' : 'outline'}
+                size="lg"
+                onClick={() => setDifficultyFilter('3')}
+                className={`rounded-xl transition-all duration-300 ${
+                  difficultyFilter === '3' 
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white border-0 shadow-lg' 
+                    : 'border-2 border-gray-200 hover:border-red-500 hover:shadow-md'
+                }`}
+              >
+                Vận dụng
+              </Button>
+              <Button
+                variant={difficultyFilter === '4' ? 'default' : 'outline'}
+                size="lg"
+                onClick={() => setDifficultyFilter('4')}
+                className={`rounded-xl transition-all duration-300 ${
+                  difficultyFilter === '4' 
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg' 
+                    : 'border-2 border-gray-200 hover:border-purple-500 hover:shadow-md'
+                }`}
+              >
+                Vận dụng cao
               </Button>
             </div>
             
@@ -326,8 +383,9 @@ export function QuestionBankPage() {
             {filteredQuestions.map((question, index) => (
               <Card 
                 key={question.id} 
-                className="group hover:shadow-2xl transition-all duration-300 hover:scale-105 border-0 bg-white/90 backdrop-blur-sm shadow-lg"
+                className="group hover:shadow-2xl transition-all duration-300 hover:scale-105 border-0 bg-white/90 backdrop-blur-sm shadow-lg cursor-pointer"
                 style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => window.location.href = `/question-bank/${question.id}`}
               >
                 <CardHeader className="pb-4">
                   <div className="flex items-start justify-between mb-4">
@@ -374,21 +432,6 @@ export function QuestionBankPage() {
                     </Badge>
                   </div>
                 </CardHeader>
-                
-                <CardContent className="pt-0">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    asChild 
-                    className="w-full group-hover:bg-gradient-to-r group-hover:from-blue-500 group-hover:to-purple-500 group-hover:text-white group-hover:border-transparent transition-all duration-300 rounded-xl"
-                  >
-                    <Link to={`/question-bank/${question.id}`}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      View Details
-                      <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </Button>
-                </CardContent>
               </Card>
             ))}
           </div>
