@@ -15,10 +15,13 @@ import {
   Trophy,
   Brain,
   Target,
-  AlertTriangle
+  AlertTriangle,
+  Lock
 } from 'lucide-react';
 import api from '@/services/axios';
 import { useAuth } from '@/pages/auth/AuthContext';
+import { SubscriptionUtils, SubscriptionLevel } from '@/lib/subscription';
+import { useToast } from '@/contexts/ToastContext';
 
 interface Question {
   id: string;
@@ -47,6 +50,7 @@ export function MockTestDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { showLoading, hideLoading } = useGlobalLoading();
   const { user } = useAuth();
+  const { error: showError } = useToast();
   
   const [exam, setExam] = useState<Exam | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -598,15 +602,26 @@ export function MockTestDetailPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              asChild
-              className="h-12 px-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold"
-            >
-              <Link to={`/mock-tests/${id}/analytics`}>
-                <Target className="mr-2 h-5 w-5" />
-                View Analytics
-              </Link>
-            </Button>
+            {SubscriptionUtils.canViewAnalyticsAndDetails(user) ? (
+              <Button
+                asChild
+                className="h-12 px-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold"
+              >
+                <Link to={`/mock-tests/${id}/analytics`}>
+                  <Target className="mr-2 h-5 w-5" />
+                  View Analytics
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                onClick={() => showError(SubscriptionUtils.getUpgradeMessage(SubscriptionLevel.BASIC), 'Cần nâng cấp subscription')}
+                className="h-12 px-8 bg-gray-400 hover:bg-gray-500 text-white border-0 shadow-xl rounded-xl text-lg font-semibold cursor-not-allowed"
+                disabled
+              >
+                <Lock className="mr-2 h-5 w-5" />
+                View Analytics (LOCKED), BASIC+ to unlock
+              </Button>
+            )}
             <Button 
               onClick={retakeTest}
               className="h-12 px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 rounded-xl text-lg font-semibold"

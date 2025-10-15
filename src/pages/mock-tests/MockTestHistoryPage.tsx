@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
@@ -13,8 +13,11 @@ import {
   Target,
   Calendar,
   ArrowRight,
-  History
+  History,
+  Lock
 } from 'lucide-react';
+import { SubscriptionUtils, SubscriptionLevel } from '@/lib/subscription';
+import { useToast } from '@/contexts/ToastContext';
 import api from '@/services/axios';
 
 interface ExamHistory {
@@ -46,6 +49,7 @@ interface ExamDetail {
 
 export function MockTestHistoryPage() {
   const { user } = useAuth();
+  const { error: showError } = useToast();
   const { showLoading, hideLoading } = useGlobalLoading();
   
   const [examHistories, setExamHistories] = useState<ExamHistory[]>([]);
@@ -317,12 +321,25 @@ export function MockTestHistoryPage() {
                         {history.score >= 80 ? 'Excellent' : history.score >= 60 ? 'Good' : 'Needs Improvement'}
                       </Badge>
                       <div className="mt-4">
-                        <Button asChild size="sm">
-                          <Link to={`/mock-tests/history/${history.id}`}>
-                            <ArrowRight className="mr-2 h-4 w-4" />
-                            View Details
-                          </Link>
-                        </Button>
+                        {SubscriptionUtils.canViewAnalyticsAndDetails(user) ? (
+                          <Button asChild size="sm">
+                            <Link to={`/mock-tests/history/${history.id}`}>
+                              <ArrowRight className="mr-2 h-4 w-4" />
+                              View Details
+                            </Link>
+                          </Button>
+                        ) : (
+                          <Button 
+                            onClick={() => showError(SubscriptionUtils.getUpgradeMessage(SubscriptionLevel.BASIC), 'Cần nâng cấp subscription')}
+                            size="sm"
+                            variant="outline"
+                            className="bg-gray-100 text-black-500 border-gray-300 cursor-not-allowed"
+                            disabled
+                          >
+                            <Lock className="mr-2 h-4 w-4" />
+                            View Details (LOCKED), BASIC+ to unlock
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -8,17 +8,65 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Lock } from 'lucide-react';
+import { useAuth } from '@/pages/auth/AuthContext';
+import { SubscriptionUtils } from '@/lib/subscription';
 // import { mockQuestionSets } from '@/data/mockData';
 import api from '@/services/axios';
 import { useToast } from '@/contexts/ToastContext';
 
 export function CreateMockTestPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   // Global loading hook
   const { withLoading } = useGlobalLoading();
   const { success, error } = useToast();
+
+  // Kiểm tra quyền truy cập
+  if (!SubscriptionUtils.canCreateMockTest(user)) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardHeader className="text-center pb-4">
+            <div className="p-4 bg-red-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <Lock className="h-8 w-8 text-red-600" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-gray-800 mb-2">
+              Tính năng bị khóa
+            </CardTitle>
+            <p className="text-gray-600">
+              Bạn cần nâng cấp lên gói PREMIUM để tạo Mock Test
+            </p>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-4">
+              <h3 className="font-semibold text-orange-800 mb-2">Subscription hiện tại:</h3>
+              <p className="text-orange-700 font-bold">
+                {SubscriptionUtils.getDisplaySubscriptionLevel(user)}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Button 
+                onClick={() => navigate('/profile')}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                Nâng cấp Subscription
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/mock-tests')}
+                className="w-full"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Quay lại Mock Tests
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   const [mockTestForm, setMockTestForm] = useState({
     name: '',

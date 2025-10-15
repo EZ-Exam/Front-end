@@ -14,14 +14,20 @@ import {
   Target,
   User,
   Lightbulb,
-  Award
+  Award,
+  Lock
 } from 'lucide-react';
 import { Question } from '@/types';
 import axios from '@/services/axios';
+import { useAuth } from '@/pages/auth/AuthContext';
+import { SubscriptionUtils, SubscriptionLevel } from '@/lib/subscription';
 import { CommentSection } from '@/components/ui/CommentSection';
+import { useToast } from '@/contexts/ToastContext';
 
 export function QuestionBankDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const { error } = useToast();
   const [question, setQuestion] = useState<Question | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -228,12 +234,12 @@ export function QuestionBankDetailPage() {
                 <div className="space-y-3">
                   {question.options.map((option, index) => (
                     <div key={index} className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 ${
-                      option === question.correctAnswer 
+                      SubscriptionUtils.canViewAnswersAndExplanations(user) && option === question.correctAnswer 
                         ? 'bg-green-50 border-green-300 shadow-lg' 
                         : 'bg-gray-50 border-gray-200 hover:border-gray-300'
                     }`}>
                       <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
-                        option === question.correctAnswer 
+                        SubscriptionUtils.canViewAnswersAndExplanations(user) && option === question.correctAnswer 
                           ? 'bg-green-500 text-white' 
                           : 'bg-gray-300 text-gray-700'
                       }`}>
@@ -241,12 +247,12 @@ export function QuestionBankDetailPage() {
                       </div>
                       <div className="flex-1">
                         <span className={`text-lg ${
-                          option === question.correctAnswer ? 'font-semibold text-green-800' : 'text-gray-700'
+                          SubscriptionUtils.canViewAnswersAndExplanations(user) && option === question.correctAnswer ? 'font-semibold text-green-800' : 'text-gray-700'
                         }`}>
                           {option}
                         </span>
                       </div>
-                      {option === question.correctAnswer && (
+                      {SubscriptionUtils.canViewAnswersAndExplanations(user) && option === question.correctAnswer && (
                         <div className="flex items-center gap-2">
                           <CheckCircle className="h-6 w-6 text-green-600" />
                           <span className="text-sm font-semibold text-green-600">Correct Answer</span>
@@ -266,9 +272,24 @@ export function QuestionBankDetailPage() {
                 </div>
                 <h3 className="text-xl font-semibold">Correct Answer</h3>
               </div>
-              <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
-                <p className="text-green-800 font-semibold text-xl text-center">{question.correctAnswer}</p>
-              </div>
+              {SubscriptionUtils.canViewAnswersAndExplanations(user) ? (
+                <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
+                  <p className="text-green-800 font-semibold text-xl text-center">{question.correctAnswer}</p>
+                </div>
+              ) : (
+                <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl relative">
+                  <div className="flex items-center justify-center gap-3 text-gray-500">
+                    <Lock className="h-6 w-6" />
+                    <span className="text-lg font-semibold">Cần nâng cấp BASIC+ để xem đáp án</span>
+                  </div>
+                  <Button 
+                    onClick={() => error(SubscriptionUtils.getUpgradeMessage(SubscriptionLevel.BASIC), 'Cần nâng cấp subscription')}
+                    className="mt-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    Nâng cấp ngay
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Explanation */}
@@ -280,9 +301,24 @@ export function QuestionBankDetailPage() {
                   </div>
                   <h3 className="text-xl font-semibold">Explanation</h3>
                 </div>
-                <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl">
-                  <p className="text-purple-800 text-lg leading-relaxed">{question.explanation}</p>
-                </div>
+                {SubscriptionUtils.canViewAnswersAndExplanations(user) ? (
+                  <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl">
+                    <p className="text-purple-800 text-lg leading-relaxed">{question.explanation}</p>
+                  </div>
+                ) : (
+                  <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl relative">
+                    <div className="flex items-center justify-center gap-3 text-gray-500">
+                      <Lock className="h-6 w-6" />
+                      <span className="text-lg font-semibold">Cần nâng cấp BASIC+ để xem giải thích</span>
+                    </div>
+                    <Button 
+                      onClick={() => error(SubscriptionUtils.getUpgradeMessage(SubscriptionLevel.BASIC), 'Cần nâng cấp subscription')}
+                      className="mt-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                    >
+                      Nâng cấp ngay
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -300,7 +336,25 @@ export function QuestionBankDetailPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <CommentSection questionId={Number(question.id)} />
+              {SubscriptionUtils.canCommentInQuestionBank(user) ? (
+                <CommentSection questionId={Number(question.id)} />
+              ) : (
+                <div className="p-8 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl text-center">
+                  <div className="flex items-center justify-center gap-3 text-gray-500 mb-4">
+                    <Lock className="h-8 w-8" />
+                    <span className="text-xl font-semibold">Cần nâng cấp BASIC+ để tham gia thảo luận</span>
+                  </div>
+                  <p className="text-gray-600 mb-6">
+                    Nâng cấp subscription để có thể xem và tham gia bình luận về câu hỏi này
+                  </p>
+                  <Button 
+                    onClick={() => error(SubscriptionUtils.getUpgradeMessage(SubscriptionLevel.BASIC), 'Cần nâng cấp subscription')}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    Nâng cấp ngay
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

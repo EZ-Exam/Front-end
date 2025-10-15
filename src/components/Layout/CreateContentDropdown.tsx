@@ -18,6 +18,7 @@ import { uploadImgBBMultipleFile } from '@/services/imgBB';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { addStyles, EditableMathField } from 'react-mathquill';
 import { useToast } from '@/contexts/ToastContext';
+import { SubscriptionUtils, SubscriptionLevel } from '@/lib/subscription';
 addStyles();
 
 export function CreateContentDropdown() {
@@ -256,45 +257,77 @@ export function CreateContentDropdown() {
         </DropdownMenuTrigger>
         
         <DropdownMenuContent align="end" className="w-64 bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-xl p-2">
-          <DropdownMenuItem 
-            className='text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 rounded-lg p-3 cursor-pointer transition-all duration-300 hover:scale-105' 
-            onClick={() => { setActiveDialog('single-question'); setIsOpen(false); }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
-                <MessageSquare className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <div className="font-semibold">Create Question</div>
-                <div className="text-xs text-gray-500">Add new question</div>
-              </div>
-            </div>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/create-lesson" onClick={() => setIsOpen(false)} className="block">
-              <div className="flex items-center gap-3 p-3 hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 rounded-lg transition-all duration-300 hover:scale-105">
-                <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg">
-                  <BookOpen className="h-4 w-4 text-white" />
+          {/* Create Question - chỉ hiển thị cho Moderator (roleId = 3) */}
+          {SubscriptionUtils.canCreateQuestionAndLesson(user) && (
+            <DropdownMenuItem 
+              className='text-blue-600 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 rounded-lg p-3 cursor-pointer transition-all duration-300 hover:scale-105' 
+              onClick={() => { setActiveDialog('single-question'); setIsOpen(false); }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
+                  <MessageSquare className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <div className="font-semibold text-green-600">Create Lesson</div>
-                  <div className="text-xs text-gray-500">Add new lesson</div>
+                  <div className="font-semibold">Create Question</div>
+                  <div className="text-xs text-gray-500">Add new question</div>
                 </div>
               </div>
-            </Link>
-          </DropdownMenuItem>
+            </DropdownMenuItem>
+          )}
+          
+          {/* Create Lesson - chỉ hiển thị cho Moderator (roleId = 3) */}
+          {SubscriptionUtils.canCreateQuestionAndLesson(user) && (
+            <DropdownMenuItem asChild>
+              <Link to="/create-lesson" onClick={() => setIsOpen(false)} className="block">
+                <div className="flex items-center gap-3 p-3 hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 rounded-lg transition-all duration-300 hover:scale-105">
+                  <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-lg">
+                    <BookOpen className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-green-600">Create Lesson</div>
+                    <div className="text-xs text-gray-500">Add new lesson</div>
+                  </div>
+                </div>
+              </Link>
+            </DropdownMenuItem>
+          )}
+          
+          {/* Create Mock Test - hiển thị cho tất cả nhưng bị khóa theo subscription */}
           <DropdownMenuItem asChild>
-            <Link to="/create-mock-test" onClick={() => setIsOpen(false)} className="block">
-              <div className="flex items-center gap-3 p-3 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 rounded-lg transition-all duration-300 hover:scale-105">
-                <div className="p-2 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg">
-                  <FileText className="h-4 w-4 text-white" />
+            {SubscriptionUtils.canCreateMockTest(user) ? (
+              <Link to="/create-mock-test" onClick={() => setIsOpen(false)} className="block">
+                <div className="flex items-center gap-3 p-3 hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 rounded-lg transition-all duration-300 hover:scale-105">
+                  <div className="p-2 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg">
+                    <FileText className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-orange-600">Create Mock Test</div>
+                    <div className="text-xs text-gray-500">Add new test</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-semibold text-orange-600">Create Mock Test</div>
-                  <div className="text-xs text-gray-500">Add new test</div>
+              </Link>
+            ) : (
+              <div 
+                onClick={() => {
+                  setIsOpen(false);
+                  error(SubscriptionUtils.getUpgradeMessage(SubscriptionLevel.PREMIUM), 'Cần nâng cấp subscription');
+                }}
+                className="block cursor-pointer"
+              >
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg opacity-60">
+                  <div className="p-2 bg-gray-400 rounded-lg">
+                    <FileText className="h-4 w-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-gray-500 flex items-center gap-2">
+                      Create Mock Test
+                      <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">LOCKED</span>
+                    </div>
+                    <div className="text-xs text-gray-400">Cần PREMIUM+</div>
+                  </div>
                 </div>
               </div>
-            </Link>
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

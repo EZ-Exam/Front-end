@@ -4,22 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import { 
   FileText, 
   ArrowLeft, 
-  MessageSquare, 
   Download,
   CheckCircle,
   RotateCcw,
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react';
-import { mockComments } from '@/data/mockData';
 import { PDFViewer } from '@/components/ui/pdf-viewer';
+import { useAuth } from '@/pages/auth/AuthContext';
+import { SubscriptionUtils, SubscriptionLevel } from '@/lib/subscription';
+import { useToast } from '@/contexts/ToastContext';
 import api from '@/services/axios';
 
 interface Lesson {
@@ -68,8 +68,9 @@ const subjectMapping: { [key: string]: string } = {
 
 export function LessonDetailPage() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const { error: showError } = useToast();
   const [activeTab, setActiveTab] = useState('pdf');
-  const [newComment, setNewComment] = useState('');
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -221,13 +222,6 @@ export function LessonDetailPage() {
     
     setQuestionResults(results);
     setQuizSubmitted(true);
-  };
-
-  const handleSubmitComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('New comment:', newComment);
-    setNewComment('');
-    // Would submit to backend
   };
 
   const handleQuizReset = () => {
@@ -435,31 +429,50 @@ export function LessonDetailPage() {
                       </div>
                       
                       {quizSubmitted && result && (
-                        <div className={`p-4 rounded-lg ${result.isCorrect ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                          <div className="flex items-center gap-2 mb-2">
-                            {result.isCorrect ? (
-                              <CheckCircle className="h-5 w-5 text-green-600" />
-                            ) : (
-                              <div className="h-5 w-5 rounded-full bg-red-600 flex items-center justify-center">
-                                <span className="text-white text-xs">✗</span>
-                              </div>
-                            )}
-                            <span className={`font-medium ${result.isCorrect ? 'text-green-800' : 'text-red-800'}`}>
-                              {result.isCorrect ? 'Correct!' : 'Incorrect'}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-700 mb-2">
-                            <strong>Your answer:</strong> {result.selectedAnswers.join(', ') || 'No answer selected'}
-                          </p>
-                          <p className="text-sm text-gray-700 mb-2">
-                            <strong>Correct answer:</strong> {result.correctAnswer}
-                          </p>
-                          {question.explanation && (
-                            <p className="text-sm text-gray-600">
-                              <strong>Explanation:</strong> {question.explanation}
+                        SubscriptionUtils.canViewAnswersAndExplanations(user) ? (
+                          <div className={`p-4 rounded-lg ${result.isCorrect ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              {result.isCorrect ? (
+                                <CheckCircle className="h-5 w-5 text-green-600" />
+                              ) : (
+                                <div className="h-5 w-5 rounded-full bg-red-600 flex items-center justify-center">
+                                  <span className="text-white text-xs">✗</span>
+                                </div>
+                              )}
+                              <span className={`font-medium ${result.isCorrect ? 'text-green-800' : 'text-red-800'}`}>
+                                {result.isCorrect ? 'Correct!' : 'Incorrect'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-700 mb-2">
+                              <strong>Your answer:</strong> {result.selectedAnswers.join(', ') || 'No answer selected'}
                             </p>
-                          )}
-                        </div>
+                            <p className="text-sm text-gray-700 mb-2">
+                              <strong>Correct answer:</strong> {result.correctAnswer}
+                            </p>
+                            {question.explanation && (
+                              <p className="text-sm text-gray-600">
+                                <strong>Explanation:</strong> {question.explanation}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg">
+                            <div className="flex items-center gap-2 text-gray-500 mb-3">
+                              <Lock className="h-5 w-5" />
+                              <span className="text-sm font-semibold">Cần nâng cấp BASIC+ để xem kết quả quiz</span>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-3">
+                              Nâng cấp subscription để xem đáp án đúng, giải thích và kết quả chi tiết
+                            </p>
+                            <Button 
+                              onClick={() => showError(SubscriptionUtils.getUpgradeMessage(SubscriptionLevel.BASIC), 'Cần nâng cấp subscription')}
+                              size="sm"
+                              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                            >
+                              Nâng cấp ngay
+                            </Button>
+                          </div>
+                        )
                       )}
                     </div>
                   );
