@@ -335,6 +335,17 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
 
     setIsLoading(true);
     try {
+      // Client-side balance validation to avoid false "success" UX
+      const currentBalance = typeof user.balance === 'string' ? parseFloat(user.balance) : (user.balance || 0);
+      const price = subscriptionType.subscriptionPrice || 0;
+      if (price > 0 && currentBalance < price) {
+        setIsLoading(false);
+        error('Số dư không đủ để đăng ký gói. Vui lòng nạp thêm tiền.', 'Insufficient Balance');
+        // Suggest opening deposit dialog
+        setActiveDialog('deposit');
+        return;
+      }
+
       const payload = {
         subscriptionTypeId: subscriptionType.id,
         description: `${user.fullName} subscribed to ${subscriptionType.subscriptionName} plan`
@@ -343,36 +354,52 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
       console.log('Subscribing to subscription with payload:', payload);
       
       const response = await api.post('/subscription/subscribe', payload);
-      
-      if (response.status === 200 || response.status === 201) {
-        console.log('Subscription created successfully:', response.data);
-        
-        success(`Successfully subscribed to ${subscriptionType.subscriptionName} plan!`, 'Subscription Success');
-        
-        // Refresh current subscription data
-        await fetchCurrentSubscription();
+      const respData = response.data || {};
 
-        // Update global user state immediately
-        setUser(prev => prev ? {
-          ...prev,
-          subscriptionName: subscriptionType.subscriptionName,
-          subscriptionTypeId: subscriptionType.id.toString(),
-          subscriptionIsActive: true
-        } : prev);
-        
-        // Notify Header to refresh its data
-        if (onSubscriptionUpdated) {
-          onSubscriptionUpdated();
-        }
-        
-        // Close the modal
-        setActiveDialog(null);
+      const looksSuccessful = (
+        (response.status === 200 || response.status === 201) &&
+        (
+          // Trust explicit flags/ids if provided by backend
+          respData.isActive === true ||
+          respData.subscriptionTypeId === subscriptionType.id ||
+          (typeof respData.message === 'string' && /success|thanh cong/i.test(respData.message))
+        )
+      );
+
+      if (!looksSuccessful) {
+        throw { response: { status: response.status, data: respData || { message: 'Subscription failed. Please try again.' } } };
       }
+
+      console.log('Subscription created successfully:', respData);
+      success(`Successfully subscribed to ${subscriptionType.subscriptionName} plan!`, 'Subscription Success');
+      
+      // Refresh current subscription data
+      await fetchCurrentSubscription();
+
+      // Update global user state immediately
+      setUser(prev => prev ? {
+        ...prev,
+        subscriptionName: subscriptionType.subscriptionName,
+        subscriptionTypeId: subscriptionType.id.toString(),
+        subscriptionIsActive: true
+      } : prev);
+      
+      // Notify Header to refresh its data
+      if (onSubscriptionUpdated) {
+        onSubscriptionUpdated();
+      }
+      
+      // Close the modal
+      setActiveDialog(null);
     } catch (err: any) {
       console.error('Error subscribing to plan:', err);
       
       // Handle different error scenarios
-      if (err.response?.data?.message) {
+      const message = err.response?.data?.message || err.message || '';
+      if (/insufficient|khong du|not enough/i.test(message)) {
+        error('Số dư không đủ để đăng ký gói. Vui lòng nạp thêm tiền.', 'Insufficient Balance');
+        setActiveDialog('deposit');
+      } else if (err.response?.data?.message) {
         error(err.response.data.message, 'Subscription Error');
       } else if (err.response?.status === 401) {
         error('Authentication failed. Please login again.', 'Authentication Error');
