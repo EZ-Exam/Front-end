@@ -20,14 +20,12 @@ import {
 import { Question } from '@/types';
 import axios from '@/services/axios';
 import { useAuth } from '@/pages/auth/AuthContext';
-import { SubscriptionUtils, SubscriptionLevel } from '@/lib/subscription';
+import { SubscriptionUtils } from '@/lib/subscription';
 import { CommentSection } from '@/components/ui/CommentSection';
-import { useToast } from '@/contexts/ToastContext';
 
 export function QuestionBankDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { error } = useToast();
   const [question, setQuestion] = useState<Question | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -283,7 +281,7 @@ export function QuestionBankDetailPage() {
                     <span className="text-lg font-semibold">Cần nâng cấp BASIC+ để xem đáp án</span>
                   </div>
                   <Button 
-                    onClick={() => error(SubscriptionUtils.getUpgradeMessage(SubscriptionLevel.BASIC), 'Cần nâng cấp subscription')}
+                    onClick={() => window.dispatchEvent(new Event('open-upgrade'))}
                     className="mt-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     Nâng cấp ngay
@@ -311,8 +309,8 @@ export function QuestionBankDetailPage() {
                       <Lock className="h-6 w-6" />
                       <span className="text-lg font-semibold">Cần nâng cấp BASIC+ để xem giải thích</span>
                     </div>
-                    <Button 
-                      onClick={() => error(SubscriptionUtils.getUpgradeMessage(SubscriptionLevel.BASIC), 'Cần nâng cấp subscription')}
+                  <Button 
+                    onClick={() => window.dispatchEvent(new Event('open-upgrade'))}
                       className="mt-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                     >
                       Nâng cấp ngay
@@ -348,7 +346,7 @@ export function QuestionBankDetailPage() {
                     Nâng cấp subscription để có thể xem và tham gia bình luận về câu hỏi này
                   </p>
                   <Button 
-                    onClick={() => error(SubscriptionUtils.getUpgradeMessage(SubscriptionLevel.BASIC), 'Cần nâng cấp subscription')}
+                    onClick={() => window.dispatchEvent(new Event('open-upgrade'))}
                     className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     Nâng cấp ngay

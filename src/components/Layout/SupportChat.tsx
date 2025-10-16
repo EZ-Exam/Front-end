@@ -5,6 +5,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MessageCircle, X, Send, Minimize2, Loader2, Bot, Sparkles } from 'lucide-react';
 import api from '@/services/axios';
+import { useAuth } from '@/pages/auth/AuthContext';
+import { SubscriptionUtils } from '@/lib/subscription';
 
 interface Message {
   id: string;
@@ -21,6 +23,7 @@ interface ChatResponse {
 }
 
 export function SupportChat() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [message, setMessage] = useState('');
@@ -28,6 +31,11 @@ export function SupportChat() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isFreePlan = SubscriptionUtils.isFreeUser(user);
+  const userMessageCount = messages.filter(m => m.sender === 'user').length;
+  const freePlanLimit = 5;
+  const hasReachedFreeLimit = isFreePlan && userMessageCount >= freePlanLimit;
 
   // Load chat history when sessionId is available
   const loadChatHistory = async (sessionId: string) => {
@@ -64,6 +72,11 @@ export function SupportChat() {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || isLoading) return;
+
+    if (hasReachedFreeLimit) {
+      setError('Bạn đã dùng hết 5 tin nhắn của gói FREE. Nâng cấp để tiếp tục chat không giới hạn.');
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -161,7 +174,7 @@ export function SupportChat() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className={`fixed bottom-6 right-6 w-[400px] bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 transition-all duration-300 ease-in-out ${
+        <div className={`fixed ${hasReachedFreeLimit ? 'bottom-24' : 'bottom-6'} right-6 w-[400px] bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 transition-all duration-300 ease-in-out ${
           isMinimized ? 'h-16' : 'h-[500px]'
         } animate-in slide-in-from-bottom-4 fade-in-0`}>
           {/* Chat Header */}
@@ -189,8 +202,10 @@ export function SupportChat() {
                       <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:0.2s]"></div>
                       Typing...
                     </span>
+                  ) : isFreePlan ? (
+                    `FREE: ${Math.min(userMessageCount, freePlanLimit)} / ${freePlanLimit} tin nhắn`
                   ) : (
-                    'Online'
+                    'Unlimited messages'
                   )}
                 </p>
               </div>
@@ -266,19 +281,33 @@ export function SupportChat() {
                     {error}
                   </div>
                 )}
+                {hasReachedFreeLimit && (
+                  <div className="mb-3 p-3 bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl text-sm text-orange-700 animate-in fade-in-0 slide-in-from-top-2">
+                    Bạn đã dùng hết 5 tin nhắn miễn phí. Nâng cấp để chat không giới hạn.
+                    <div className="mt-2">
+                      <Button 
+                        size="sm" 
+                        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        onClick={() => window.dispatchEvent(new Event('open-upgrade'))}
+                      >
+                        Nâng cấp ngay
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <form onSubmit={handleSendMessage} className="flex gap-3">
                   <Input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder={isLoading ? "AI is responding..." : "Type your message..."}
                     className="flex-1 text-sm rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500 transition-all duration-200 hover:border-gray-400"
-                    disabled={isLoading}
+                    disabled={isLoading || hasReachedFreeLimit}
                   />
                   <Button 
                     type="submit" 
                     size="sm" 
                     className="px-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
-                    disabled={isLoading || !message.trim()}
+                    disabled={isLoading || !message.trim() || hasReachedFreeLimit}
                   >
                     {isLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

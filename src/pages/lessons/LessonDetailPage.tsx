@@ -18,8 +18,7 @@ import {
 } from 'lucide-react';
 import { PDFViewer } from '@/components/ui/pdf-viewer';
 import { useAuth } from '@/pages/auth/AuthContext';
-import { SubscriptionUtils, SubscriptionLevel } from '@/lib/subscription';
-import { useToast } from '@/contexts/ToastContext';
+import { SubscriptionUtils } from '@/lib/subscription';
 import api from '@/services/axios';
 
 interface Lesson {
@@ -69,7 +68,6 @@ const subjectMapping: { [key: string]: string } = {
 export function LessonDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
-  const { error: showError } = useToast();
   const [activeTab, setActiveTab] = useState('pdf');
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
@@ -465,7 +463,7 @@ export function LessonDetailPage() {
                               Nâng cấp subscription để xem đáp án đúng, giải thích và kết quả chi tiết
                             </p>
                             <Button 
-                              onClick={() => showError(SubscriptionUtils.getUpgradeMessage(SubscriptionLevel.BASIC), 'Cần nâng cấp subscription')}
+                              onClick={() => window.dispatchEvent(new Event('open-upgrade'))}
                               size="sm"
                               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                             >

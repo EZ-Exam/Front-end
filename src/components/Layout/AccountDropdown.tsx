@@ -69,7 +69,7 @@ interface CurrentSubscription {
 }
 
 export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps = {}) {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, setUser } = useAuth();
   const { success, error } = useToast();
   const navigate = useNavigate();
   const [activeDialog, setActiveDialog] = useState<'deposit' | 'upgrade' | null>(null);
@@ -143,6 +143,13 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
       fetchCurrentSubscription();
     }
   }, [activeDialog]);
+
+  // Listen for global event to open upgrade dialog
+  useEffect(() => {
+    const handleOpenUpgrade = () => setActiveDialog('upgrade');
+    window.addEventListener('open-upgrade', handleOpenUpgrade as EventListener);
+    return () => window.removeEventListener('open-upgrade', handleOpenUpgrade as EventListener);
+  }, []);
 
   // Load current subscription when component mounts
   useEffect(() => {
@@ -278,6 +285,14 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
           
           // Refresh current subscription data
           await fetchCurrentSubscription();
+
+          // Update global user state immediately to FREE
+          setUser(prev => prev ? {
+            ...prev,
+            subscriptionName: 'FREE',
+            subscriptionTypeId: '1',
+            subscriptionIsActive: false
+          } : prev);
           
           // Notify Header to refresh its data
           if (onSubscriptionUpdated) {
@@ -336,6 +351,14 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
         
         // Refresh current subscription data
         await fetchCurrentSubscription();
+
+        // Update global user state immediately
+        setUser(prev => prev ? {
+          ...prev,
+          subscriptionName: subscriptionType.subscriptionName,
+          subscriptionTypeId: subscriptionType.id.toString(),
+          subscriptionIsActive: true
+        } : prev);
         
         // Notify Header to refresh its data
         if (onSubscriptionUpdated) {
@@ -859,8 +882,12 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
             </div>
           )}
           
-          {/* Cancel Subscription Button */}
-          {(currentSubscription?.isActive || user?.subscriptionName) && (
+          {/* Cancel Subscription Button (hidden for FREE) */}
+          {(() => {
+            const currentName = (currentSubscription?.subscriptionName || user?.subscriptionName || 'FREE').toString().toUpperCase();
+            const isFreePlan = currentName === 'FREE';
+            const showCancel = !isFreePlan && (currentSubscription?.isActive || !!user?.subscriptionName);
+            return showCancel ? (
             <div className="mt-8 pt-6 border-t border-gray-200">
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-4">
@@ -889,7 +916,8 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
                 </p>
               </div>
             </div>
-          )}
+            ) : null;
+          })()}
         </DialogContent>
       </Dialog>
 

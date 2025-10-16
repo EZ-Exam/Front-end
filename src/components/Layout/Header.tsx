@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, Crown, User, Star, Infinity, LogIn, UserPlus } from 'lucide-react';
+import { Crown, User, Star, Infinity, LogIn, UserPlus, Home, BookOpen, FileText, HelpCircle, PenTool, History } from 'lucide-react';
 import EZEXAMLogo from '@/assest/EZEXAM_Icon.png';
 import {NotificationDropdown} from '@/components/Layout/NotificationDropdown';
 import { CreateContentDropdown } from './CreateContentDropdown';
@@ -9,7 +9,6 @@ import { useAuth } from '@/pages/auth/AuthContext';
 import { useState, useEffect } from 'react';
 import api from '@/services/axios';
 interface HeaderProps {
-  onMenuToggle: () => void;
   onRefreshData?: (refreshFn: () => void) => void;
   refreshTrigger?: number; // Trigger để refresh data từ bên ngoài
 }
@@ -41,8 +40,9 @@ interface SubscriptionResponse {
   message: string;
 }
 
-export function Header({ onMenuToggle, onRefreshData, refreshTrigger }: HeaderProps) {
+export function Header({ onRefreshData, refreshTrigger }: HeaderProps) {
   const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
   
   // State cho balance và subscription từ API
   const [balanceData, setBalanceData] = useState<BalanceResponse | null>(null);
@@ -149,15 +149,6 @@ export function Header({ onMenuToggle, onRefreshData, refreshTrigger }: HeaderPr
       <div className="absolute inset-0 bg-gradient-to-r from-blue-50/30 via-transparent to-purple-50/30 pointer-events-none"></div>
       
       <div className="flex items-center gap-4 relative z-10">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="lg:hidden hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl transition-all duration-300 hover:scale-105"
-          onClick={onMenuToggle}
-        >
-          <Menu className="h-5 w-5 text-gray-600" />
-        </Button>
-        
         <Link to="/" className="flex items-center gap-3 group">
             <img src={EZEXAMLogo} alt='Logo' className='w-8 h-6 relative z-10'/>
           <span className="font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-purple-700 transition-all duration-300">
@@ -165,6 +156,35 @@ export function Header({ onMenuToggle, onRefreshData, refreshTrigger }: HeaderPr
           </span>
         </Link>
       </div>
+
+      {/* Center navigation (moved from Sidebar) */}
+      <nav className="hidden md:flex items-center gap-2 relative z-10">
+        {[
+          { name: 'Home', href: '/', icon: Home },
+          { name: 'Lessons', href: '/lessons', icon: BookOpen },
+          { name: 'Question Bank', href: '/question-bank', icon: PenTool },
+          { name: 'Mock Tests', href: '/mock-tests', icon: FileText },
+          { name: 'Mock Test History', href: '/mock-tests/history', icon: History },
+          { name: 'Help & Support', href: '/help', icon: HelpCircle },
+        ].map((item) => {
+          const isActive = location.pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.name}
+              to={item.href}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                isActive
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:shadow'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
       <div className="flex items-center gap-4 relative z-10">
         {checkUserAuthentication() && <NotificationDropdown />}

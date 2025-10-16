@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import api from '@/services/axios';
 
 // Function to decode JWT token
 const decodeJWT = (token: string): DecodedToken | null => {
@@ -65,6 +66,7 @@ interface AuthContextType {
   setUser: React.Dispatch<React.SetStateAction<UserData | null>>;
   login: (token: string, navigate?: (path: string) => void) => void;
   logout: () => void;
+  refreshSubscription?: () => Promise<void>;
 }
 
 // Props cho AuthProvider
@@ -112,6 +114,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           subscriptionEndDate: decodedToken.subscriptionEndDate,
           subscriptionIsActive: decodedToken.subscriptionIsActive,
         });
+        // Sau khi set từ token, đồng bộ subscription hiện tại từ API
+        // để đảm bảo trạng thái (BASIC/PREMIUM/...) luôn mới nhất
+        void fetchAndMergeSubscription();
       } else {
         // Nếu không decode được token thì xóa token và logout
         localStorage.removeItem('token');
@@ -122,6 +127,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
     setLoading(false);
   }, []);
+
+  // Hàm đồng bộ subscription hiện tại từ API vào user state
+  const fetchAndMergeSubscription = async () => {
+    try {
+      const resp = await api.get('/subscription/current');
+      if (resp.status === 200 && resp.data) {
+        const sub = resp.data;
+        setUser(prev => prev ? {
+          ...prev,
+          subscriptionName: sub.subscriptionName || prev.subscriptionName,
+          subscriptionTypeId: (sub.subscriptionTypeId ?? prev.subscriptionTypeId)?.toString?.() || prev.subscriptionTypeId,
+          subscriptionCode: sub.subscriptionCode || prev.subscriptionCode,
+          subscriptionEndDate: sub.endDate || prev.subscriptionEndDate,
+          subscriptionIsActive: sub.isActive ?? prev.subscriptionIsActive,
+          // Optionally update balance if API returns it elsewhere
+        } : prev);
+      }
+    } catch (e) {
+      // Không chặn app nếu lỗi; giữ nguyên dữ liệu từ token
+      console.warn('Could not refresh subscription from API');
+    }
+  };
 
   const login = (token: string, navigate?: (path: string) => void) => {
     localStorage.setItem('token', token);
@@ -142,6 +169,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         subscriptionEndDate: decodedToken.subscriptionEndDate,
         subscriptionIsActive: decodedToken.subscriptionIsActive,
       });
+      // Đồng bộ subscription từ API ngay sau khi login
+      void fetchAndMergeSubscription();
       
       // Role-based navigation nếu có navigate function
       if (navigate) {
@@ -180,7 +209,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isAuthenticated,
     setUser,
     login,
-    logout
+    logout,
+    refreshSubscription: fetchAndMergeSubscription
   };
 
   return (
