@@ -47,7 +47,7 @@ export function ProfilePage() {
   // Global loading hook
   const { withLoading } = useGlobalLoading();
 
-  // Lấy thông tin user từ API
+  // Get user information from API
   const fetchUserData = async () => {
     await withLoading(async () => {
       try {
@@ -68,16 +68,16 @@ export function ProfilePage() {
           
           setFormData(newFormData);
           setOriginalData(newFormData);
-          setUserProfile(userData); // Lưu toàn bộ user data để sử dụng createdAt
-          setUserId(userData.id || userData._id || ''); // Lưu userId để sử dụng khi update
+          setUserProfile(userData); // Save all user data to use createdAt
+          setUserId(userData.id || userData._id || ''); // Save userId to use when updating
         }
       } catch (error: any) {
         console.error('Error fetching user data:', error);
-        error(error.response?.data?.message || "Không thể tải dữ liệu hồ sơ", "Lỗi tải dữ liệu");
+        error(error.response?.data?.message || "Unable to load profile data", "Data Loading Error");
       } finally {
         setIsLoading(false);
       }
-    }, "Đang tải thông tin cá nhân...");
+    }, "Loading personal information...");
   };
 
   // Load user profile data when component mounts
@@ -91,27 +91,27 @@ export function ProfilePage() {
         setIsLoading(true);
         console.log('Saving profile:', formData);
     
-        // Lấy userId từ state
+        // Get userId from state
         if (!userId) {
-          error("Không tìm thấy ID người dùng", "Lỗi xác thực");
+          error("User ID not found", "Authentication Error");
           return;
         }
     
         let avatarUrlToSave = formData.avatarUrl;
     
-        // Nếu có ảnh mới được chọn thì upload lên ImgBB
+        // If new image is selected, upload to ImgBB
         if (selectedImage) {
           try {
             avatarUrlToSave = await uploadImgBBOneFile(selectedImage);
             console.log("Uploaded ImgBB URL:", avatarUrlToSave);
           } catch (uploadError) {
             console.error("Image upload failed:", uploadError);
-            error("Tải ảnh lên thất bại", "Lỗi tải ảnh");
+            error("Image upload failed", "Image Upload Error");
             return;
           }
         }
     
-        // Gọi API update profile với URL direct của ImgBB
+        // Call API to update profile with direct ImgBB URL
         const response = await api.put(`/users/${userId}/profile`, {
           fullName: formData.fullName,
           email: formData.email,
@@ -125,23 +125,23 @@ export function ProfilePage() {
           setPreviewImage('');
           setIsEditing(false);
     
-          // Refresh user profile data from API để sync với AuthContext
+          // Refresh user profile data from API to sync with AuthContext
           await fetchUserData();
     
-          success("Cập nhật hồ sơ thành công!", "Thành công");
+          success("Profile updated successfully!", "Success");
 
         }
       } catch (error: any) {
         console.error('Error updating profile:', error);
-        error(error.response?.data?.message || "Cập nhật hồ sơ thất bại", "Lỗi cập nhật");
+        error(error.response?.data?.message || "Profile update failed", "Update Error");
       } finally {
         setIsLoading(false);
       }
-    }, "Đang cập nhật thông tin cá nhân...");
+    }, "Updating personal information...");
   };
 
   const handleCancel = () => {
-    // Khôi phục dữ liệu gốc
+    // Restore original data
     setFormData(originalData);
     setSelectedImage(null);
     setPreviewImage('');
@@ -149,25 +149,25 @@ export function ProfilePage() {
     
   };
 
-  // Xử lý chọn ảnh
+  // Handle image selection
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Kiểm tra loại file
+      // Check file type
       if (!file.type.startsWith('image/')) {
-        error("Vui lòng chọn file ảnh", "Thiếu file ảnh");
+        error("Please select an image file", "Missing Image File");
         return;
       }
 
-      // Kiểm tra kích thước file (max 5MB)
+      // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        error("Kích thước ảnh phải nhỏ hơn 5MB", "File quá lớn");
+        error("Image size must be less than 5MB", "File Too Large");
         return;
       }
 
       setSelectedImage(file);
       
-      // Tạo preview URL
+      // Create preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreviewImage(e.target?.result as string);

@@ -115,11 +115,11 @@ export function HomePage() {
                   <CardHeader className="text-center pb-6">
                     <CardTitle className="text-3xl font-bold mb-2">
                       <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                        Bắt đầu hành trình học tập của bạn
+                        Start Your Learning Journey
                       </span>
                     </CardTitle>
                     <CardDescription className="text-lg text-gray-600">
-                      Tham gia cùng hàng nghìn học sinh đã cải thiện điểm số với EZEXAM
+                      Join thousands of students who have improved their scores with EZEXAM
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-8">
@@ -130,11 +130,11 @@ export function HomePage() {
                           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                             <LogIn className="h-8 w-8 text-white" />
                           </div>
-                          <CardTitle className="text-xl font-bold text-blue-800">Đã có tài khoản?</CardTitle>
+                          <CardTitle className="text-xl font-bold text-blue-800">Already have an account?</CardTitle>
                         </CardHeader>
                         <CardContent className="text-center">
                           <p className="text-gray-600 mb-6 leading-relaxed">
-                            Đăng nhập để tiếp tục hành trình học tập và truy cập vào tất cả tính năng của EZEXAM
+                            Sign in to continue your learning journey and access all EZEXAM features
                           </p>
                           <Button 
                             size="lg" 
@@ -143,7 +143,7 @@ export function HomePage() {
                           >
                             <Link to="/login">
                               <LogIn className="mr-2 h-5 w-5" />
-                              Đăng nhập ngay
+                              Sign In Now
                             </Link>
                           </Button>
                         </CardContent>
@@ -155,11 +155,11 @@ export function HomePage() {
                           <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                             <UserPlus className="h-8 w-8 text-white" />
                           </div>
-                          <CardTitle className="text-xl font-bold text-purple-800">Chưa có tài khoản?</CardTitle>
+                          <CardTitle className="text-xl font-bold text-purple-800">Don't have an account?</CardTitle>
                         </CardHeader>
                         <CardContent className="text-center">
                           <p className="text-gray-600 mb-6 leading-relaxed">
-                            Tạo tài khoản miễn phí và khám phá thế giới học tập AI-powered của EZEXAM
+                            Create a free account and explore EZEXAM's AI-powered learning world
                           </p>
                           <Button 
                             size="lg" 
@@ -168,7 +168,7 @@ export function HomePage() {
                           >
                             <Link to="/register">
                               <UserPlus className="mr-2 h-5 w-5" />
-                              Đăng ký miễn phí
+                              Sign Up Free
                             </Link>
                           </Button>
                         </CardContent>
@@ -178,26 +178,26 @@ export function HomePage() {
                     {/* Benefits List */}
                     <div className="mt-8 pt-8 border-t border-gray-200">
                       <h3 className="text-xl font-bold text-center mb-6 text-gray-800">
-                        Tại sao chọn EZEXAM?
+                        Why Choose EZEXAM?
                       </h3>
                       <div className="grid md:grid-cols-3 gap-6">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                             <CheckCircle className="h-5 w-5 text-green-600" />
                           </div>
-                          <span className="text-gray-700 font-medium">Học tập AI-powered</span>
+                          <span className="text-gray-700 font-medium">AI-powered Learning</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                             <Star className="h-5 w-5 text-blue-600" />
                           </div>
-                          <span className="text-gray-700 font-medium">Nội dung chất lượng cao</span>
+                          <span className="text-gray-700 font-medium">High-quality Content</span>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
                             <Shield className="h-5 w-5 text-purple-600" />
                           </div>
-                          <span className="text-gray-700 font-medium">Bảo mật tuyệt đối</span>
+                          <span className="text-gray-700 font-medium">Absolute Security</span>
                         </div>
                       </div>
                     </div>

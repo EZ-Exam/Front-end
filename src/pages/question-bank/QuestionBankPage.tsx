@@ -87,10 +87,10 @@ export function QuestionBankPage() {
 
   const getDifficultyInfo = (difficultyLevelId: number) => {
     switch (difficultyLevelId) {
-      case 1: return { text: 'Nhận biết', color: 'bg-green-100 text-green-800' };
-      case 2: return { text: 'Thông hiểu', color: 'bg-yellow-100 text-yellow-800' };
-      case 3: return { text: 'Vận dụng', color: 'bg-red-100 text-red-800' };
-      case 4: return { text: 'Vận dụng cao', color: 'bg-purple-100 text-purple-800' };
+      case 1: return { text: 'Recognition', color: 'bg-green-100 text-green-800' };
+      case 2: return { text: 'Understanding', color: 'bg-yellow-100 text-yellow-800' };
+      case 3: return { text: 'Application', color: 'bg-red-100 text-red-800' };
+      case 4: return { text: 'Advanced Application', color: 'bg-purple-100 text-purple-800' };
       default: return { text: 'Unknown', color: 'bg-gray-100 text-gray-800' };
     }
   };
@@ -159,7 +159,7 @@ export function QuestionBankPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm font-medium">Nhận biết</p>
+                  <p className="text-green-100 text-sm font-medium">Recognition</p>
                   <p className="text-3xl font-bold">{stats.easy}</p>
                 </div>
                 <Target className="h-8 w-8 text-green-200" />
@@ -171,7 +171,7 @@ export function QuestionBankPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-yellow-100 text-sm font-medium">Thông hiểu</p>
+                  <p className="text-yellow-100 text-sm font-medium">Understanding</p>
                   <p className="text-3xl font-bold">{stats.medium}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-yellow-200" />
@@ -183,7 +183,7 @@ export function QuestionBankPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-red-100 text-sm font-medium">Vận dụng</p>
+                  <p className="text-red-100 text-sm font-medium">Application</p>
                   <p className="text-3xl font-bold">{stats.hard}</p>
                 </div>
                 <Zap className="h-8 w-8 text-red-200" />
@@ -195,7 +195,7 @@ export function QuestionBankPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100 text-sm font-medium">Vận dụng cao</p>
+                  <p className="text-purple-100 text-sm font-medium">Advanced Application</p>
                   <p className="text-3xl font-bold">{stats.veryHard}</p>
                 </div>
                 <Brain className="h-8 w-8 text-purple-200" />
@@ -277,7 +277,7 @@ export function QuestionBankPage() {
                     : 'border-2 border-gray-200 hover:border-blue-500 hover:shadow-md'
                 }`}
               >
-                Tất cả độ khó
+                All Difficulties
               </Button>
               <Button
                 variant={difficultyFilter === '1' ? 'default' : 'outline'}
@@ -289,7 +289,7 @@ export function QuestionBankPage() {
                     : 'border-2 border-gray-200 hover:border-green-500 hover:shadow-md'
                 }`}
               >
-                Nhận biết
+                Recognition
               </Button>
               <Button
                 variant={difficultyFilter === '2' ? 'default' : 'outline'}
@@ -301,7 +301,7 @@ export function QuestionBankPage() {
                     : 'border-2 border-gray-200 hover:border-yellow-500 hover:shadow-md'
                 }`}
               >
-                Thông hiểu
+                Understanding
               </Button>
               <Button
                 variant={difficultyFilter === '3' ? 'default' : 'outline'}
@@ -313,7 +313,7 @@ export function QuestionBankPage() {
                     : 'border-2 border-gray-200 hover:border-red-500 hover:shadow-md'
                 }`}
               >
-                Vận dụng
+                Application
               </Button>
               <Button
                 variant={difficultyFilter === '4' ? 'default' : 'outline'}
@@ -325,7 +325,7 @@ export function QuestionBankPage() {
                     : 'border-2 border-gray-200 hover:border-purple-500 hover:shadow-md'
                 }`}
               >
-                Vận dụng cao
+                Advanced Application
               </Button>
             </div>
             

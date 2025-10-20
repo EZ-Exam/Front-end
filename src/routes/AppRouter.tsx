@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout/Layout';
+import { AdminRoute } from '@/components/AdminRoute';
 import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { RegisterPage } from '@/pages/auth/RegisterPage';
@@ -20,6 +21,8 @@ import { NotificationsPage } from '@/pages/NotificationPage';
 import { QuestionBankDetailPage } from '@/pages/question-bank/QuestionBankDetailPage';
 import { TermsOfServicePage } from '@/pages/TermsOfServicePage';
 import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
+import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage';
+import { AdminDemoPage } from '@/pages/AdminDemoPage';
 
 export function AppRouter() {
   return (
@@ -32,6 +35,9 @@ export function AppRouter() {
         {/* Legal Pages */}
         <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        
+        {/* Demo Pages */}
+        <Route path="/admin-demo" element={<AdminDemoPage />} />
         
         {/* Protected Routes */}
         <Route path="/" element={<Layout />}>
@@ -58,6 +64,13 @@ export function AppRouter() {
           <Route path="mock-tests/history/:id" element={<MockTestHistoryDetailPage />} />
           <Route path="create-mock-test" element={<CreateMockTestPage />} />
         </Route>
+
+        {/* Admin Routes */}
+        <Route path="/admin" element={
+          <AdminRoute>
+            <AdminDashboardPage />
+          </AdminRoute>
+        } />
         
         {/* Catch all - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

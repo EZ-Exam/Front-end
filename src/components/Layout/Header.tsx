@@ -10,10 +10,10 @@ import { useState, useEffect } from 'react';
 import api from '@/services/axios';
 interface HeaderProps {
   onRefreshData?: (refreshFn: () => void) => void;
-  refreshTrigger?: number; // Trigger để refresh data từ bên ngoài
+  refreshTrigger?: number; // Trigger to refresh data from outside
 }
 
-// Định nghĩa kiểu cho balance API response
+// Define type for balance API response
 interface BalanceResponse {
   userId: number;
   userEmail: string;
@@ -25,7 +25,7 @@ interface BalanceResponse {
   updatedAt: string;
 }
 
-// Định nghĩa kiểu cho subscription API response
+// Define type for subscription API response
 interface SubscriptionResponse {
   userId: number;
   userEmail: string;
@@ -44,7 +44,7 @@ export function Header({ onRefreshData, refreshTrigger }: HeaderProps) {
   const { isAuthenticated, user } = useAuth();
   const location = useLocation();
   
-  // State cho balance và subscription từ API
+  // State for balance and subscription from API
   const [balanceData, setBalanceData] = useState<BalanceResponse | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionResponse | null>(null);
 
@@ -75,7 +75,7 @@ export function Header({ onRefreshData, refreshTrigger }: HeaderProps) {
     }
   };
 
-  // Function to refresh data (có thể gọi từ bên ngoài)
+  // Function to refresh data (can be called from outside)
   const refreshData = () => {
     fetchBalanceAndSubscription();
   };
@@ -193,7 +193,7 @@ export function Header({ onRefreshData, refreshTrigger }: HeaderProps) {
 
         {/* Enhanced Account Balance & Package */}
         {checkUserAuthentication() && user && (() => {
-          // Sử dụng dữ liệu từ API nếu có, fallback về token data
+          // Use data from API if available, fallback to token data
           const subscriptionName = subscriptionData?.subscriptionName || user.subscriptionName || 'Free';
           const subscriptionInfo = getSubscriptionInfo(subscriptionName);
           const IconComponent = subscriptionInfo.icon;
@@ -230,7 +230,7 @@ export function Header({ onRefreshData, refreshTrigger }: HeaderProps) {
             >
               <Link to="/login">
                 <LogIn className="h-4 w-4" />
-                Đăng nhập
+                Sign In
               </Link>
             </Button>
             
@@ -241,7 +241,7 @@ export function Header({ onRefreshData, refreshTrigger }: HeaderProps) {
             >
               <Link to="/register">
                 <UserPlus className="h-4 w-4" />
-                Đăng ký
+                Sign Up
               </Link>
             </Button>
           </div>

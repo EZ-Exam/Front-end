@@ -40,13 +40,13 @@ export function RegisterPage() {
 
     // Validate form data
     if (!formData.name || !formData.email || !formData.password) {
-      error("Vui lòng điền đầy đủ thông tin", "Thiếu thông tin");
+      error("Please fill in all information", "Missing Information");
       setIsLoading(false);
       return;
     }
 
     if (!formData.agreeToTerms) {
-      error("Vui lòng đồng ý với điều khoản và chính sách", "Chưa đồng ý điều khoản");
+      error("Please agree to terms and policies", "Terms Not Agreed");
       setIsLoading(false);
       return;
     }
@@ -63,7 +63,7 @@ export function RegisterPage() {
       console.log('Register response:', response);
       
       if (response.status === 200 || response.status === 201) {
-        success(response.data.message || "Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.", "Thành công");
+        success(response.data.message || "Registration successful! Please sign in to continue.", "Success");
         
         setTimeout(() => {
           navigate('/login');
@@ -71,7 +71,7 @@ export function RegisterPage() {
       }
     } catch (error: any) {
       console.error('Registration error:', error);
-      error(error.response?.data?.message || "Đăng ký thất bại", "Lỗi đăng ký");
+      error(error.response?.data?.message || "Registration failed", "Registration Error");
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +142,7 @@ export function RegisterPage() {
         // Store token and update auth state
         login(loginResponse.data.token);
         
-        success(loginResponse.data.message || "Đăng ký Google thành công", "Thành công");
+        success(loginResponse.data.message || "Google registration successful", "Success");
         
         // Navigate to home page (role-based navigation will be handled by backend API)
         setTimeout(() => {
@@ -155,16 +155,16 @@ export function RegisterPage() {
       console.error('Error status:', error.response?.status);
       console.error('Error data:', error.response?.data);
       
-      let errorMessage = "Đăng ký Google thất bại";
+      let errorMessage = "Google registration failed";
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.status === 400) {
-        errorMessage = 'Yêu cầu không hợp lệ. Vui lòng kiểm tra cấu hình Google login.';
+        errorMessage = 'Invalid request. Please check Google login configuration.';
       } else if (error.response?.status === 404) {
-        errorMessage = 'Không tìm thấy endpoint Google login. Vui lòng liên hệ quản trị viên.';
+        errorMessage = 'Google login endpoint not found. Please contact administrator.';
       }
       
-      error(errorMessage, "Lỗi Google Registration");
+      error(errorMessage, "Google Registration Error");
     } finally {
       setIsLoading(false);
     }
@@ -186,7 +186,7 @@ export function RegisterPage() {
           className="absolute top-6 left-6 inline-flex items-center gap-2 text-purple-600 hover:text-purple-800 transition-colors duration-200 group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
-          <span className="font-medium">Về trang chủ</span>
+          <span className="font-medium">Back to Home</span>
         </Link>
 
         <div className="w-full max-w-md">
@@ -200,10 +200,10 @@ export function RegisterPage() {
               <div className="absolute inset-0 w-20 h-20 border-2 border-transparent border-t-purple-500 border-r-blue-500 rounded-2xl animate-spin opacity-60"></div>
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
-              Tham gia EZEXAM!
+              Join EZEXAM!
             </h1>
             <p className="text-gray-600">
-              Tạo tài khoản để bắt đầu hành trình học tập của bạn
+              Create an account to start your learning journey
             </p>
           </div>
 
@@ -211,23 +211,23 @@ export function RegisterPage() {
           <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm">
             <CardHeader className="text-center pb-6">
               <CardTitle className="text-2xl font-bold text-gray-800">
-                Tạo tài khoản mới
+                Create New Account
               </CardTitle>
               <CardDescription className="text-gray-600">
-                Điền thông tin để đăng ký tài khoản EZEXAM
+                Fill in information to register EZEXAM account
               </CardDescription>
             </CardHeader>
             
             <CardContent className="space-y-6">
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-sm font-semibold text-gray-700">Họ và tên</Label>
+                  <Label htmlFor="name" className="text-sm font-semibold text-gray-700">Full Name</Label>
                   <div className="relative group">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-purple-500 transition-colors duration-200" />
                     <Input
                       id="name"
                       type="text"
-                      placeholder="Nhập họ và tên của bạn"
+                      placeholder="Enter your full name"
                       className="pl-12 h-12 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-300 bg-gray-50/50 focus:bg-white"
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
@@ -243,7 +243,7 @@ export function RegisterPage() {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="Nhập email của bạn"
+                      placeholder="Enter your email"
                       className="pl-12 h-12 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-300 bg-gray-50/50 focus:bg-white"
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
@@ -253,13 +253,13 @@ export function RegisterPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-semibold text-gray-700">Mật khẩu</Label>
+                  <Label htmlFor="password" className="text-sm font-semibold text-gray-700">Password</Label>
                   <div className="relative group">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-purple-500 transition-colors duration-200" />
                     <Input
                       id="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Tạo mật khẩu mạnh"
+                      placeholder="Create a strong password"
                       className="pl-12 pr-12 h-12 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-300 bg-gray-50/50 focus:bg-white"
                       value={formData.password}
                       onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
@@ -283,13 +283,13 @@ export function RegisterPage() {
                   />
                   <div className="space-y-1">
                     <label htmlFor="terms" className="text-sm font-medium leading-relaxed text-gray-700 cursor-pointer">
-                      Tôi đồng ý với{' '}
+                      I agree to{' '}
                       <Link to="/terms" className="text-purple-600 hover:text-purple-800 hover:underline transition-colors duration-200">
-                        Điều khoản dịch vụ
+                        Terms of Service
                       </Link>{' '}
                       và{' '}
                       <Link to="/privacy" className="text-purple-600 hover:text-purple-800 hover:underline transition-colors duration-200">
-                        Chính sách bảo mật
+                        Privacy Policy
                       </Link>
                     </label>
                   </div>
@@ -303,12 +303,12 @@ export function RegisterPage() {
                   {isLoading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Đang tạo tài khoản...
+                      Creating account...
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <Sparkles className="h-5 w-5" />
-                      Tạo tài khoản
+                      Create Account
                     </div>
                   )}
                 </Button>
@@ -317,7 +317,7 @@ export function RegisterPage() {
               <div className="relative">
                 <Separator className="my-6" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="bg-white px-4 text-sm text-gray-500">Hoặc đăng ký với</span>
+                  <span className="bg-white px-4 text-sm text-gray-500">Or register with</span>
                 </div>
               </div>
               
@@ -325,11 +325,11 @@ export function RegisterPage() {
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-2 text-gray-500">
                     <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
-                    Đang xử lý...
+                    Processing...
                   </div>
                 ) : (
                   <div className="text-center text-sm text-gray-500">
-                    Tiếp tục với Google
+                    Continue with Google
                   </div>
                 )}
               </div>
@@ -337,9 +337,9 @@ export function RegisterPage() {
             
             <CardFooter className="text-center pt-6 border-t border-gray-100">
               <p className="text-sm text-gray-600">
-                Đã có tài khoản?{' '}
+                Already have an account?{' '}
                 <Link to="/login" className="text-purple-600 hover:text-purple-800 font-semibold hover:underline transition-colors duration-200">
-                  Đăng nhập ngay
+                  Sign in now
                 </Link>
               </p>
             </CardFooter>
@@ -351,19 +351,19 @@ export function RegisterPage() {
               <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
               </div>
-              <p className="text-xs text-gray-600 font-medium">Miễn phí</p>
+              <p className="text-xs text-gray-600 font-medium">Free</p>
             </div>
             <div className="text-center">
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
                 <Star className="h-5 w-5 text-blue-600" />
               </div>
-              <p className="text-xs text-gray-600 font-medium">Chất lượng cao</p>
+              <p className="text-xs text-gray-600 font-medium">High Quality</p>
             </div>
             <div className="text-center">
               <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
                 <Shield className="h-5 w-5 text-purple-600" />
               </div>
-              <p className="text-xs text-gray-600 font-medium">Bảo mật</p>
+              <p className="text-xs text-gray-600 font-medium">Secure</p>
             </div>
           </div>
         </div>

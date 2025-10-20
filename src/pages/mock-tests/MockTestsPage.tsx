@@ -122,7 +122,7 @@ export function MockTestsPage() {
         } finally {
           setLoading(false);
         }
-      }, "Đang tải danh sách bài thi...");
+      }, "Loading mock tests list...");
     };
 
     fetchExams();
@@ -148,14 +148,14 @@ export function MockTestsPage() {
 
   const getSubjectColor = (subject: string) => {
     switch (subject) {
-      case 'Toán học': return 'bg-blue-100 text-blue-800';
-      case 'Vật lý': return 'bg-purple-100 text-purple-800';
-      case 'Hóa học': return 'bg-green-100 text-green-800';
-      case 'Sinh học': return 'bg-green-100 text-green-800';
-      case 'Ngữ văn': return 'bg-orange-100 text-orange-800';
-      case 'Tiếng Anh': return 'bg-pink-100 text-pink-800';
-      case 'Lịch sử': return 'bg-yellow-100 text-yellow-800';
-      case 'Địa lý': return 'bg-teal-100 text-teal-800';
+      case 'Math': return 'bg-blue-100 text-blue-800';
+      case 'Physics': return 'bg-purple-100 text-purple-800';
+      case 'Chemistry': return 'bg-green-100 text-green-800';
+      case 'Biology': return 'bg-green-100 text-green-800';
+      case 'Literature': return 'bg-orange-100 text-orange-800';
+      case 'English': return 'bg-pink-100 text-pink-800';
+      case 'History': return 'bg-yellow-100 text-yellow-800';
+      case 'Geography': return 'bg-teal-100 text-teal-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -288,103 +288,103 @@ export function MockTestsPage() {
                         : 'border-2 border-gray-200 hover:border-blue-500'
                     }`}
                   >
-                    Tất cả
+                    All
                   </Button>
                   <Button
-                    variant={subjectFilter === 'Toán học' ? 'default' : 'outline'}
+                    variant={subjectFilter === 'Math' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setSubjectFilter('Toán học')}
+                    onClick={() => setSubjectFilter('Math')}
                     className={`rounded-lg transition-all duration-300 ${
-                      subjectFilter === 'Toán học' 
+                      subjectFilter === 'Math' 
                         ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0' 
                         : 'border-2 border-gray-200 hover:border-blue-500'
                     }`}
                   >
-                    Toán học
+                    Math
                   </Button>
                   <Button
-                    variant={subjectFilter === 'Vật lý' ? 'default' : 'outline'}
+                    variant={subjectFilter === 'Physics' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setSubjectFilter('Vật lý')}
+                    onClick={() => setSubjectFilter('Physics')}
                     className={`rounded-lg transition-all duration-300 ${
-                      subjectFilter === 'Vật lý' 
+                      subjectFilter === 'Physics' 
                         ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border-0' 
                         : 'border-2 border-gray-200 hover:border-green-500'
                     }`}
                   >
-                    Vật lý
+                    Physics
                   </Button>
                   <Button
-                    variant={subjectFilter === 'Hóa học' ? 'default' : 'outline'}
+                    variant={subjectFilter === 'Chemistry' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setSubjectFilter('Hóa học')}
+                    onClick={() => setSubjectFilter('Chemistry')}
                     className={`rounded-lg transition-all duration-300 ${
-                      subjectFilter === 'Hóa học' 
+                      subjectFilter === 'Chemistry' 
                         ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0' 
                         : 'border-2 border-gray-200 hover:border-orange-500'
                     }`}
                   >
-                    Hóa học
+                    Chemistry
                   </Button>
                   <Button
-                    variant={subjectFilter === 'Sinh học' ? 'default' : 'outline'}
+                    variant={subjectFilter === 'Biology' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setSubjectFilter('Sinh học')}
+                    onClick={() => setSubjectFilter('Biology')}
                     className={`rounded-lg transition-all duration-300 ${
-                      subjectFilter === 'Sinh học' 
+                      subjectFilter === 'Biology' 
                         ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-0' 
                         : 'border-2 border-gray-200 hover:border-emerald-500'
                     }`}
                   >
-                    Sinh học
+                    Biology
                   </Button>
                   <Button
-                    variant={subjectFilter === 'Ngữ văn' ? 'default' : 'outline'}
+                    variant={subjectFilter === 'Literature' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setSubjectFilter('Ngữ văn')}
+                    onClick={() => setSubjectFilter('Literature')}
                     className={`rounded-lg transition-all duration-300 ${
-                      subjectFilter === 'Ngữ văn' 
+                      subjectFilter === 'Literature' 
                         ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white border-0' 
                         : 'border-2 border-gray-200 hover:border-pink-500'
                     }`}
                   >
-                    Ngữ văn
+                    Literature
                   </Button>
                   <Button
-                    variant={subjectFilter === 'Tiếng Anh' ? 'default' : 'outline'}
+                    variant={subjectFilter === 'English' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setSubjectFilter('Tiếng Anh')}
+                    onClick={() => setSubjectFilter('English')}
                     className={`rounded-lg transition-all duration-300 ${
-                      subjectFilter === 'Tiếng Anh' 
+                      subjectFilter === 'English' 
                         ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0' 
                         : 'border-2 border-gray-200 hover:border-purple-500'
                     }`}
                   >
-                    Tiếng Anh
+                    English
                   </Button>
                   <Button
-                    variant={subjectFilter === 'Lịch sử' ? 'default' : 'outline'}
+                    variant={subjectFilter === 'History' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setSubjectFilter('Lịch sử')}
+                    onClick={() => setSubjectFilter('History')}
                     className={`rounded-lg transition-all duration-300 ${
-                      subjectFilter === 'Lịch sử' 
+                      subjectFilter === 'History' 
                         ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0' 
                         : 'border-2 border-gray-200 hover:border-amber-500'
                     }`}
                   >
-                    Lịch sử
+                    History
                   </Button>
                   <Button
-                    variant={subjectFilter === 'Địa lý' ? 'default' : 'outline'}
+                    variant={subjectFilter === 'Geography' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setSubjectFilter('Địa lý')}
+                    onClick={() => setSubjectFilter('Geography')}
                     className={`rounded-lg transition-all duration-300 ${
-                      subjectFilter === 'Địa lý' 
+                      subjectFilter === 'Geography' 
                         ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white border-0' 
                         : 'border-2 border-gray-200 hover:border-teal-500'
                     }`}
                   >
-                    Địa lý
+                    Geography
                   </Button>
                 </div>
               </div>

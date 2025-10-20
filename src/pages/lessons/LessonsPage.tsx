@@ -109,7 +109,7 @@ export function LessonsPage() {
       } finally {
         setLoading(false);
       }
-    }, "Đang tải danh sách bài học...");
+    }, "Loading lessons list...");
   }, [currentPage, subjectFilter, sortBy, sortOrder, withLoading]);
 
   // Fetch lessons when dependencies change (excluding searchQuery)
@@ -280,7 +280,7 @@ export function LessonsPage() {
                         : 'border-2 border-gray-200 hover:border-blue-500'
                     }`}
                   >
-                    Tất cả
+                    All
                   </Button>
                   <Button
                     variant={subjectFilter === 'Math' ? 'default' : 'outline'}
@@ -292,7 +292,7 @@ export function LessonsPage() {
                         : 'border-2 border-gray-200 hover:border-blue-500'
                     }`}
                   >
-                    Toán học
+                    Math
                   </Button>
                   <Button
                     variant={subjectFilter === 'Physics' ? 'default' : 'outline'}
@@ -304,7 +304,7 @@ export function LessonsPage() {
                         : 'border-2 border-gray-200 hover:border-green-500'
                     }`}
                   >
-                    Vật lý
+                    Physics
                   </Button>
                   <Button
                     variant={subjectFilter === 'Chemistry' ? 'default' : 'outline'}
@@ -316,7 +316,7 @@ export function LessonsPage() {
                         : 'border-2 border-gray-200 hover:border-orange-500'
                     }`}
                   >
-                    Hóa học
+                    Chemistry
                   </Button>
                   <Button
                     variant={subjectFilter === 'Biology' ? 'default' : 'outline'}
@@ -328,7 +328,7 @@ export function LessonsPage() {
                         : 'border-2 border-gray-200 hover:border-emerald-500'
                     }`}
                   >
-                    Sinh học
+                    Biology
                   </Button>
                   <Button
                     variant={subjectFilter === 'Literature' ? 'default' : 'outline'}
@@ -340,7 +340,7 @@ export function LessonsPage() {
                         : 'border-2 border-gray-200 hover:border-pink-500'
                     }`}
                   >
-                    Ngữ văn
+                    Literature
                   </Button>
                   <Button
                     variant={subjectFilter === 'English' ? 'default' : 'outline'}
@@ -352,7 +352,7 @@ export function LessonsPage() {
                         : 'border-2 border-gray-200 hover:border-purple-500'
                     }`}
                   >
-                    Tiếng Anh
+                    English
                   </Button>
                   <Button
                     variant={subjectFilter === 'History' ? 'default' : 'outline'}
@@ -364,7 +364,7 @@ export function LessonsPage() {
                         : 'border-2 border-gray-200 hover:border-amber-500'
                     }`}
                   >
-                    Lịch sử
+                    History
                   </Button>
                   <Button
                     variant={subjectFilter === 'Geography' ? 'default' : 'outline'}
@@ -376,7 +376,7 @@ export function LessonsPage() {
                         : 'border-2 border-gray-200 hover:border-teal-500'
                     }`}
                   >
-                    Địa lý
+                    Geography
                   </Button>
                 </div>
               </div>

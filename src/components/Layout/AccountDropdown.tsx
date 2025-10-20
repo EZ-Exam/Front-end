@@ -32,7 +32,7 @@ import { useAuth } from '@/pages/auth/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 
 interface AccountDropdownProps {
-  onSubscriptionUpdated?: () => void; // Callback để thông báo Header refresh
+  onSubscriptionUpdated?: () => void; // Callback to notify Header refresh
 }
 
 // Define subscription type interface
@@ -340,7 +340,7 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
       const price = subscriptionType.subscriptionPrice || 0;
       if (price > 0 && currentBalance < price) {
         setIsLoading(false);
-        error('Số dư không đủ để đăng ký gói. Vui lòng nạp thêm tiền.', 'Insufficient Balance');
+        error('Insufficient balance to subscribe to package. Please top up more money.', 'Insufficient Balance');
         // Suggest opening deposit dialog
         setActiveDialog('deposit');
         return;
@@ -397,7 +397,7 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
       // Handle different error scenarios
       const message = err.response?.data?.message || err.message || '';
       if (/insufficient|khong du|not enough/i.test(message)) {
-        error('Số dư không đủ để đăng ký gói. Vui lòng nạp thêm tiền.', 'Insufficient Balance');
+        error('Insufficient balance to subscribe to package. Please top up more money.', 'Insufficient Balance');
         setActiveDialog('deposit');
       } else if (err.response?.data?.message) {
         error(err.response.data.message, 'Subscription Error');
@@ -431,41 +431,41 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
 
   // Function to check if a package is the current plan
   const isCurrentPlan = (subscriptionType: SubscriptionType) => {
-    // Ưu tiên dữ liệu từ API, fallback về token data
+    // Prioritize data from API, fallback to token data
     const currentSubscriptionId = currentSubscription?.subscriptionTypeId || user?.subscriptionTypeId;
     const currentSubscriptionName = currentSubscription?.subscriptionName || user?.subscriptionName;
     
-    // Nếu không có subscription ID và không có subscription name, coi như đang ở gói Free
+    // If no subscription ID and no subscription name, consider as Free package
     if (!currentSubscriptionId && !currentSubscriptionName) {
       return subscriptionType.subscriptionName.toLowerCase() === 'free';
     }
     
-    // Nếu có subscription name là "Free" hoặc không có subscription, coi như đang ở gói Free
+    // If subscription name is "Free" or no subscription, consider as Free package
     if (!currentSubscriptionId || currentSubscriptionName?.toLowerCase() === 'free') {
       return subscriptionType.subscriptionName.toLowerCase() === 'free';
     }
     
-    // Kiểm tra bằng subscription name nếu có
+    // Check by subscription name if available
     if (currentSubscriptionName) {
       return currentSubscriptionName.toLowerCase() === subscriptionType.subscriptionName.toLowerCase();
     }
     
-    // Fallback về subscription ID
+    // Fallback to subscription ID
     return parseInt(currentSubscriptionId.toString()) === subscriptionType.id;
   };
 
   // Function to check if a package should be disabled (lower priority than current)
   const isPackageDisabled = (subscriptionType: SubscriptionType) => {
-    // Ưu tiên dữ liệu từ API, fallback về token data
+    // Prioritize data from API, fallback to token data
     const currentSubscriptionName = currentSubscription?.subscriptionName || user?.subscriptionName;
     const currentSubscriptionId = currentSubscription?.subscriptionTypeId || user?.subscriptionTypeId;
     
-    // Nếu không có subscription hoặc đang ở gói Free, không disable gói nào
+    // If no subscription or on Free package, do not disable any package
     if (!currentSubscriptionName && !currentSubscriptionId) {
       return false;
     }
     
-    // Nếu đang ở gói Free, không disable gói nào
+    // If on Free package, do not disable any package
     if (!currentSubscriptionId || currentSubscriptionName?.toLowerCase() === 'free') {
       return false;
     }
@@ -818,7 +818,7 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
                   <Card 
                     key={subscriptionType.id} 
                     className={`border-2 ${styling.borderColor} transition-all duration-300 ${styling.shadow} ${styling.bgGradient} ${styling.opacity} ${isCurrent ? 'relative' : ''} ${isDisabled ? 'cursor-not-allowed' : 'hover:scale-105'}`}
-                    title={isDisabled ? `Bạn đang sử dụng gói ${currentSubscription?.subscriptionName || user?.subscriptionName} cao hơn. Không thể downgrade xuống gói ${subscriptionType.subscriptionName}.` : ''}
+                    title={isDisabled ? `You are using a higher package ${currentSubscription?.subscriptionName || user?.subscriptionName}. Cannot downgrade to package ${subscriptionType.subscriptionName}.` : ''}
                   >
                     {isCurrent && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -874,7 +874,7 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
                         variant="default"
                         disabled={isCurrent || isLoading || isDisabled}
                         onClick={() => !isCurrent && !isDisabled && handleUpgradeSubscription(subscriptionType)}
-                        title={isDisabled ? `Không thể downgrade từ ${currentSubscription?.subscriptionName || user?.subscriptionName} xuống ${subscriptionType.subscriptionName}` : ''}
+                        title={isDisabled ? `Cannot downgrade from ${currentSubscription?.subscriptionName || user?.subscriptionName} to ${subscriptionType.subscriptionName}` : ''}
                       >
                         {isCurrent ? (
                           <div className="flex items-center">

@@ -9,9 +9,11 @@ import {
   X,
   Sparkles,
   Zap,
-  History
+  History,
+  Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/pages/auth/AuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -27,8 +29,18 @@ const navigation = [
   { name: 'Help & Support', href: '/help', icon: HelpCircle, color: 'from-teal-500 to-teal-600' },
 ];
 
+const adminNavigation = [
+  { name: 'Admin Dashboard', href: '/admin', icon: Shield, color: 'from-red-500 to-red-600' },
+];
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
+  const { user } = useAuth();
+  
+  // Combine navigation based on user role
+  const allNavigation = user?.roleId === '2' 
+    ? [...navigation, ...adminNavigation]
+    : navigation;
 
   return (
     <>
@@ -58,7 +70,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         
         {/* Enhanced Navigation */}
         <nav className="p-6 space-y-3">
-          {navigation.map((item) => {
+          {allNavigation.map((item) => {
             const isActive = location.pathname === item.href;
             return (
               <Link
