@@ -189,6 +189,7 @@ export function Header({ onRefreshData, refreshTrigger }: HeaderProps) {
       <div className="flex items-center gap-4 relative z-10">
         {checkUserAuthentication() && <NotificationDropdown />}
 
+        {/* Create Content Dropdown - chỉ hiển thị cho Moderator và Admin */}
         {checkUserAuthentication() && <CreateContentDropdown />}
 
         {/* Enhanced Account Balance & Package */}

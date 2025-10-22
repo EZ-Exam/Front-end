@@ -179,7 +179,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setTimeout(() => {
           if (roleId === "1") navigate('/');
           else if (roleId === "2") navigate('/admin');
-          else if (roleId === "3") navigate('/mod');
+          else if (roleId === "3") navigate('/moderator');
           else navigate('/');
         }, 2000);
       }

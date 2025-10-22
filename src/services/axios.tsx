@@ -1,6 +1,6 @@
 import axios, { InternalAxiosRequestConfig } from "axios";
 
-const BASE_URL = "http://localhost:5000"; //https://phygen.ticketresell-swp.click
+const BASE_URL = "http://localhost:5000"; //https://tridz123backend.ezexam.online
 // Instance cho API
 const api = axios.create({
   baseURL: BASE_URL+"/api",

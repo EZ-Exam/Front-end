@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Mail, Lock, Eye, EyeOff, ArrowLeft, Sparkles, Shield, Zap } from 'lucide-react';
 import EZEXAMLogo from '@/assest/EZEXAM_Icon.png';
-import axios from 'axios';
 import api from '@/services/axios';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -110,16 +109,9 @@ export function LoginPage() {
 
       console.log("Request data being sent:", requestData);
 
-      const loginResponse = await axios.post(
-        "http://localhost:5000/api/login/google-login",
-        requestData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          timeout: 30000,
-        }
+      const loginResponse = await api.post(
+        "/login/google-login",
+        requestData
       );
 
       console.log('Backend response:', loginResponse);
@@ -128,7 +120,7 @@ export function LoginPage() {
         // Use AuthContext login method with navigation
         login(loginResponse.data.token, navigate);
         
-        success(loginResponse.data.message || "Google login successful!", "Success");
+        success(loginResponse.data.message || "Đăng nhập Google thành công!", "Thành công");
       }
     } catch (err : any) {
       console.error('Google login error:', err);
@@ -136,14 +128,14 @@ export function LoginPage() {
       console.error('Error status:', err.response?.status);
       console.error('Error data:', err.response?.data);
       
-      let errorMessage = "Wrong password or account";
+      let errorMessage = "Sai mật khẩu hoặc tài khoản";
       if (err.response?.status === 400) {
-        errorMessage = 'Invalid request. Please check Google login configuration.';
+        errorMessage = 'Yêu cầu không hợp lệ. Vui lòng kiểm tra cấu hình Google login.';
       } else if (err.response?.status === 404) {
-        errorMessage = 'Google login endpoint not found. Please contact administrator.';
+        errorMessage = 'Không tìm thấy endpoint Google login. Vui lòng liên hệ quản trị viên.';
       }
       
-      error(errorMessage, "Google Login Error");
+      error(errorMessage, "Lỗi đăng nhập Google");
     } finally {
       setIsLoading(false);
     }

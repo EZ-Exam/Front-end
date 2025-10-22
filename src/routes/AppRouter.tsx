@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout/Layout';
 import { AdminRoute } from '@/components/AdminRoute';
+import { ModeratorRoute } from '@/components/ModeratorRoute';
 import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { RegisterPage } from '@/pages/auth/RegisterPage';
@@ -22,6 +23,7 @@ import { QuestionBankDetailPage } from '@/pages/question-bank/QuestionBankDetail
 import { TermsOfServicePage } from '@/pages/TermsOfServicePage';
 import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
 import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage';
+import { ModeratorDashboardPage } from '@/pages/moderator/ModeratorDashboardPage';
 import { AdminDemoPage } from '@/pages/AdminDemoPage';
 
 export function AppRouter() {
@@ -70,6 +72,13 @@ export function AppRouter() {
           <AdminRoute>
             <AdminDashboardPage />
           </AdminRoute>
+        } />
+        
+        {/* Moderator Routes */}
+        <Route path="/moderator" element={
+          <ModeratorRoute>
+            <ModeratorDashboardPage />
+          </ModeratorRoute>
         } />
         
         {/* Catch all - redirect to home */}

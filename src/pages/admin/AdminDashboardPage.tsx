@@ -9,10 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/pages/auth/AuthContext';
-import { AdminStats, AdminUser, AdminOrder, AdminQuestion, AdminExam } from '@/types';
+import { AdminStats, AdminUser, AdminPayment, AdminQuestion, AdminExam } from '@/types';
 import { 
-  mockAdminStats, 
-  mockAdminOrders
+  mockAdminStats
 } from '@/data/adminMockData';
 import { QuestionDetailModal } from '@/components/admin/QuestionDetailModal';
 import { ExamDetailModal } from '@/components/admin/ExamDetailModal';
@@ -36,7 +35,7 @@ export function AdminDashboardPage() {
   const { toast } = useToast();
   const [stats, setStats] = useState<AdminStats>(mockAdminStats);
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [orders] = useState<AdminOrder[]>(mockAdminOrders);
+  const [payments, setPayments] = useState<AdminPayment[]>([]);
   const [questions, setQuestions] = useState<AdminQuestion[]>([]);
   const [exams, setExams] = useState<AdminExam[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,6 +67,7 @@ export function AdminDashboardPage() {
   
   // Loading states for pagination
   const [usersLoading, setUsersLoading] = useState(false);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [examsLoading, setExamsLoading] = useState(false);
   
@@ -105,14 +105,15 @@ export function AdminDashboardPage() {
     if (user?.roleId === '2') {
       if (activeTab === 'users') {
         fetchUsersData();
+      } else if (activeTab === 'subscriptions') {
+        // Update pagination when subscriptions page changes
       } else if (activeTab === 'questions') {
         fetchQuestionsData();
       } else if (activeTab === 'exams') {
         fetchExamsData();
       }
-      // Subscriptions don't need API call, just update pagination
     }
-  }, [usersCurrentPage, questionsCurrentPage, examsCurrentPage]);
+  }, [usersCurrentPage, subscriptionsCurrentPage, questionsCurrentPage, examsCurrentPage]);
 
   const fetchDashboardData = async () => {
     try {
@@ -122,28 +123,20 @@ export function AdminDashboardPage() {
       
       // Fetch all data without loading states for initial load
       await fetchUsersData();
+      await fetchPaymentsData();
       await fetchQuestionsData();
       await fetchExamsData();
       
-      // For subscriptions, we'll use mock data for now but set pagination
-      const filteredOrdersCount = orders.filter(order =>
-        order.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.id.includes(searchTerm)
-      ).length;
-      setSubscriptionsTotalItems(filteredOrdersCount);
-      setSubscriptionsTotalPages(Math.ceil(filteredOrdersCount / pageSize));
-      
       toast({
-        title: "Data loaded successfully",
-        description: "Dashboard data has been updated",
+        title: "Tải dữ liệu thành công",
+        description: "Dữ liệu dashboard đã được cập nhật",
       });
       
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast({
-        title: "Data loading error",
-        description: "Unable to load dashboard data",
+        title: "Lỗi tải dữ liệu",
+        description: "Không thể tải dữ liệu dashboard",
         variant: "destructive"
       });
     }
@@ -172,12 +165,36 @@ export function AdminDashboardPage() {
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
-        title: "Users data loading error",
-        description: "Unable to load users list",
+        title: "Lỗi tải dữ liệu users",
+        description: "Không thể tải danh sách người dùng",
         variant: "destructive"
       });
     } finally {
       setUsersLoading(false);
+    }
+  };
+
+  const fetchPaymentsData = async () => {
+    try {
+      setPaymentsLoading(true);
+      
+      // Fetch all payments from API
+      const paymentsData = await AdminApiService.getPayments();
+      setPayments(paymentsData);
+      
+      // Update pagination info
+      setSubscriptionsTotalItems(paymentsData.length);
+      setSubscriptionsTotalPages(Math.ceil(paymentsData.length / pageSize));
+      
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      toast({
+        title: "Lỗi tải dữ liệu payments",
+        description: "Không thể tải danh sách thanh toán",
+        variant: "destructive"
+      });
+    } finally {
+      setPaymentsLoading(false);
     }
   };
 
@@ -199,8 +216,8 @@ export function AdminDashboardPage() {
     } catch (error) {
       console.error('Error fetching questions:', error);
       toast({
-        title: "Questions data loading error",
-        description: "Unable to load questions list",
+        title: "Lỗi tải dữ liệu questions",
+        description: "Không thể tải danh sách câu hỏi",
         variant: "destructive"
       });
     } finally {
@@ -226,8 +243,8 @@ export function AdminDashboardPage() {
     } catch (error) {
       console.error('Error fetching exams:', error);
       toast({
-        title: "Exams data loading error",
-        description: "Unable to load exams list",
+        title: "Lỗi tải dữ liệu exams",
+        description: "Không thể tải danh sách đề thi",
         variant: "destructive"
       });
     } finally {
@@ -302,14 +319,21 @@ export function AdminDashboardPage() {
   // Users are already paginated from API, no need for frontend filtering
   const filteredUsers = users;
 
-  const filteredOrders = orders.filter(order =>
-    order.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.id.includes(searchTerm)
+  // Filter payments by search term
+  const filteredPayments = payments.filter(payment =>
+    payment.id.toString().includes(searchTerm) ||
+    payment.userId.toString().includes(searchTerm) ||
+    payment.paymentStatus.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Paginate filtered orders
-  const paginatedOrders = filteredOrders.slice(
+  // Update pagination when filtered
+  useEffect(() => {
+    setSubscriptionsTotalItems(filteredPayments.length);
+    setSubscriptionsTotalPages(Math.ceil(filteredPayments.length / pageSize));
+  }, [filteredPayments.length, pageSize]);
+
+  // Paginate filtered payments
+  const paginatedPayments = filteredPayments.slice(
     (subscriptionsCurrentPage - 1) * pageSize,
     subscriptionsCurrentPage * pageSize
   );
@@ -525,27 +549,36 @@ export function AdminDashboardPage() {
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-white">Subscriptions</h1>
-              <p className="text-gray-400 mt-2">Subscription management</p>
+              <p className="text-gray-400 mt-2">Manage package subscriptions</p>
             </div>
             <Card className="bg-gray-800 border-gray-700">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-white">Subscription List</CardTitle>
+                    <CardTitle className="text-white">List of Subscriptions</CardTitle>
                     <CardDescription className="text-gray-400">
-                      Track and manage subscriptions in the system
+                    Track and manage registration packages in the system
                     </CardDescription>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="relative">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search subscriptions..."
+                        placeholder="Tìm kiếm subscriptions..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-8 w-64 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                       />
                     </div>
+                    <Button 
+                      onClick={fetchPaymentsData} 
+                      variant="outline" 
+                      size="sm" 
+                      className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh
+                    </Button>
                     <Button variant="outline" size="sm" className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">
                       <Download className="h-4 w-4 mr-2" />
                       Export Excel
@@ -558,38 +591,67 @@ export function AdminDashboardPage() {
                   <TableHeader>
                     <TableRow className="border-gray-700">
                       <TableHead className="text-gray-300">ID</TableHead>
-                      <TableHead className="text-gray-300">User</TableHead>
-                      <TableHead className="text-gray-300">Package Price</TableHead>
-                      <TableHead className="text-gray-300">Status</TableHead>
-                      <TableHead className="text-gray-300">Package Type</TableHead>
-                      <TableHead className="text-gray-300">Registration Date</TableHead>
+                      <TableHead className="text-gray-300">User ID</TableHead>
+                      <TableHead className="text-gray-300">Subscription Type</TableHead>
+                      <TableHead className="text-gray-300">Amount</TableHead>
+                      <TableHead className="text-gray-300">Payment Status</TableHead>
+                      <TableHead className="text-gray-300">Start Date</TableHead>
+                      <TableHead className="text-gray-300">End Date</TableHead>
+                      <TableHead className="text-gray-300">Active</TableHead>
+                      <TableHead className="text-gray-300">Created At</TableHead>
                       <TableHead className="text-gray-300">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedOrders.map((order) => (
-                      <TableRow key={order.id} className="border-gray-700 hover:bg-gray-700">
-                        <TableCell className="font-medium text-white">{order.id}</TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium text-white">{order.userName}</div>
-                            <div className="text-sm text-gray-400">{order.userEmail}</div>
+                    {paymentsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="text-center py-8">
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mr-3"></div>
+                            <span className="text-gray-400">Đang tải dữ liệu...</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-gray-300">{order.amount.toLocaleString('vi-VN')} VNĐ</TableCell>
+                      </TableRow>
+                    ) : paginatedPayments.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="text-center py-8">
+                          <span className="text-gray-400">Không có dữ liệu</span>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      paginatedPayments.map((payment) => (
+                      <TableRow key={payment.id} className="border-gray-700 hover:bg-gray-700">
+                        <TableCell className="font-medium text-white">{payment.id}</TableCell>
+                        <TableCell className="text-gray-300">{payment.userId}</TableCell>
                         <TableCell>
-                          <Badge variant={
-                            order.status === 'completed' ? 'default' :
-                            order.status === 'pending' ? 'secondary' :
-                            order.status === 'failed' ? 'destructive' : 'outline'
-                          }>
-                            {order.status === 'completed' ? 'Activated' :
-                             order.status === 'pending' ? 'Pending Payment' :
-                             order.status === 'failed' ? 'Payment Failed' : 'Cancelled'}
+                          <Badge variant="outline" className="text-white border-gray-500">
+                            Type {payment.subscriptionTypeId}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-gray-300">{order.subscriptionType}</TableCell>
-                        <TableCell className="text-gray-300">{new Date(order.createdAt).toLocaleDateString('en-US')}</TableCell>
+                        <TableCell className="text-gray-300">{payment.amount.toLocaleString('vi-VN')} VNĐ</TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            payment.paymentStatus.toLowerCase() === 'completed' ? 'default' :
+                            payment.paymentStatus.toLowerCase() === 'pending' ? 'secondary' :
+                            payment.paymentStatus.toLowerCase() === 'failed' ? 'destructive' : 'outline'
+                          }>
+                            {payment.paymentStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {new Date(payment.startDate).toLocaleDateString('vi-VN')}
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {payment.endDate ? new Date(payment.endDate).toLocaleDateString('vi-VN') : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={payment.isActive ? 'default' : 'destructive'}>
+                            {payment.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {new Date(payment.createdAt).toLocaleDateString('vi-VN')}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <Button variant="outline" size="sm" className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">
@@ -601,7 +663,8 @@ export function AdminDashboardPage() {
                           </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                      ))
+                    )}
                   </TableBody>
                 </Table>
                 

@@ -1,5 +1,5 @@
 import api from './axios';
-import { AdminStats, AdminUser, AdminQuestion, AdminExam, ApiResponse } from '@/types';
+import { AdminStats, AdminUser, AdminQuestion, AdminExam, AdminPayment, ApiResponse } from '@/types';
 
 // Admin API Service
 export class AdminApiService {
@@ -88,7 +88,7 @@ export class AdminApiService {
   // Khôi phục tài khoản user
   static async restoreUser(userId: number): Promise<void> {
     try {
-      await api.patch(`/users/${userId}/restore`);
+      await api.put(`/users/${userId}/restore-user`);
     } catch (error) {
       console.error('Error restoring user:', error);
       throw error;
@@ -98,7 +98,7 @@ export class AdminApiService {
   // Vô hiệu hóa tài khoản user
   static async deactivateUser(userId: number): Promise<void> {
     try {
-      await api.patch(`/users/${userId}/deactivate`);
+      await api.put(`/users/${userId}/soft-delete`);
     } catch (error) {
       console.error('Error deactivating user:', error);
       throw error;
@@ -141,6 +141,30 @@ export class AdminApiService {
       await api.patch(`/exams/${examId}/status`, { isActive });
     } catch (error) {
       console.error('Error updating exam status:', error);
+      throw error;
+    }
+  }
+
+  // Lấy danh sách payments (subscriptions)
+  static async getPayments(): Promise<AdminPayment[]> {
+    try {
+      const response = await api.get<AdminPayment[]>('/payments');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      throw error;
+    }
+  }
+
+  // Lấy danh sách lessons enhanced
+  static async getLessonsEnhanced(params?: {
+    subjectId?: number;
+  }): Promise<any[]> {
+    try {
+      const response = await api.get<any[]>('/lessons-enhanced', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching lessons enhanced:', error);
       throw error;
     }
   }

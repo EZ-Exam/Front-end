@@ -226,6 +226,20 @@ export interface AdminOrder {
   subscriptionType: string;
 }
 
+export interface AdminPayment {
+  id: number;
+  userId: number;
+  subscriptionTypeId: number;
+  startDate: string;
+  endDate: string | null;
+  isActive: boolean;
+  paymentStatus: string;
+  amount: number;
+  paymentGatewayTransactionId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AdminQuestion {
   id: number;
   content: string;
