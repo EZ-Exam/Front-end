@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout/Layout';
-import { AdminRoute } from '@/components/AdminRoute';
-import { ModeratorRoute } from '@/components/ModeratorRoute';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { RoleRoute } from '@/components/RoleRoute';
 import { HomePage } from '@/pages/HomePage';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { RegisterPage } from '@/pages/auth/RegisterPage';
@@ -41,8 +41,12 @@ export function AppRouter() {
         {/* Demo Pages */}
         <Route path="/admin-demo" element={<AdminDemoPage />} />
         
-        {/* Protected Routes */}
-        <Route path="/" element={<Layout />}>
+        {/* Protected Routes - Chỉ dành cho User (roleId = '1') */}
+        <Route path="/" element={
+          <ProtectedRoute allowedRoles={['1']}>
+            <Layout />
+          </ProtectedRoute>
+        }>
           <Route index element={<HomePage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
@@ -67,18 +71,18 @@ export function AppRouter() {
           <Route path="create-mock-test" element={<CreateMockTestPage />} />
         </Route>
 
-        {/* Admin Routes */}
+        {/* Admin Routes - Chỉ dành cho Admin (roleId = '2') */}
         <Route path="/admin" element={
-          <AdminRoute>
+          <RoleRoute requiredRole="2">
             <AdminDashboardPage />
-          </AdminRoute>
+          </RoleRoute>
         } />
         
-        {/* Moderator Routes */}
+        {/* Moderator Routes - Chỉ dành cho Moderator (roleId = '3') */}
         <Route path="/moderator" element={
-          <ModeratorRoute>
+          <RoleRoute requiredRole="3">
             <ModeratorDashboardPage />
-          </ModeratorRoute>
+          </RoleRoute>
         } />
         
         {/* Catch all - redirect to home */}

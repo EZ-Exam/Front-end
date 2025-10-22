@@ -176,12 +176,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (navigate) {
         const roleId = decodedToken.roleId;
         
-        setTimeout(() => {
-          if (roleId === "1") navigate('/');
-          else if (roleId === "2") navigate('/admin');
-          else if (roleId === "3") navigate('/moderator');
-          else navigate('/');
-        }, 2000);
+        // Redirect ngay lập tức dựa trên role
+        if (roleId === "1") {
+          navigate('/');
+        } else if (roleId === "2") {
+          navigate('/admin');
+        } else if (roleId === "3") {
+          navigate('/moderator');
+        } else {
+          // Fallback cho role không xác định
+          navigate('/');
+        }
       }
     } else {
       // Nếu không decode được token thì xóa token và logout
@@ -190,9 +195,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // Fallback navigation
       if (navigate) {
-        setTimeout(() => {
-          navigate('/');
-        }, 2000);
+        navigate('/');
       }
     }
   };
