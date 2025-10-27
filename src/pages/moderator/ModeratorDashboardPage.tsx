@@ -664,18 +664,18 @@ export function ModeratorDashboardPage() {
     fetchMockTestLessons();
   }, []);
 
-  // Fetch questions for mock test when subject changes
+  // Fetch questions for mock test when lesson changes
   useEffect(() => {
     const fetchMockTestQuestions = async () => {
-      const subjectId = mockTestForm.subjectId;
-      if (subjectId === '' || subjectId == null) {
+      const lessonId = mockTestForm.lessonId;
+      if (lessonId === '' || lessonId == null) {
         setMockTestQuestions([]);
         return;
       }
 
       try {
         setMockTestQuestionsLoading(true);
-        const res = await api.get(`/questions/by-subject/${subjectId}`);
+        const res = await api.get(`/questions?lessonId=${lessonId}`);
         let items = [];
         if (Array.isArray(res.data)) {
           items = res.data;
@@ -696,7 +696,7 @@ export function ModeratorDashboardPage() {
     };
 
     fetchMockTestQuestions();
-  }, [mockTestForm.subjectId]);
+  }, [mockTestForm.lessonId]);
 
   const handleCreateQuestion = () => {
     setCreateQuestionDialogOpen(true);
@@ -2667,13 +2667,13 @@ export function ModeratorDashboardPage() {
                   Total selected: {selectedMockTestQuestionIds.length}
                 </p>
                 {mockTestQuestionsLoading && <p className="text-sm text-gray-500">Đang tải danh sách câu hỏi...</p>}
-                {!mockTestQuestionsLoading && !mockTestForm.subjectId && (
-                  <p className="text-sm text-gray-500">Vui lòng chọn môn học để xem danh sách câu hỏi.</p>
+                {!mockTestQuestionsLoading && !mockTestForm.lessonId && (
+                  <p className="text-sm text-gray-500">Vui lòng chọn bài học để xem danh sách câu hỏi.</p>
                 )}
-                {!mockTestQuestionsLoading && mockTestForm.subjectId && mockTestQuestions.length === 0 && (
-                  <p className="text-sm text-gray-500">Không có câu hỏi nào cho môn học này.</p>
+                {!mockTestQuestionsLoading && mockTestForm.lessonId && mockTestQuestions.length === 0 && (
+                  <p className="text-sm text-gray-500">Không có câu hỏi nào cho bài học này.</p>
                 )}
-                {!mockTestQuestionsLoading && mockTestForm.subjectId && mockTestQuestions.length > 0 && (
+                {!mockTestQuestionsLoading && mockTestForm.lessonId && mockTestQuestions.length > 0 && (
                   <div className="max-h-60 overflow-y-auto border rounded-lg p-3 space-y-2">
                     {mockTestQuestions.map((q) => (
                       <div key={q.id} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50">
