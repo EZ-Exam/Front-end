@@ -154,11 +154,11 @@ export function LoginPage() {
       <div className="relative z-10 flex items-center justify-center p-4 min-h-screen">
         {/* Back button */}
         <Link 
-          to="/" 
+          to="/landing-page" 
           className="absolute top-6 left-6 inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors duration-200 group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
-          <span className="font-medium">Back to Home</span>
+          <span className="font-medium">Back to Landing Page</span>
         </Link>
 
         <div className="w-full max-w-md">

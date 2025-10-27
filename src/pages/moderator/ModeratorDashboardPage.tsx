@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +18,6 @@ import { ExamDetailModal } from '@/components/admin/ExamDetailModal';
 import { ModeratorSidebar } from '@/components/moderator/ModeratorSidebar';
 import api from '@/services/axios';
 import { uploadImgBBMultipleFile } from '@/services/imgBB';
-import { addStyles, EditableMathField } from 'react-mathquill';
 import { useToast as useToastContext } from '@/contexts/ToastContext';
 import { 
   RefreshCw,
@@ -36,18 +35,16 @@ import {
   FileText
 } from 'lucide-react';
 
-addStyles();
-
 // Subject mapping
 const SUBJECT_NAMES: { [key: number]: string } = {
-  1: 'Toán học',
-  2: 'Vật lý',
-  3: 'Hóa học',
-  4: 'Sinh học',
-  5: 'Ngữ văn',
-  6: 'Tiếng Anh',
-  7: 'Lịch sử',
-  8: 'Địa lý'
+  1: 'Math', 
+  2: 'Physics',
+  3: 'Chemistry',
+  4: 'Biology',
+  5: 'Literature',
+  6: 'English',
+  7: 'History',
+  8: 'Geography'
 };
 
 export function ModeratorDashboardPage() {
@@ -130,9 +127,6 @@ export function ModeratorDashboardPage() {
     isPublic: true,
   });
   
-  // MathQuill refs for handling paste
-  const formulaMQRef = useRef<any>(null);
-  const optionMQRefs = useRef<any[]>([]);
 
   // Create Lesson Dialog State
   const [createLessonDialogOpen, setCreateLessonDialogOpen] = useState(false);
@@ -572,6 +566,7 @@ export function ModeratorDashboardPage() {
         setSingleQuestionForm(prev => ({ ...prev, textbookId: undefined }));
         return;
       }
+      console.log(singleQuestionForm.gradeId, singleQuestionForm.subjectId);
       try {
         const res = await api.get(`/text-books?gradeId=${singleQuestionForm.gradeId}&subjectId=${singleQuestionForm.subjectId}`);
         setTextbookOptions(res.data || []);
@@ -2145,39 +2140,13 @@ export function ModeratorDashboardPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="formula">Formula (optional) </Label>
-                <div
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    const text = e.clipboardData.getData('text/plain');
-                    if (formulaMQRef.current) {
-                      formulaMQRef.current.write(text);
-                      setSingleQuestionForm(prev => ({ ...prev, formula: formulaMQRef.current.latex() }));
-                    }
-                  }}
-                >
-                  <EditableMathField 
-                    latex={singleQuestionForm.formula}
-                    style={{ 
-                      width: "100%",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "0.375rem",
-                      paddingLeft: "0.75rem",
-                      paddingRight: "0.75rem",
-                      paddingTop: "0.5rem",
-                      paddingBottom: "0.5rem",
-                      minHeight: "48px",
-                      boxSizing: "border-box",
-                      outline: "none",
-                    }}
-                    onChange={(mathField) =>
-                      setSingleQuestionForm(prev => ({ ...prev, formula: mathField.latex() }))
-                    }
-                    mathquillDidMount={(mf) => {
-                      formulaMQRef.current = mf;
-                    }}
-                  />
-                </div>
+                <Label htmlFor="formula">Formula (optional)</Label>
+                <Input
+                  id="formula"
+                  value={singleQuestionForm.formula}
+                  onChange={(e) => setSingleQuestionForm(prev => ({ ...prev, formula: e.target.value }))}
+                  placeholder="Enter mathematical formula if applicable"
+                />
               </div>
 
               <div className="space-y-2">
@@ -2208,38 +2177,12 @@ export function ModeratorDashboardPage() {
                         aria-label={`Select option ${String.fromCharCode(65 + index)} as correct answer`}
                       />
                     </div>
-                    <div
+                    <Input
+                      value={option}
+                      onChange={(e) => updateSingleQuestionOption(index, e.target.value)}
+                      placeholder={`Option ${String.fromCharCode(65 + index)}`}
                       className="flex-1"
-                      onPaste={(e) => {
-                        e.preventDefault();
-                        const text = e.clipboardData.getData('text/plain');
-                        const mf = optionMQRefs.current[index];
-                        if (mf) {
-                          mf.write(text);
-                          updateSingleQuestionOption(index, mf.latex());
-                        }
-                      }}
-                    >
-                      <EditableMathField
-                        latex={option}
-                        onChange={(mathField) => updateSingleQuestionOption(index, mathField.latex())}
-                        style={{ 
-                          width: "100%",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "0.375rem",
-                          paddingLeft: "0.75rem",
-                          paddingRight: "0.75rem",
-                          paddingTop: "0.5rem",
-                          paddingBottom: "0.5rem",
-                          minHeight: "48px",
-                          boxSizing: "border-box",
-                          outline: "none",
-                        }}
-                        mathquillDidMount={(mf) => {
-                          optionMQRefs.current[index] = mf;
-                        }}
-                      />
-                    </div>
+                    />
                   </div>
                 ))}
                 <div className="flex gap-2">

@@ -298,3 +298,54 @@ export interface AdminExam {
 
 // Legacy type for backward compatibility
 export interface AdminQuiz extends AdminExam {}
+
+// AI Exam Generation Types
+export interface AIExamGenerationRequest {
+  userId: number;
+  questionCount: number;
+  mode: 'review' | 'advanced';
+  historyCount: number;
+  subjectIds?: number[];
+  gradeIds?: number[];
+  chapterIds?: number[];
+  lessonIds?: number[];
+  difficultyLevelId?: number; // 1=EASY, 2=MEDIUM, 3=HARD
+}
+
+export interface AIExamQuestion {
+  questionId: number;
+  content: string;
+  difficultyLevel: string;
+  questionType: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+  formula: string;
+  questionSource: string;
+  gradeId: number;
+  gradeName: string;
+  lessonId: number;
+  lessonName: string;
+  aiReasoning: string;
+}
+
+export interface AIExamMetadata {
+  examId: number;
+  totalQuestions: number;
+  mode: string;
+  userId: number;
+  generatedAt: string;
+  aiModel: string;
+  tokensUsed: number;
+  processingTimeSeconds: number;
+  analysis: string;
+  difficultyDistribution: Record<string, number>;
+  subjectDistribution: Record<string, number>;
+}
+
+export interface AIExamGenerationResponse {
+  success: boolean;
+  message: string;
+  questions: AIExamQuestion[];
+  metadata: AIExamMetadata;
+}

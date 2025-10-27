@@ -3,6 +3,7 @@ import { Layout } from '@/components/Layout/Layout';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { RoleRoute } from '@/components/RoleRoute';
 import { HomePage } from '@/pages/HomePage';
+import { PublicHomePage } from '@/pages/PublicHomePage';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { RegisterPage } from '@/pages/auth/RegisterPage';
 import { ProfilePage } from '@/pages/ProfilePage';
@@ -17,6 +18,7 @@ import { MockTestAnalyticsPage } from '@/pages/mock-tests/MockTestAnalyticsPage'
 import { MockTestHistoryPage } from '@/pages/mock-tests/MockTestHistoryPage';
 import { MockTestHistoryDetailPage } from '@/pages/mock-tests/MockTestHistoryDetailPage';
 import { CreateMockTestPage } from '@/pages/mock-tests/CreateMockTestPage';
+import { GenerateMockTestAIPage } from '@/pages/mock-tests/GenerateMockTestAIPage';
 import { QuestionBankPage } from '@/pages/question-bank/QuestionBankPage';
 import { NotificationsPage } from '@/pages/NotificationPage';
 import { QuestionBankDetailPage } from '@/pages/question-bank/QuestionBankDetailPage';
@@ -30,7 +32,8 @@ export function AppRouter() {
   return (
     <Router>
       <Routes>
-        {/* Auth Routes */}
+        {/* Public Routes - Không cần đăng nhập */}
+        <Route path="/landing-page" element={<PublicHomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         
@@ -69,6 +72,7 @@ export function AppRouter() {
           <Route path="mock-tests/history" element={<MockTestHistoryPage />} />
           <Route path="mock-tests/history/:id" element={<MockTestHistoryDetailPage />} />
           <Route path="create-mock-test" element={<CreateMockTestPage />} />
+          <Route path="generate-mock-test-AI" element={<GenerateMockTestAIPage />} />
         </Route>
 
         {/* Admin Routes - Chỉ dành cho Admin (roleId = '2') */}

@@ -68,12 +68,22 @@ export function RegisterPage() {
           navigate('/login');
         }, 2000);
       }
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      error(error.response?.data?.message || "Registration failed", "Registration Error");
+    } catch (err: any) {
+      console.error('Registration error:', err);
+    
+      let backendMessage = "Registration failed";
+    
+      if (err.response?.data?.errors) {
+        const messages = Object.values(err.response.data.errors).flat().join('\n');
+        backendMessage = messages;
+      } else if (err.response?.data?.message) {
+        backendMessage = err.response.data.message;
+      }
+    
+      error(backendMessage, "Registration Error");
     } finally {
       setIsLoading(false);
-    }
+    }    
   };
 
   useEffect(() => {
@@ -169,11 +179,11 @@ export function RegisterPage() {
       <div className="relative z-10 flex items-center justify-center p-4 min-h-screen">
         {/* Back button */}
         <Link 
-          to="/" 
+          to="/landing-page" 
           className="absolute top-6 left-6 inline-flex items-center gap-2 text-purple-600 hover:text-purple-800 transition-colors duration-200 group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
-          <span className="font-medium">Back to Home</span>
+          <span className="font-medium">Back to Landing Page</span>
         </Link>
 
         <div className="w-full max-w-md">

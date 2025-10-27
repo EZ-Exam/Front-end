@@ -178,14 +178,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         // Redirect ngay lập tức dựa trên role
         if (roleId === "1") {
-          navigate('/');
+          navigate('/dashboard');
         } else if (roleId === "2") {
           navigate('/admin');
         } else if (roleId === "3") {
           navigate('/moderator');
         } else {
           // Fallback cho role không xác định
-          navigate('/');
+          navigate('/dashboard');
         }
       }
     } else {
@@ -195,7 +195,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // Fallback navigation
       if (navigate) {
-        navigate('/');
+        navigate('/dashboard');
       }
     }
   };
