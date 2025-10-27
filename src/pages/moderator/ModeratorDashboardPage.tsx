@@ -2653,9 +2653,10 @@ export function ModeratorDashboardPage() {
                     <SelectValue placeholder="Select exam type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Mock Test</SelectItem>
-                    <SelectItem value="2">AI-Gen Test</SelectItem>
-                    <SelectItem value="3">User Test</SelectItem>
+                    <SelectItem value="1">Kiểm tra 15 phút</SelectItem>
+                    <SelectItem value="2">Kiểm tra 1 tiết</SelectItem>
+                    <SelectItem value="3">Kiểm tra giữa kỳ</SelectItem>
+                    <SelectItem value="4">Kiểm tra cuối kỳ</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
