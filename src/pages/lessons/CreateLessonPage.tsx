@@ -57,20 +57,20 @@ export function CreateLessonPage() {
 
   useEffect(() => {
     const fetchChapters = async () => {
-      if (!lessonForm.semesterId) {
+      if (!lessonForm.semesterId || !lessonForm.subject) {
         setChapterOptions([]);
         setLessonForm(prev => ({ ...prev, chapterId: undefined }));
         return;
       }
       try {
-        const res = await api.get(`/chapters/by-semester/${lessonForm.semesterId}`);
+        const res = await api.get(`/chapters/semester/${lessonForm.semesterId}/subject/${lessonForm.subject}`);
         setChapterOptions(res.data || []);
       } catch (err) {
         setChapterOptions([]);
       }
     };
     fetchChapters();
-  }, [lessonForm.semesterId]);
+  }, [lessonForm.semesterId, lessonForm.subject]);
 
   useEffect(() => {
     const fetchLessons = async () => {

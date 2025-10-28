@@ -41,6 +41,16 @@ export class ChapterApiService {
       throw error;
     }
   }
+
+  static async getChaptersBySemesterAndSubject(semesterId: number, subjectId: number): Promise<Chapter[]> {
+    try {
+      const response = await api.get<Chapter[]>(`/chapters/semester/${semesterId}/subject/${subjectId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching chapters by semester and subject:', error);
+      throw error;
+    }
+  }
 }
 
 // Lesson API Service

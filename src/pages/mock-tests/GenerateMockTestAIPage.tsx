@@ -27,7 +27,10 @@ export function GenerateMockTestAIPage() {
       
       // Decode JWT token (simple base64 decode for payload)
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.userId || payload.id || payload.sub || 1;
+      const userId = payload.userId || payload.id || payload.sub || 1;
+      
+      // Ensure userId is a number
+      return typeof userId === 'string' ? parseInt(userId, 10) : Number(userId);
     } catch {
       return 1; // fallback if token is invalid
     }
@@ -52,8 +55,8 @@ export function GenerateMockTestAIPage() {
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [selectedSemesterId, setSelectedSemesterId] = useState<number | null>(null);
-  const [selectedChapterId, setSelectedChapterId] = useState<number | null>(null);
+  const [selectedSemesterIds, setSelectedSemesterIds] = useState<number[]>([]);
+  const [selectedChapterIds, setSelectedChapterIds] = useState<number[]>([]);
   const [loadingSemesters, setLoadingSemesters] = useState(false);
   const [loadingChapters, setLoadingChapters] = useState(false);
   const [loadingLessons, setLoadingLessons] = useState(false);
@@ -175,22 +178,36 @@ export function GenerateMockTestAIPage() {
         setSemesters([]);
         setChapters([]);
         setLessons([]);
-        setSelectedSemesterId(null);
-        setSelectedChapterId(null);
+        setSelectedSemesterIds([]);
+        setSelectedChapterIds([]);
       }
     };
 
     fetchSemesters();
   }, [formData.gradeIds, handleError]);
 
-  // Fetch chapters when semester is selected
+  // Fetch chapters when semesters are selected
   useEffect(() => {
     const fetchChapters = async () => {
-      if (selectedSemesterId) {
+      if (selectedSemesterIds.length > 0 && formData.subjectIds && formData.subjectIds.length > 0) {
         try {
           setLoadingChapters(true);
-          const semesterChapters = await ChapterApiService.getChaptersBySemester(selectedSemesterId);
-          setChapters(semesterChapters);
+          const allChapters: Chapter[] = [];
+          
+          // Fetch chapters for all selected semester-subject combinations
+          for (const semesterId of selectedSemesterIds) {
+            for (const subjectId of formData.subjectIds) {
+              const chapters = await ChapterApiService.getChaptersBySemesterAndSubject(semesterId, subjectId);
+              allChapters.push(...chapters);
+            }
+          }
+          
+          // Remove duplicates based on chapter ID
+          const uniqueChapters = Array.from(
+            new Map(allChapters.map(chapter => [chapter.id, chapter])).values()
+          );
+          
+          setChapters(uniqueChapters);
         } catch (err) {
           console.error('Error fetching chapters:', err);
           handleError('Không thể tải danh sách chương');
@@ -200,21 +217,33 @@ export function GenerateMockTestAIPage() {
       } else {
         setChapters([]);
         setLessons([]);
-        setSelectedChapterId(null);
+        setSelectedChapterIds([]);
       }
     };
 
     fetchChapters();
-  }, [selectedSemesterId, handleError]);
+  }, [selectedSemesterIds, formData.subjectIds, handleError]);
 
-  // Fetch lessons when chapter is selected
+  // Fetch lessons when chapters are selected
   useEffect(() => {
     const fetchLessons = async () => {
-      if (selectedChapterId) {
+      if (selectedChapterIds.length > 0) {
         try {
           setLoadingLessons(true);
-          const chapterLessons = await LessonApiService.getLessonsByChapter(selectedChapterId);
-          setLessons(chapterLessons);
+          const allLessons: Lesson[] = [];
+          
+          // Fetch lessons for all selected chapters
+          for (const chapterId of selectedChapterIds) {
+            const chapterLessons = await LessonApiService.getLessonsByChapter(chapterId);
+            allLessons.push(...chapterLessons);
+          }
+          
+          // Remove duplicates based on lesson ID
+          const uniqueLessons = Array.from(
+            new Map(allLessons.map(lesson => [lesson.id, lesson])).values()
+          );
+          
+          setLessons(uniqueLessons);
         } catch (err) {
           console.error('Error fetching lessons:', err);
           handleError('Không thể tải danh sách bài học');
@@ -227,14 +256,22 @@ export function GenerateMockTestAIPage() {
     };
 
     fetchLessons();
-  }, [selectedChapterId, handleError]);
+  }, [selectedChapterIds, handleError]);
 
   const handleGenerate = async () => {
     try {
       setIsGenerating(true);
       setGeneratedExam(null);
       
-      const response = await AIExamApiService.generateExam(formData);
+      // Ensure userId is a number
+      const payload = {
+        ...formData,
+        userId: Number(formData.userId)
+      };
+      
+      console.log('Payload with userId as number:', payload);
+      
+      const response = await AIExamApiService.generateExam(payload);
       setGeneratedExam(response);
       success('Tạo bài thi AI thành công!');
     } catch (err: any) {
@@ -537,102 +574,87 @@ export function GenerateMockTestAIPage() {
             {/* Semester Selection */}
             {formData.gradeIds && formData.gradeIds.length > 0 && (
               <div className="space-y-3">
-                <Label className="text-base font-medium">Học kỳ</Label>
-                <p className="text-sm text-gray-600">Chọn học kỳ để lấy danh sách chương</p>
-                <Select 
-                  value={selectedSemesterId?.toString() || 'none'} 
-                  onValueChange={(value) => setSelectedSemesterId(value === 'none' ? null : parseInt(value))}
-                >
-                  <SelectTrigger className="border-gray-300 focus:border-purple-500">
-                    <SelectValue placeholder="Chọn học kỳ" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Tất cả học kỳ</SelectItem>
-                    {loadingSemesters ? (
-                      <SelectItem value="loading" disabled>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Đang tải...
-                      </SelectItem>
-                    ) : (
-                      semesters.map(semester => (
-                        <SelectItem key={semester.id} value={semester.id.toString()}>
+                <Label className="text-base font-medium">Học kỳ (tùy chọn)</Label>
+                <p className="text-sm text-gray-600">Nếu không chọn, AI sẽ lấy từ tất cả học kỳ</p>
+                {loadingSemesters ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-gray-600">Đang tải danh sách học kỳ...</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {semesters.map(semester => (
+                      <div key={semester.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`semester-${semester.id}`}
+                          checked={selectedSemesterIds.includes(semester.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedSemesterIds(prev => [...prev, semester.id]);
+                            } else {
+                              setSelectedSemesterIds(prev => prev.filter(id => id !== semester.id));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`semester-${semester.id}`} className="text-sm">
                           {semester.name} - {semester.gradeName}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Chapter Selection */}
-            {selectedSemesterId && (
-              <div className="space-y-3">
-                <Label className="text-base font-medium">Chương</Label>
-                <p className="text-sm text-gray-600">Chọn chương để lấy danh sách bài học</p>
-                <Select 
-                  value={selectedChapterId?.toString() || 'none'} 
-                  onValueChange={(value) => setSelectedChapterId(value === 'none' ? null : parseInt(value))}
-                >
-                  <SelectTrigger className="border-gray-300 focus:border-purple-500">
-                    <SelectValue placeholder="Chọn chương" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Tất cả chương</SelectItem>
-                    {loadingChapters ? (
-                      <SelectItem value="loading" disabled>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Đang tải...
-                      </SelectItem>
-                    ) : (
-                      chapters.map(chapter => (
-                        <SelectItem key={chapter.id} value={chapter.id.toString()}>
-                          {chapter.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {/* Chapter Selection (Checkboxes) */}
-            {selectedSemesterId && chapters.length > 0 && (
+            {selectedSemesterIds.length > 0 && chapters.length > 0 && (
               <div className="space-y-3">
                 <Label className="text-base font-medium">Chọn chương cụ thể (tùy chọn)</Label>
-                <p className="text-sm text-gray-600">Nếu không chọn, AI sẽ lấy từ tất cả chương trong học kỳ</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {chapters.map(chapter => (
-                    <div key={chapter.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`chapter-${chapter.id}`}
-                        checked={formData.chapterIds?.includes(chapter.id) || false}
-                        onCheckedChange={(checked) => 
-                          handleArrayChange('chapterIds', chapter.id, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={`chapter-${chapter.id}`} className="text-sm">
-                        {chapter.name}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-sm text-gray-600">Nếu không chọn, AI sẽ lấy từ tất cả chương trong học kỳ đã chọn</p>
+                {loadingChapters ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-gray-600">Đang tải danh sách chương...</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                    {chapters.map(chapter => (
+                      <div key={chapter.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`chapter-${chapter.id}`}
+                          checked={formData.chapterIds?.includes(chapter.id) || false}
+                          onCheckedChange={(checked) => {
+                            handleArrayChange('chapterIds', chapter.id, checked as boolean);
+                            if (checked) {
+                              setSelectedChapterIds(prev => [...prev, chapter.id]);
+                            } else {
+                              setSelectedChapterIds(prev => prev.filter(id => id !== chapter.id));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`chapter-${chapter.id}`} className="text-sm">
+                          {chapter.name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {/* Lesson Selection */}
-            {selectedChapterId && (
+            {selectedChapterIds.length > 0 && lessons.length > 0 && (
               <div className="space-y-3">
-                <Label className="text-base font-medium">Bài học (tùy chọn)</Label>
-                <p className="text-sm text-gray-600">Nếu không chọn, AI sẽ lấy từ tất cả bài học trong chương</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {loadingLessons ? (
-                    <div className="col-span-2 flex items-center justify-center p-4">
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      <span className="text-sm text-gray-600">Đang tải danh sách bài học...</span>
-                    </div>
-                  ) : (
-                    lessons.map(lesson => (
+                <Label className="text-base font-medium">Chọn bài học cụ thể (tùy chọn)</Label>
+                <p className="text-sm text-gray-600">Nếu không chọn, AI sẽ lấy từ tất cả bài học trong chương đã chọn</p>
+                {loadingLessons ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-gray-600">Đang tải danh sách bài học...</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                    {lessons.map(lesson => (
                       <div key={lesson.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`lesson-${lesson.id}`}
@@ -645,9 +667,9 @@ export function GenerateMockTestAIPage() {
                           {lesson.name}
                         </Label>
                       </div>
-                    ))
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

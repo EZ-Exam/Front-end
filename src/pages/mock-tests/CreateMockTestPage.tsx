@@ -73,6 +73,9 @@ export function CreateMockTestPage() {
     description: '',
     duration: '',
     subjectId: '' as unknown as number | '' ,
+    gradeId: undefined as number | undefined,
+    semesterId: undefined as number | undefined,
+    chapterId: undefined as number | undefined,
     lessonId: '' as unknown as number | '' ,
     examTypeId: '' as unknown as number | '' ,
     createdByUserId: 1 as number,
@@ -126,6 +129,8 @@ export function CreateMockTestPage() {
   ];
 
   const [lessons, setLessons] = useState<Array<{ id: number; name: string }>>([]);
+  const [semesterOptions, setSemesterOptions] = useState<Array<{ id: number; name: string }>>([]);
+  const [chapterOptions, setChapterOptions] = useState<Array<{ id: number; name: string }>>([]);
 
   // Helper function to check if subject is selected
   const isSubjectSelected = () => {
@@ -135,9 +140,9 @@ export function CreateMockTestPage() {
 
   useEffect(() => {
     const fetchQuestions = async () => {
-      // Chỉ fetch khi đã chọn subject
-      const subjectId = mockTestForm.subjectId;
-      if (subjectId === '' || subjectId == null) {
+      // Chỉ fetch khi đã chọn lesson
+      const lessonId = mockTestForm.lessonId;
+      if (lessonId === '' || lessonId == null) {
         setQuestions([]);
         return;
       }
@@ -145,8 +150,8 @@ export function CreateMockTestPage() {
       try {
         setQuestionsLoading(true);
         setQuestionsError(null);
-        console.log('Fetching questions for subjectId:', subjectId);
-        const res = await api.get(`/questions/by-subject/${subjectId}`);
+        console.log('Fetching questions for lessonId:', lessonId);
+        const res = await api.get(`/questions`, { params: { lessonId } });
         console.log('Full API Response:', res);
         console.log('API Response data:', res.data);
         console.log('Response structure:', {
@@ -202,7 +207,7 @@ export function CreateMockTestPage() {
     };
 
     fetchQuestions();
-  }, [mockTestForm.subjectId]);
+  }, [mockTestForm.lessonId]);
 
   // Resolve names from IDs
   useEffect(() => {
@@ -240,11 +245,50 @@ export function CreateMockTestPage() {
   }, [mockTestForm.examTypeId, examTypes]);
 
 
-  // Fetch option lists for selects (only lessons now)
+  // Dependent selects similar to Create Question/Lesson flows
+  useEffect(() => {
+    const fetchSemesters = async () => {
+      if (!mockTestForm.gradeId) {
+        setSemesterOptions([]);
+        setMockTestForm(prev => ({ ...prev, semesterId: undefined }));
+        return;
+      }
+      try {
+        const res = await api.get(`/semesters/by-grade/${mockTestForm.gradeId}`);
+        setSemesterOptions(res.data || []);
+      } catch {
+        setSemesterOptions([]);
+      }
+    };
+    fetchSemesters();
+  }, [mockTestForm.gradeId]);
+
+  useEffect(() => {
+    const fetchChapters = async () => {
+      if (!mockTestForm.semesterId || !mockTestForm.subjectId) {
+        setChapterOptions([]);
+        setMockTestForm(prev => ({ ...prev, chapterId: undefined }));
+        return;
+      }
+      try {
+        const res = await api.get(`/chapters/semester/${mockTestForm.semesterId}/subject/${mockTestForm.subjectId}`);
+        setChapterOptions(res.data || []);
+      } catch {
+        setChapterOptions([]);
+      }
+    };
+    fetchChapters();
+  }, [mockTestForm.semesterId, mockTestForm.subjectId]);
+
   useEffect(() => {
     const fetchLessons = async () => {
+      if (!mockTestForm.chapterId) {
+        setLessons([]);
+        setMockTestForm(prev => ({ ...prev, lessonId: '' as unknown as number | '' }));
+        return;
+      }
       try {
-        const res = await api.get('/lessons');
+        const res = await api.get(`/lessons/by-chapter/${mockTestForm.chapterId}`);
         const items = Array.isArray(res?.data?.items) ? res.data.items : (Array.isArray(res?.data) ? res.data : []);
         setLessons(items.map((x: any) => ({ id: Number(x.id), name: x.name ?? x.title ?? `${x.id}` })));
       } catch {
@@ -252,7 +296,7 @@ export function CreateMockTestPage() {
       }
     };
     fetchLessons();
-  }, []);
+  }, [mockTestForm.chapterId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -360,7 +404,7 @@ export function CreateMockTestPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="subjectId">Subject *</Label>
-                <Select value={mockTestForm.subjectId === '' ? undefined : String(mockTestForm.subjectId)} onValueChange={(v) => setMockTestForm(prev => ({ ...prev, subjectId: v ? Number(v) : '' }))}>
+                <Select value={mockTestForm.subjectId === '' ? undefined : String(mockTestForm.subjectId)} onValueChange={(v) => setMockTestForm(prev => ({ ...prev, subjectId: v ? Number(v) : '', gradeId: undefined, semesterId: undefined, chapterId: undefined, lessonId: '' as unknown as number | '' }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select subject" />
                   </SelectTrigger>
@@ -373,19 +417,74 @@ export function CreateMockTestPage() {
                 {subjectName && <p className="text-sm text-gray-600">Subject: {subjectName}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lessonId">Lesson *</Label>
-                <Select value={mockTestForm.lessonId === '' ? undefined : String(mockTestForm.lessonId)} onValueChange={(v) => setMockTestForm(prev => ({ ...prev, lessonId: v ? Number(v) : '' }))}>
+                <Label htmlFor="gradeId">Grade *</Label>
+                <Select 
+                  value={mockTestForm.gradeId?.toString() ?? ''}
+                  onValueChange={(v) => setMockTestForm(prev => ({ ...prev, gradeId: Number(v), semesterId: undefined, chapterId: undefined, lessonId: '' as unknown as number | '' }))}
+                  disabled={!mockTestForm.subjectId}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select lesson" />
+                    <SelectValue placeholder="Select grade" />
                   </SelectTrigger>
                   <SelectContent>
-                    {lessons.map(l => (
-                      <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
+                    <SelectItem value="1">10</SelectItem>
+                    <SelectItem value="2">11</SelectItem>
+                    <SelectItem value="3">12</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="semesterId">Semester *</Label>
+                <Select 
+                  value={mockTestForm.semesterId?.toString() ?? ''}
+                  onValueChange={(v) => setMockTestForm(prev => ({ ...prev, semesterId: Number(v), chapterId: undefined, lessonId: '' as unknown as number | '' }))}
+                  disabled={!mockTestForm.gradeId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {semesterOptions.map(s => (
+                      <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {lessonName && <p className="text-sm text-gray-600">Lesson: {lessonName}</p>}
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="chapterId">Chapter *</Label>
+                <Select 
+                  value={mockTestForm.chapterId?.toString() ?? ''}
+                  onValueChange={(v) => setMockTestForm(prev => ({ ...prev, chapterId: Number(v), lessonId: '' as unknown as number | '' }))}
+                  disabled={!mockTestForm.semesterId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select chapter" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-48 overflow-y-auto">
+                    {chapterOptions.map(c => (
+                      <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="lessonId">Lesson *</Label>
+              <Select value={mockTestForm.lessonId === '' ? undefined : String(mockTestForm.lessonId)} onValueChange={(v) => setMockTestForm(prev => ({ ...prev, lessonId: v ? Number(v) : '' }))} disabled={!mockTestForm.chapterId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select lesson" />
+                </SelectTrigger>
+                <SelectContent className="max-h-48 overflow-y-auto">
+                  {lessons.map(l => (
+                    <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {lessonName && <p className="text-sm text-gray-600">Lesson: {lessonName}</p>}
             </div>
 
             <div className="space-y-2">

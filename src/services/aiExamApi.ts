@@ -6,6 +6,7 @@ export class AIExamApiService {
   // Generate AI-powered exam
   static async generateExam(request: AIExamGenerationRequest): Promise<AIExamGenerationResponse> {
     try {
+      console.log('request payload for AI Exam Generation', request);
       const response = await api.post<AIExamGenerationResponse>('/ai-exam/generate', request);
       return response.data;
     } catch (error) {
