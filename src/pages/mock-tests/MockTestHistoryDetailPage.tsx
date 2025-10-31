@@ -23,7 +23,7 @@ import api from '@/services/axios';
 interface ExamHistory {
   id: number;
   examId: string;
-  userId: string;
+  userId: string | number; // Backend có thể trả về number hoặc string
   score: number;
   correctCount: number;
   incorrectCount: number;
@@ -83,7 +83,22 @@ export function MockTestHistoryDetailPage() {
       const historyResponse = await api.get(`/exam-history/${id}`);
       const history: ExamHistory = historyResponse.data;
       
-      if (history.userId !== user.id) {
+      // Log để debug - kiểm tra type và giá trị
+      console.log('History userId:', history.userId, 'Type:', typeof history.userId);
+      console.log('User id:', user.id, 'Type:', typeof user.id);
+      console.log('Full history response:', history);
+      
+      // Normalize cả hai giá trị về string để so sánh (tránh type mismatch)
+      const historyUserId = String(history.userId || '').trim();
+      const currentUserId = String(user.id || '').trim();
+      
+      if (historyUserId !== currentUserId) {
+        console.error('User ID mismatch:', {
+          historyUserId,
+          currentUserId,
+          historyUserIdType: typeof history.userId,
+          currentUserIdType: typeof user.id
+        });
         throw new Error('Unauthorized access to this exam history');
       }
       
@@ -117,7 +132,22 @@ export function MockTestHistoryDetailPage() {
       
     } catch (error: any) {
       console.error('Error fetching exam history details:', error);
-      setError(error.response?.data?.message || 'Failed to load exam history details. Please try again.');
+      
+      // Kiểm tra nếu lỗi là từ backend (401, 403) hay từ frontend validation
+      if (error.response) {
+        // Lỗi từ backend API
+        const status = error.response.status;
+        if (status === 401 || status === 403) {
+          setError('Bạn không có quyền truy cập vào lịch sử bài thi này. Vui lòng đăng nhập lại.');
+        } else {
+          setError(error.response?.data?.message || `Lỗi từ server (${status}). Vui lòng thử lại.`);
+        }
+      } else if (error.message === 'Unauthorized access to this exam history') {
+        // Lỗi từ frontend validation - User ID không khớp
+        setError('Bạn không có quyền truy cập vào lịch sử bài thi này. Vui lòng kiểm tra lại tài khoản.');
+      } else {
+        setError(error.message || 'Không thể tải chi tiết lịch sử bài thi. Vui lòng thử lại.');
+      }
     } finally {
       setLoading(false);
       hideLoading();

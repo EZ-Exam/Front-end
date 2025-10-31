@@ -164,6 +164,7 @@ export function Header({ onRefreshData, refreshTrigger }: HeaderProps) {
           { name: 'Lessons', href: '/lessons', icon: BookOpen },
           { name: 'Question Bank', href: '/question-bank', icon: PenTool },
           { name: 'Mock Tests', href: '/mock-tests', icon: FileText },
+          { name: 'My Mock Test', href: '/my-mock-tests', icon: FileText },
           { name: 'Mock Test History', href: '/mock-tests/history', icon: History },
           { name: 'Help & Support', href: '/help', icon: HelpCircle },
         ].map((item) => {

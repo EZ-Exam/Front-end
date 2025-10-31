@@ -14,10 +14,12 @@ import { LessonDetailPage } from '@/pages/lessons/LessonDetailPage';
 import { CreateLessonPage } from '@/pages/lessons/CreateLessonPage';
 import { MockTestsPage } from '@/pages/mock-tests/MockTestsPage';
 import { MockTestDetailPage } from '@/pages/mock-tests/MockTestDetailPage';
+import { MyMockTestsPage } from '@/pages/mock-tests/MyMockTestsPage';
+import { MyMockTestDetailPage } from '@/pages/mock-tests/MyMockTestDetailPage';
 import { MockTestAnalyticsPage } from '@/pages/mock-tests/MockTestAnalyticsPage';
 import { MockTestHistoryPage } from '@/pages/mock-tests/MockTestHistoryPage';
 import { MockTestHistoryDetailPage } from '@/pages/mock-tests/MockTestHistoryDetailPage';
-import { CreateMockTestPage } from '@/pages/mock-tests/CreateMockTestPage';
+// import { CreateMockTestPage } from '@/pages/mock-tests/CreateMockTestPage';
 import { GenerateMockTestAIPage } from '@/pages/mock-tests/GenerateMockTestAIPage';
 import { QuestionBankPage } from '@/pages/question-bank/QuestionBankPage';
 import { NotificationsPage } from '@/pages/NotificationPage';
@@ -27,6 +29,7 @@ import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
 import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage';
 import { ModeratorDashboardPage } from '@/pages/moderator/ModeratorDashboardPage';
 import { AdminDemoPage } from '@/pages/AdminDemoPage';
+import { TransactionHistoryPage } from '@/pages/payments/TransactionHistoryPage';
 
 export function AppRouter() {
   return (
@@ -55,6 +58,7 @@ export function AppRouter() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="help" element={<HelpPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="transactions" element={<TransactionHistoryPage />} />
           
           {/* Lessons Routes */}
           <Route path="lessons" element={<LessonsPage />} />
@@ -71,7 +75,11 @@ export function AppRouter() {
           <Route path="mock-tests/:id/analytics" element={<MockTestAnalyticsPage />} />
           <Route path="mock-tests/history" element={<MockTestHistoryPage />} />
           <Route path="mock-tests/history/:id" element={<MockTestHistoryDetailPage />} />
-          <Route path="create-mock-test" element={<CreateMockTestPage />} />
+          
+          {/* My Mock Tests (user-owned) */}
+          <Route path="my-mock-tests" element={<MyMockTestsPage />} />
+          <Route path="my-mock-tests/:id" element={<MyMockTestDetailPage />} />
+          {/* <Route path="create-mock-test" element={<CreateMockTestPage />} /> */}
           <Route path="generate-mock-test-AI" element={<GenerateMockTestAIPage />} />
         </Route>
 

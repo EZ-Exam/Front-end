@@ -50,7 +50,7 @@ export function MockTestsPage() {
           setLoading(true);
           setError(null);
           
-          // Build query parameters
+          // Build query parameters for optimized exams feed
           const queryParams = new URLSearchParams();
           
           // Add search parameter
@@ -62,60 +62,30 @@ export function MockTestsPage() {
           if (subjectId) queryParams.append('subjectId', subjectId);
           if (lessonId) queryParams.append('lessonId', lessonId);
           if (examTypeId) queryParams.append('examTypeId', examTypeId);
-          if (createdById) queryParams.append('createdById', createdById);
-          
-          // Add sorting parameters
-          if (sortBy && sortOrder) {
-            const sortValue = `${sortBy}:${sortOrder}`;
-            queryParams.append('sort', sortValue);
-            queryParams.append('isSort', '1');
-          }
-          
-          // Add pagination parameters
-          queryParams.append('pageNumber', pageNumber.toString());
+          if (createdById) queryParams.append('createdByUserId', createdById);
+
+          // Pagination parameters for new API
+          queryParams.append('page', pageNumber.toString());
           queryParams.append('pageSize', pageSize.toString());
-          
+
           const queryString = queryParams.toString();
-          const apiUrl = queryString ? `/exams?${queryString}` : '/exams';
-          
+          const apiUrl = queryString ? `/exams/optimized/feed?${queryString}` : '/exams/optimized/feed';
+
           const response = await api.get(apiUrl);
-          const examData = Array.isArray(response?.data?.items) ? response.data.items : (Array.isArray(response?.data) ? response.data : []);
-          
+          const items = Array.isArray(response?.data?.items) ? response.data.items : [];
+
           // Update pagination info if available
-          if (response?.data?.totalPages) {
-            setTotalPages(response.data.totalPages);
-          }
-          
-          // Fetch question count and order info for each exam
-          const examsWithDetails = await Promise.all(
-            examData.map(async (exam: any) => {
-              try {
-                const questionsResponse = await api.get(`/exams/${exam.id}/questions`);
-                const questions = Array.isArray(questionsResponse?.data?.items) 
-                  ? questionsResponse.data.items 
-                  : (Array.isArray(questionsResponse?.data) ? questionsResponse.data : []);
-                
-                return {
-                  ...exam,
-                  questionCount: questions.length,
-                  questions: questions.sort((a: any, b: any) => {
-                    const orderA = a.order || a.questionOrder || 0;
-                    const orderB = b.order || b.questionOrder || 0;
-                    return orderA - orderB;
-                  })
-                };
-              } catch (err) {
-                console.error(`Failed to fetch questions for exam ${exam.id}:`, err);
-                return {
-                  ...exam,
-                  questionCount: 0,
-                  questions: []
-                };
-              }
-            })
-          );
-          
-          setExams(examsWithDetails);
+          setTotalPages(response?.data?.totalPages || 0);
+
+          // Map items to shape used by UI
+          const mapped = items.map((exam: any) => ({
+            ...exam,
+            questionCount: exam.totalQuestions,
+            // keep compatibility
+            duration: exam.duration ?? exam.timeLimit ?? null,
+          }));
+
+          setExams(mapped);
         } catch (err: any) {
           console.error('Failed to fetch exams:', err);
           setError(err?.response?.data?.message || 'Failed to load exams');
@@ -132,18 +102,18 @@ export function MockTestsPage() {
   // Keep client-side filtering for backward compatibility with existing UI filters
   const filteredTests = exams.filter(test => {
     const matchesSubject = subjectFilter === 'all' || test.subjectName === subjectFilter;
-    const matchesDifficulty = difficultyFilter === 'all' || test.difficultyLevel === difficultyFilter;
-    
-    return matchesSubject && matchesDifficulty;
+    const matchesType = difficultyFilter === 'all' || test.examTypeName === difficultyFilter;
+    return matchesSubject && matchesType;
   });
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'bg-green-100 text-green-800';
-      case 'Medium': return 'bg-yellow-100 text-yellow-800';
-      case 'Hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const getTypeColor = (type: string) => {
+    // simple color mapping by exam type name
+    if (!type) return 'bg-gray-100 text-gray-800';
+    const lower = type.toLowerCase();
+    if (lower.includes('15') || lower.includes('short')) return 'bg-green-100 text-green-800';
+    if (lower.includes('giữa') || lower.includes('mid') || lower.includes('quiz')) return 'bg-yellow-100 text-yellow-800';
+    if (lower.includes('cuối') || lower.includes('final') || lower.includes('hoc ky') || lower.includes('semester')) return 'bg-red-100 text-red-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
   const getSubjectColor = (subject: string) => {
@@ -472,8 +442,8 @@ export function MockTestsPage() {
                   <Badge className={`${getSubjectColor(test.subjectName)} border-0 shadow-md font-semibold px-3 py-1`}>
                     {test.subjectName}
                   </Badge>
-                  <Badge className={`${getDifficultyColor(test.difficultyLevel)} border-0 shadow-md font-semibold px-3 py-1`}>
-                    {test.difficultyLevel}
+                  <Badge className={`${getTypeColor(test.examTypeName)} border-0 shadow-md font-semibold px-3 py-1`}>
+                    {test.examTypeName}
                   </Badge>
                 </div>
               </CardHeader>
@@ -493,7 +463,7 @@ export function MockTestsPage() {
                     <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-xl w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                       <Users className="h-6 w-6 text-white" />
                     </div>
-                    <div className="text-2xl font-bold text-green-600 mb-1">{test.questionCount || 0}</div>
+                    <div className="text-2xl font-bold text-green-600 mb-1">{test.totalQuestions ?? test.questionCount ?? 0}</div>
                     <div className="text-sm text-gray-600 font-medium">Questions</div>
                   </div>
                 </div>

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+ 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,9 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Search, 
-  Eye, 
   BookOpen, 
-  Filter, 
   RefreshCw, 
   TrendingUp,
   Users,
@@ -36,64 +34,153 @@ export function QuestionBankPage() {
   const [pageSize] = useState<number>(6);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [totalItems, setTotalItems] = useState<number>(0);
+  const [totalItemsForFilter, setTotalItemsForFilter] = useState<number>(0);
+
+  // Server-side counts per difficulty for current search
+  const [difficultyCounts, setDifficultyCounts] = useState<{Easy: number; Medium: number; Hard: number; VeryHard: number}>({
+    Easy: 0,
+    Medium: 0,
+    Hard: 0,
+    VeryHard: 0,
+  });
 
   useEffect(() => {
     fetchQuestions();
-  }, [searchQuery, sortBy, sortOrder, pageNumber]);
+  }, [pageNumber, difficultyFilter]);
+
+  // Map difficulty to backend id; accepts names or id strings
+  const getDifficultyId = (level: string) => {
+    if (['1','2','3','4'].includes(level)) return Number(level);
+    switch (level) {
+      case 'Easy': return 1;
+      case 'Medium': return 2;
+      case 'Hard': return 3;
+      case 'Very Hard': return 4;
+      default: return undefined as unknown as number;
+    }
+  };
+
+  // Fetch overall counts per difficulty (across all pages) for current search
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const levels = ['Easy', 'Medium', 'Hard', 'Very Hard'] as const;
+        const requests = levels.map((lvl) => {
+          const p = new URLSearchParams();
+          p.append('page', '1');
+          p.append('pageSize', '1');
+          const id = getDifficultyId(lvl);
+          if (id) p.append('difficultyLevelId', String(id));
+          return axios.get(`/questions/feed?${p.toString()}`);
+        });
+        const [easyRes, medRes, hardRes, veryHardRes] = await Promise.all(requests);
+        setDifficultyCounts({
+          Easy: easyRes?.data?.totalItems || 0,
+          Medium: medRes?.data?.totalItems || 0,
+          Hard: hardRes?.data?.totalItems || 0,
+          VeryHard: veryHardRes?.data?.totalItems || 0,
+        });
+      } catch (err) {
+        console.error('Failed to fetch difficulty counts', err);
+        setDifficultyCounts({ Easy: 0, Medium: 0, Hard: 0, VeryHard: 0 });
+      }
+    };
+    fetchCounts();
+  }, []);
 
   const fetchQuestions = async () => {
     try {
       setLoading(true);
       
-      // Build query parameters
+      // Build query parameters for optimized feed endpoint
       const queryParams = new URLSearchParams();
-      
-      // Add search parameter
-      if (searchQuery.trim()) {
-        queryParams.append('search', searchQuery.trim());
+
+      // Do not pass search/sort to backend; handled on client
+
+      // Pass difficulty to server when selected for optimized filtering
+      if (difficultyFilter !== 'all') {
+        queryParams.append('difficultyLevelId', difficultyFilter);
       }
-      
-      // Add sorting parameters
-      if (sortBy && sortOrder) {
-        const sortValue = `${sortBy}:${sortOrder}`;
-        queryParams.append('sort', sortValue);
-        queryParams.append('isSort', '1');
-      } else {
-        queryParams.append('isSort', '0');
-      }
-      
-      // Add pagination parameters
-      queryParams.append('pageNumber', pageNumber.toString());
+
+      // Pagination uses `page` and `pageSize` on the new API
+      queryParams.append('page', pageNumber.toString());
       queryParams.append('pageSize', pageSize.toString());
-      
+
       const queryString = queryParams.toString();
-      const apiUrl = queryString ? `/questions?${queryString}` : '/questions?isSort=0';
-      
+      const apiUrl = queryString ? `/questions/feed?${queryString}` : '/questions/feed';
+      console.log("API URL", apiUrl);
       const response = await axios.get(apiUrl);
       console.log("Response", response.data);
       
-      setQuestions(response.data.items || []);
+      // Map API items to local `Question` shape if necessary
+      const items = (response.data.items || []).map((item: any) => ({
+        ...item,
+        // Backward compatibility with UI expecting `questionSource`
+        questionSource: item.questionSource ?? item.source,
+      }));
+
+      setQuestions(items);
       setTotalPages(response.data.totalPages || 0);
-      setTotalItems(response.data.totalItems || 0);
+      const total = response.data.totalItems || 0;
+      setTotalItems(total);
+      // default total for current filter view
+      setTotalItemsForFilter(total);
     } catch (error) {
       console.error('Error fetching questions:', error);
       setQuestions([]);
       setTotalPages(0);
       setTotalItems(0);
+      setTotalItemsForFilter(0);
     } finally {
       setLoading(false);
     }
   };
 
-  const getDifficultyInfo = (difficultyLevelId: number) => {
-    switch (difficultyLevelId) {
-      case 1: return { text: 'Recognition', color: 'bg-green-100 text-green-800' };
-      case 2: return { text: 'Understanding', color: 'bg-yellow-100 text-yellow-800' };
-      case 3: return { text: 'Application', color: 'bg-red-100 text-red-800' };
-      case 4: return { text: 'Advanced Application', color: 'bg-purple-100 text-purple-800' };
+  // When difficulty filter changes, update totalItemsForFilter across all pages
+  useEffect(() => {
+    const updateTotalForFilter = async () => {
+      if (difficultyFilter === 'all') {
+        setTotalItemsForFilter(totalItems);
+        return;
+      }
+      try {
+        const params = new URLSearchParams();
+        params.append('page', '1');
+        params.append('pageSize', '1');
+        if (searchQuery.trim()) params.append('search', searchQuery.trim());
+        const id = getDifficultyId(difficultyFilter);
+        if (id) params.append('difficultyLevelId', String(id));
+        const res = await axios.get(`/questions/feed?${params.toString()}`);
+        setTotalItemsForFilter(res?.data?.totalItems || 0);
+      } catch (err) {
+        console.error('Failed to fetch total for filter', err);
+        setTotalItemsForFilter(0);
+      }
+    };
+    updateTotalForFilter();
+  }, [difficultyFilter, searchQuery, totalItems]);
+
+  const getDifficultyDisplay = (level: string) => {
+    switch (level) {
+      case 'Easy': return { text: 'Recognition', color: 'bg-green-100 text-green-800' };
+      case 'Medium': return { text: 'Understanding', color: 'bg-yellow-100 text-yellow-800' };
+      case 'Hard': return { text: 'Application', color: 'bg-red-100 text-red-800' };
+      case 'Very Hard': return { text: 'Advanced Application', color: 'bg-purple-100 text-purple-800' };
       default: return { text: 'Unknown', color: 'bg-gray-100 text-gray-800' };
     }
   };
+  
+  // Map id string to difficulty name returned by backend
+  const getDifficultyNameFromId = (id: string) => {
+    switch (id) {
+      case '1': return 'Easy';
+      case '2': return 'Medium';
+      case '3': return 'Hard';
+      case '4': return 'Very Hard';
+      default: return '';
+    }
+  };
+  
 
   if (loading) {
     return (
@@ -111,19 +198,37 @@ export function QuestionBankPage() {
     );
   }
 
-  // Since filtering is now done server-side via API, we use questions directly
-  // Keep client-side filtering for backward compatibility with existing UI filters
+  // Client-side filter and sort
   const filteredQuestions = questions.filter(question => {
-    const matchesDifficulty = difficultyFilter === 'all' || question.difficultyLevelId?.toString() === difficultyFilter;
-    return matchesDifficulty;
+    const matchesDifficulty = difficultyFilter === 'all' || question.difficultyLevel === getDifficultyNameFromId(difficultyFilter);
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch = q === '' ||
+      question.content?.toLowerCase().includes(q) ||
+      (question.questionSource?.toLowerCase?.().includes(q)) ||
+      question.lessonName?.toLowerCase().includes(q) ||
+      question.chapterName?.toLowerCase().includes(q);
+    return matchesDifficulty && matchesSearch;
   });
+
+  const sortedQuestions = [...filteredQuestions].sort((a, b) => {
+    if (sortBy === 'updatedAt') {
+      const aTime = new Date((a as any)['updatedAt']).getTime();
+      const bTime = new Date((b as any)['updatedAt']).getTime();
+      return sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
+    }
+    if (sortBy === 'content') {
+      const cmp = String(a.content || '').localeCompare(String(b.content || ''));
+      return sortOrder === 'asc' ? cmp : -cmp;
+    }
+    return 0;
+  });  
 
   const stats = {
     total: totalItems,
-    easy: questions.filter(q => q.difficultyLevelId === 1).length,
-    medium: questions.filter(q => q.difficultyLevelId === 2).length,
-    hard: questions.filter(q => q.difficultyLevelId === 3).length,
-    veryHard: questions.filter(q => q.difficultyLevelId === 4).length,
+    easy: difficultyCounts.Easy,
+    medium: difficultyCounts.Medium,
+    hard: difficultyCounts.Hard,
+    veryHard: difficultyCounts.VeryHard,
   };
 
   return (
@@ -282,7 +387,7 @@ export function QuestionBankPage() {
               <Button
                 variant={difficultyFilter === '1' ? 'default' : 'outline'}
                 size="lg"
-                onClick={() => setDifficultyFilter('1')}
+                onClick={() => { setDifficultyFilter('1'); setPageNumber(1); }}
                 className={`rounded-xl transition-all duration-300 ${
                   difficultyFilter === '1' 
                     ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg' 
@@ -294,7 +399,7 @@ export function QuestionBankPage() {
               <Button
                 variant={difficultyFilter === '2' ? 'default' : 'outline'}
                 size="lg"
-                onClick={() => setDifficultyFilter('2')}
+                onClick={() => { setDifficultyFilter('2'); setPageNumber(1); }}
                 className={`rounded-xl transition-all duration-300 ${
                   difficultyFilter === '2' 
                     ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-0 shadow-lg' 
@@ -306,7 +411,7 @@ export function QuestionBankPage() {
               <Button
                 variant={difficultyFilter === '3' ? 'default' : 'outline'}
                 size="lg"
-                onClick={() => setDifficultyFilter('3')}
+                onClick={() => { setDifficultyFilter('3'); setPageNumber(1); }}
                 className={`rounded-xl transition-all duration-300 ${
                   difficultyFilter === '3' 
                     ? 'bg-gradient-to-r from-red-500 to-red-600 text-white border-0 shadow-lg' 
@@ -318,7 +423,7 @@ export function QuestionBankPage() {
               <Button
                 variant={difficultyFilter === '4' ? 'default' : 'outline'}
                 size="lg"
-                onClick={() => setDifficultyFilter('4')}
+                onClick={() => { setDifficultyFilter('4'); setPageNumber(1); }}
                 className={`rounded-xl transition-all duration-300 ${
                   difficultyFilter === '4' 
                     ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg' 
@@ -332,7 +437,7 @@ export function QuestionBankPage() {
             {/* Results count */}
             <div className="mt-4 flex items-center justify-between">
               <p className="text-sm text-gray-600">
-                Showing <span className="font-semibold text-blue-600">{filteredQuestions.length}</span> of <span className="font-semibold">{totalItems}</span> questions
+                Showing <span className="font-semibold text-blue-600">{sortedQuestions.length}</span> of <span className="font-semibold">{totalItemsForFilter}</span> questions
                 {totalPages > 1 && (
                   <span className="ml-2">(Page {pageNumber} of {totalPages})</span>
                 )}
@@ -347,7 +452,7 @@ export function QuestionBankPage() {
         </Card>
 
         {/* Questions Grid */}
-        {filteredQuestions.length === 0 ? (
+        {sortedQuestions.length === 0 ? (
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardContent className="py-20 text-center">
               <div className="max-w-md mx-auto">
@@ -380,7 +485,7 @@ export function QuestionBankPage() {
           </Card>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredQuestions.map((question, index) => (
+            {sortedQuestions.map((question, index) => (
               <Card 
                 key={question.id} 
                 className="group hover:shadow-2xl transition-all duration-300 hover:scale-105 border-0 bg-white/90 backdrop-blur-sm shadow-lg cursor-pointer"
@@ -423,12 +528,12 @@ export function QuestionBankPage() {
                   
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge 
-                      className={`${getDifficultyInfo(question.difficultyLevelId).color} border-0 font-semibold`}
+                      className={`${getDifficultyDisplay(question.difficultyLevel).color} border-0 font-semibold`}
                     >
-                      {getDifficultyInfo(question.difficultyLevelId).text}
+                      {getDifficultyDisplay(question.difficultyLevel).text}
                     </Badge>
                     <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                      {question.questionSource}
+                      {question.type}
                     </Badge>
                   </div>
                 </CardHeader>

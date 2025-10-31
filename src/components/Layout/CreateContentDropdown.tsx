@@ -31,7 +31,7 @@ export function CreateContentDropdown() {
         </DropdownMenuTrigger>
         
         <DropdownMenuContent align="end" className="w-64 bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-xl p-2">
-          {/* Create Mock Test - chỉ dành cho User */}
+          {/* Create Mock Test - chỉ dành cho User
           <DropdownMenuItem asChild>
             {SubscriptionUtils.canCreateMockTest(user) ? (
               <Link to="/create-mock-test" onClick={() => setIsOpen(false)} className="block">
@@ -67,7 +67,7 @@ export function CreateContentDropdown() {
                 </div>
               </div>
             )}
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
 
           {/* Generate Mock Test By AI - chỉ dành cho User */}
           <DropdownMenuItem asChild>

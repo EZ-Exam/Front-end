@@ -26,7 +26,8 @@ import {
   Zap,
   Star,
   Infinity,
-  X
+  X,
+  History as HistoryIcon
 } from 'lucide-react';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
@@ -174,6 +175,10 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
 
   const handleSettingsClick = () => {
     navigate('/settings');
+  };
+
+  const handleTransactionHistoryClick = () => {
+    navigate('/transactions');
   };
 
   const handleDeposit = async (e: React.FormEvent) => {
@@ -653,6 +658,17 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
                 <div>
                   <div className="font-semibold text-gray-600">Settings</div>
                   <div className="text-xs text-gray-500">Account settings</div>
+                </div>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleTransactionHistoryClick} className="p-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 rounded-lg transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg">
+                  <HistoryIcon className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <div className="font-semibold text-blue-600">Transaction History</div>
+                  <div className="text-xs text-gray-500">View your payments</div>
                 </div>
               </div>
             </DropdownMenuItem>
