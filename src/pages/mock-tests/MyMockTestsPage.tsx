@@ -63,7 +63,7 @@ export function MyMockTestsPage() {
           </Card>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {exams.map((test, index) => (
+            {exams.map((test) => (
               <Card key={test.id} className="group hover:shadow-2xl transition-all duration-500 hover:scale-105 border-0 bg-white/90 backdrop-blur-sm overflow-hidden">
                 <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-purple-50 relative">
                   <div className="flex items-start justify-between relative z-10">

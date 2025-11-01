@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
 import { Document, Page, pdfjs} from "react-pdf";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -38,7 +38,7 @@ export default function PdfViewerCard({ pdfUrl, title = "Tài liệu PDF" }: Pdf
     setIsLoading(false);
   };
   const goPrev = () => setPageNumber((n) => Math.max(1, n - 1));
-  const goNext = () => setPageNumber((n) => Math.min(numPages, n + 1));
+  // const goNext = () => setPageNumber((n) => Math.min(numPages, n + 1));
 
   const zoomIn = () => setScale((s) => Math.min(2.5, parseFloat((s + 0.1).toFixed(2))));
   const zoomOut = () => setScale((s) => Math.max(0.5, parseFloat((s - 0.1).toFixed(2))));

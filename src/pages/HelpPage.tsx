@@ -17,20 +17,8 @@ import {
   Users,
   Bug,
   Send,
-  FileText,
-  Zap,
-  Sparkles,
   Rocket,
-  Shield,
-  CheckCircle,
-  AlertCircle,
-  Star,
-  Heart,
   Lightbulb,
-  Target,
-  Award,
-  TrendingUp,
-  Globe,
   Headphones
 } from 'lucide-react';
 

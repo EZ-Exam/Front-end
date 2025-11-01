@@ -3,7 +3,6 @@ import { useAuth } from '@/pages/auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  CreditCard, 
   HelpCircle, 
   FileText,
   Shield,

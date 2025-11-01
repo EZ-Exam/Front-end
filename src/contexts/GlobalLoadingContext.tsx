@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { LoadingOverlay, useLoadingOverlay } from '@/components/ui/LoadingOverlay';
 
 interface GlobalLoadingContextType {

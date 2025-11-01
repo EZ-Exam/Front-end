@@ -16,7 +16,6 @@ import {
   Calendar,
   RotateCcw,
   Plus,
-  History
 } from 'lucide-react';
 import api from '@/services/axios';
 
@@ -174,17 +173,17 @@ export function MockTestHistoryDetailPage() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
-  };
+  // const getScoreColor = (score: number) => {
+  //   if (score >= 80) return 'text-green-600';
+  //   if (score >= 60) return 'text-yellow-600';
+  //   return 'text-red-600';
+  // };
 
-  const getScoreBadgeColor = (score: number) => {
-    if (score >= 80) return 'bg-green-100 text-green-800 border-green-200';
-    if (score >= 60) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    return 'bg-red-100 text-red-800 border-red-200';
-  };
+  // const getScoreBadgeColor = (score: number) => {
+  //   if (score >= 80) return 'bg-green-100 text-green-800 border-green-200';
+  //   if (score >= 60) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+  //   return 'bg-red-100 text-red-800 border-red-200';
+  // };
 
   const isCorrect = (question: Question, history: ExamHistory) => {
     const answer = history.answers.find(a => a.questionId === question.id);

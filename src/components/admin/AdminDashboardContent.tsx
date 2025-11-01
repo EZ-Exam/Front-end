@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AdminStats } from '@/types';
 import { AdminCharts, RevenueChart, UserGrowthChart, SubjectDistributionChart, OrderStatusChart } from '@/components/admin/AdminCharts';

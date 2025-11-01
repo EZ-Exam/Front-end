@@ -1,6 +1,5 @@
-import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Users, ShoppingCart, FileText, BarChart3 } from 'lucide-react';
+import { Users, ShoppingCart, FileText, BarChart3 } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -94,7 +93,7 @@ export function AdminCharts({ stats }: AdminChartsProps) {
 }
 
 // Revenue Chart Component với Recharts
-export function RevenueChart({ stats }: AdminChartsProps) {
+export function RevenueChart({ stats: _stats }: AdminChartsProps) {
   const revenueData = [
     { day: 'Week 1', revenue: 2100000, orders: 12 },
     { day: 'Week 2', revenue: 2800000, orders: 18 },
@@ -188,7 +187,7 @@ export function RevenueChart({ stats }: AdminChartsProps) {
 }
 
 // User Growth Chart Component với Recharts
-export function UserGrowthChart({ stats }: AdminChartsProps) {
+export function UserGrowthChart({ stats: _stats }: AdminChartsProps) {
   const growthData = [
     { week: 'Week 1', users: 1200, newUsers: 15 },
     { week: 'Week 2', users: 1250, newUsers: 50 },

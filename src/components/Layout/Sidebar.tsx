@@ -8,7 +8,6 @@ import {
   PenTool,
   X,
   Sparkles,
-  Zap,
   History,
   Shield
 } from 'lucide-react';

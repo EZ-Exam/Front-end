@@ -14,8 +14,6 @@ import {
   Save, 
   X, 
   TrendingUp,
-  BookOpen,
-  Trophy,
   CheckCircle
 } from 'lucide-react';
 import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';

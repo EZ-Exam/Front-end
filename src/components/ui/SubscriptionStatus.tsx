@@ -13,7 +13,7 @@ interface SubscriptionStatusProps {
 
 export function SubscriptionStatus({ showUpgradeButton = true, className = '' }: SubscriptionStatusProps) {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   
   const subscriptionLevel = SubscriptionUtils.getDisplaySubscriptionLevel(user);
   const isFree = SubscriptionUtils.isFreeUser(user);

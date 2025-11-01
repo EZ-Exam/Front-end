@@ -6,7 +6,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Plus, FileText, Sparkles } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
