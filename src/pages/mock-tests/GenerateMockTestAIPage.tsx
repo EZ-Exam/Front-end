@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Sparkles, Loader2, CheckCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ArrowLeft, Sparkles, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { SubscriptionUtils } from '@/lib/subscription';
 import { AIExamApiService } from '@/services/aiExamApi';
@@ -50,6 +51,10 @@ export function GenerateMockTestAIPage() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedExam, setGeneratedExam] = useState<AIExamGenerationResponse | null>(null);
+  const [showModeDialog, setShowModeDialog] = useState(false);
+  const [isInteractiveMode, setIsInteractiveMode] = useState(false);
+  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
+  const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set());
 
   // Curriculum data states
   const [semesters, setSemesters] = useState<Semester[]>([]);
@@ -272,7 +277,9 @@ export function GenerateMockTestAIPage() {
       console.log('Payload with userId as number:', payload);
       
       const response = await AIExamApiService.generateExam(payload);
+      console.log('Response in Generate Mock Test AI Page', response);
       setGeneratedExam(response);
+      setShowModeDialog(true);
       success('Tạo bài thi AI thành công!');
     } catch (err: any) {
       console.error('Error generating AI exam:', err);
@@ -282,93 +289,176 @@ export function GenerateMockTestAIPage() {
     }
   };
 
-  const QuestionCard = ({ question, index }: { question: AIExamQuestion; index: number }) => (
-    <Card className="mb-4 border-l-4 border-l-blue-500">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-lg font-semibold text-gray-800">
-            Câu {index + 1}
-          </CardTitle>
-          <div className="flex gap-2">
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-              {question.difficultyLevel}
-            </span>
-            <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-              {question.questionType}
-            </span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="prose max-w-none">
-          <p className="text-gray-700 leading-relaxed">{question.content}</p>
-        </div>
-        
-        {question.options && question.options.length > 0 && (
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-600">Các lựa chọn:</Label>
-            <div className="grid gap-2">
-              {question.options.map((option, optionIndex) => (
-                <div 
-                  key={optionIndex}
-                  className={`p-3 rounded-lg border ${
-                    option === question.correctAnswer 
-                      ? 'bg-green-50 border-green-200 text-green-800' 
-                      : 'bg-gray-50 border-gray-200 text-gray-700'
-                  }`}
-                >
-                  <span className="font-medium">{String.fromCharCode(65 + optionIndex)}.</span> {option}
-                  {option === question.correctAnswer && (
-                    <CheckCircle className="inline-block ml-2 h-4 w-4 text-green-600" />
-                  )}
-                </div>
-              ))}
+  const handleAnswerSelect = (questionId: string, selectedAnswer: string) => {
+    setUserAnswers(prev => ({
+      ...prev,
+      [questionId]: selectedAnswer
+    }));
+    setAnsweredQuestions(prev => new Set([...prev, questionId]));
+  };
+
+  const QuestionCard = ({ question, index }: { question: AIExamQuestion; index: number }) => {
+    const questionId = question.questionId?.toString() || `question-${index}`;
+    const userAnswer = userAnswers[questionId];
+    const isAnswered = answeredQuestions.has(questionId);
+    const showResults = !isInteractiveMode || isAnswered;
+
+    return (
+      <Card className="mb-4 border-l-4 border-l-blue-500">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <CardTitle className="text-lg font-semibold text-gray-800">
+              Câu {index + 1}
+            </CardTitle>
+            <div className="flex gap-2">
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                {question.difficultyLevel}
+              </span>
+              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                {question.questionType}
+              </span>
             </div>
           </div>
-        )}
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="prose max-w-none">
+            <p className="text-gray-700 leading-relaxed">{question.content}</p>
+          </div>
+          
+          {question.options && question.options.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-600">Các lựa chọn:</Label>
+              <div className="grid gap-2">
+                {question.options.map((option, optionIndex) => {
+                  const optionLetter = String.fromCharCode(65 + optionIndex);
+                  const isCorrect = option === question.correctAnswer;
+                  const isSelected = userAnswer === option;
+                  const showAsCorrect = showResults && isCorrect;
+                  const showAsIncorrect = showResults && isSelected && !isCorrect;
 
-        {question.explanation && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <Label className="text-sm font-medium text-blue-800">Giải thích:</Label>
-            <p className="text-blue-700 text-sm mt-1">{question.explanation}</p>
-          </div>
-        )}
+                  return (
+                    <div 
+                      key={optionIndex}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                        showAsCorrect
+                          ? 'bg-green-50 border-green-200 text-green-800'
+                          : showAsIncorrect
+                          ? 'bg-red-50 border-red-200 text-red-800'
+                          : isSelected && !showResults
+                          ? 'bg-blue-50 border-blue-300 text-blue-800'
+                          : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                      }`}
+                      onClick={() => {
+                        if (isInteractiveMode && !isAnswered) {
+                          handleAnswerSelect(questionId, option);
+                        }
+                      }}
+                    >
+                      <span className="font-medium">{optionLetter}.</span> {option}
+                      {showAsCorrect && (
+                        <CheckCircle className="inline-block ml-2 h-4 w-4 text-green-600" />
+                      )}
+                      {showAsIncorrect && (
+                        <XCircle className="inline-block ml-2 h-4 w-4 text-red-600" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-        {question.formula && (
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-            <Label className="text-sm font-medium text-purple-800">Công thức:</Label>
-            <p className="text-purple-700 text-sm mt-1 font-mono">{question.formula}</p>
-          </div>
-        )}
+          {showResults && question.explanation && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <Label className="text-sm font-medium text-blue-800">Giải thích:</Label>
+              <p className="text-blue-700 text-sm mt-1">{question.explanation}</p>
+            </div>
+          )}
 
-        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-          <div>
-            <span className="font-medium">Lớp:</span> {question.gradeName}
-          </div>
-          <div>
-            <span className="font-medium">Bài học:</span> {question.lessonName}
-          </div>
-        </div>
+          {question.formula && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+              <Label className="text-sm font-medium text-purple-800">Công thức:</Label>
+              <p className="text-purple-700 text-sm mt-1 font-mono">{question.formula}</p>
+            </div>
+          )}
 
-        {question.aiReasoning && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <Label className="text-sm font-medium text-yellow-800">Lý do AI chọn:</Label>
-            <p className="text-yellow-700 text-sm mt-1">{question.aiReasoning}</p>
+          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+            <div>
+              <span className="font-medium">Lớp:</span> {question.gradeName}
+            </div>
+            <div>
+              <span className="font-medium">Bài học:</span> {question.lessonName}
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+
+          {showResults && question.aiReasoning && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <Label className="text-sm font-medium text-yellow-800">Lý do AI chọn:</Label>
+              <p className="text-yellow-700 text-sm mt-1">{question.aiReasoning}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (generatedExam) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
         <div className="max-w-4xl mx-auto">
+          {/* Mode Selection Dialog */}
+          <Dialog open={showModeDialog} onOpenChange={(open) => {
+            // Prevent closing by clicking outside - user must choose a mode
+            if (!open) return;
+          }}>
+            <DialogContent className="sm:max-w-md" onInteractOutside={(e) => {
+              // Prevent closing by clicking outside
+              e.preventDefault();
+            }}>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-center">
+                  The Mock Test has been created, do it now?
+                </DialogTitle>
+                <DialogDescription className="text-center pt-2">
+                  Choose how you want to view the mock test
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                <Button
+                  onClick={() => {
+                    setIsInteractiveMode(true);
+                    setShowModeDialog(false);
+                  }}
+                  className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  OK, let's do it
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsInteractiveMode(false);
+                    setShowModeDialog(false);
+                  }}
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
+                  Show Mock Test
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           {/* Header */}
           <div className="mb-6">
             <Button 
               variant="outline" 
-              onClick={() => navigate('/mock-tests')}
+              onClick={() => {
+                setGeneratedExam(null);
+                setShowModeDialog(false);
+                setIsInteractiveMode(false);
+                setUserAnswers({});
+                setAnsweredQuestions(new Set());
+                navigate('/mock-tests');
+              }}
               className="mb-4"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -381,7 +471,9 @@ export function GenerateMockTestAIPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-800">Bài thi AI đã tạo</h1>
-                <p className="text-gray-600">Kết quả từ AI Exam Generator</p>
+                <p className="text-gray-600">
+                  {isInteractiveMode ? 'Chế độ làm bài - Chọn đáp án để xem kết quả' : 'Kết quả từ AI Exam Generator'}
+                </p>
               </div>
             </div>
           </div>

@@ -24,6 +24,7 @@ export function MyMockTestsPage() {
         qs.append('page', String(pageNumber));
         qs.append('pageSize', String(pageSize));
         const res = await api.get(`/exams/optimized/user/${user.id}/feed?${qs.toString()}`);
+        console.log('Thông tin trong My Mock Tests Page', res);
         const items = Array.isArray(res?.data?.items) ? res.data.items : [];
         setExams(items);
         setTotalPages(res?.data?.totalPages || 0);
