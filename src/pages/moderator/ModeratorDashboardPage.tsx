@@ -47,6 +47,47 @@ const SUBJECT_NAMES: { [key: number]: string } = {
   8: 'Geography'
 };
 
+// Helper function to calculate pagination pages with ellipsis
+const getPaginationPages = (currentPage: number, totalPages: number, maxVisible: number = 7): (number | 'ellipsis')[] => {
+  if (totalPages <= maxVisible) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages: (number | 'ellipsis')[] = [];
+  const halfVisible = Math.floor(maxVisible / 2);
+
+  if (currentPage <= halfVisible + 1) {
+    // Show first pages: 1, 2, 3, 4, 5, ..., totalPages
+    for (let i = 1; i <= maxVisible - 2; i++) {
+      pages.push(i);
+    }
+    if (totalPages > maxVisible - 1) {
+      pages.push('ellipsis');
+    }
+    pages.push(totalPages);
+  } else if (currentPage >= totalPages - halfVisible) {
+    // Show last pages: 1, ..., totalPages-4, totalPages-3, totalPages-2, totalPages-1, totalPages
+    pages.push(1);
+    if (totalPages > maxVisible - 1) {
+      pages.push('ellipsis');
+    }
+    for (let i = totalPages - (maxVisible - 3); i <= totalPages; i++) {
+      pages.push(i);
+    }
+  } else {
+    // Show middle pages: 1, ..., currentPage-1, currentPage, currentPage+1, ..., totalPages
+    pages.push(1);
+    pages.push('ellipsis');
+    for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+      pages.push(i);
+    }
+    pages.push('ellipsis');
+    pages.push(totalPages);
+  }
+
+  return pages;
+};
+
 export function ModeratorDashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -169,7 +210,7 @@ export function ModeratorDashboardPage() {
   const [mockTestChapterOptions, setMockTestChapterOptions] = useState<Array<{ id: number; name: string }>>([]);
   
   // Pagination states for each tab
-  const [pageSize] = useState(5);
+  const [pageSize] = useState(10);
   
   // Separate pagination for each tab
   const [lessonsCurrentPage, setLessonsCurrentPage] = useState(1);
@@ -1326,20 +1367,26 @@ export function ModeratorDashboardPage() {
                           />
                         </PaginationItem>
                         
-                        {Array.from({ length: Math.min(5, lessonsTotalPages) }, (_, i) => {
-                          const pageNum = i + 1;
+                        {getPaginationPages(lessonsCurrentPage, lessonsTotalPages).map((page, index) => {
+                          if (page === 'ellipsis') {
+                            return (
+                              <PaginationItem key={`ellipsis-${index}`}>
+                                <span className="px-3 py-2 text-gray-400">...</span>
+                              </PaginationItem>
+                            );
+                          }
                           return (
-                            <PaginationItem key={pageNum}>
+                            <PaginationItem key={page}>
                               <PaginationLink
                                 href="#"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  setLessonsCurrentPage(pageNum);
+                                  setLessonsCurrentPage(page);
                                 }}
-                                isActive={lessonsCurrentPage === pageNum}
+                                isActive={lessonsCurrentPage === page}
                                 className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
                               >
-                                {pageNum}
+                                {page}
                               </PaginationLink>
                             </PaginationItem>
                           );
@@ -1529,20 +1576,26 @@ export function ModeratorDashboardPage() {
                           />
                         </PaginationItem>
                         
-                        {Array.from({ length: Math.min(5, questionsTotalPages) }, (_, i) => {
-                          const pageNum = i + 1;
+                        {getPaginationPages(questionsCurrentPage, questionsTotalPages).map((page, index) => {
+                          if (page === 'ellipsis') {
+                            return (
+                              <PaginationItem key={`ellipsis-${index}`}>
+                                <span className="px-3 py-2 text-gray-400">...</span>
+                              </PaginationItem>
+                            );
+                          }
                           return (
-                            <PaginationItem key={pageNum}>
+                            <PaginationItem key={page}>
                               <PaginationLink
                                 href="#"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  setQuestionsCurrentPage(pageNum);
+                                  setQuestionsCurrentPage(page);
                                 }}
-                                isActive={questionsCurrentPage === pageNum}
+                                isActive={questionsCurrentPage === page}
                                 className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
                               >
-                                {pageNum}
+                                {page}
                               </PaginationLink>
                             </PaginationItem>
                           );
@@ -1756,20 +1809,26 @@ export function ModeratorDashboardPage() {
                           />
                         </PaginationItem>
                         
-                        {Array.from({ length: Math.min(5, examsTotalPages) }, (_, i) => {
-                          const pageNum = i + 1;
+                        {getPaginationPages(examsCurrentPage, examsTotalPages).map((page, index) => {
+                          if (page === 'ellipsis') {
+                            return (
+                              <PaginationItem key={`ellipsis-${index}`}>
+                                <span className="px-3 py-2 text-gray-400">...</span>
+                              </PaginationItem>
+                            );
+                          }
                           return (
-                            <PaginationItem key={pageNum}>
+                            <PaginationItem key={page}>
                               <PaginationLink
                                 href="#"
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  setExamsCurrentPage(pageNum);
+                                  setExamsCurrentPage(page);
                                 }}
-                                isActive={examsCurrentPage === pageNum}
+                                isActive={examsCurrentPage === page}
                                 className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
                               >
-                                {pageNum}
+                                {page}
                               </PaginationLink>
                             </PaginationItem>
                           );

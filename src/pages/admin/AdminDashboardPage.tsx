@@ -320,11 +320,18 @@ export function AdminDashboardPage() {
   const filteredUsers = users;
 
   // Filter payments by search term
-  const filteredPayments = payments.filter(payment =>
-    payment.id.toString().includes(searchTerm) ||
-    payment.userId.toString().includes(searchTerm) ||
-    payment.paymentStatus.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPayments = payments
+    .filter(payment =>
+      payment.id.toString().includes(searchTerm) ||
+      payment.userId.toString().includes(searchTerm) ||
+      payment.paymentStatus.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    // Sort by createdAt descending (newest first)
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA; // Descending order (newest first)
+    });
 
   // Update pagination when filtered
   useEffect(() => {
