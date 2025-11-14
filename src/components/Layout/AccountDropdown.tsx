@@ -808,7 +808,7 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
 
       {/* Upgrade Package Dialog */}
       <Dialog open={activeDialog === 'upgrade'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="max-w-4xl bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl">
+        <DialogContent className="max-w-7xl bg-white/95 backdrop-blur-sm border-0 shadow-2xl rounded-2xl">
           <DialogHeader className="pb-6">
             <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-3">
               <div className="p-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg">
@@ -833,7 +833,7 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
                 return (
                   <Card 
                     key={subscriptionType.id} 
-                    className={`border-2 ${styling.borderColor} transition-all duration-300 ${styling.shadow} ${styling.bgGradient} ${styling.opacity} ${isCurrent ? 'relative' : ''} ${isDisabled ? 'cursor-not-allowed' : 'hover:scale-105'}`}
+                    className={`h-full flex flex-col border-2 ${styling.borderColor} transition-all duration-300 ${styling.shadow} ${styling.bgGradient} ${styling.opacity} ${isCurrent ? 'relative' : ''} ${isDisabled ? 'cursor-not-allowed' : 'hover:scale-105'}`}
                     title={isDisabled ? `You are using a higher package ${currentSubscription?.subscriptionName || user?.subscriptionName}. Cannot downgrade to package ${subscriptionType.subscriptionName}.` : ''}
                   >
                     {isCurrent && (
@@ -857,11 +857,11 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
                         )}
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="flex flex-col flex-1">
                       <div className="mb-4">
                         <p className="text-sm text-gray-600 mb-3">{subscriptionType.description}</p>
                       </div>
-                      <ul className="space-y-3 text-sm">
+                      <ul className="space-y-3 text-sm flex-1">
                         <li className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                           Max Solution Views: {subscriptionType.maxSolutionViews === -1 ? 'Forever' : subscriptionType.maxSolutionViews}
@@ -880,7 +880,7 @@ export function AccountDropdown({ onSubscriptionUpdated }: AccountDropdownProps 
                         </li>
                       </ul>
                       <Button 
-                        className={`w-full mt-6 h-20 flex flex-col items-center justify-center px-2 ${
+                        className={`w-full mt-auto h-20 flex flex-col items-center justify-center px-2 ${
                           isCurrent 
                             ? 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105' 
                             : isDisabled
