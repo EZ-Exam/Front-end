@@ -156,6 +156,30 @@ export class AdminApiService {
     }
   }
 
+  // Lấy tổng doanh thu
+  static async getRevenue(days?: number): Promise<number> {
+    try {
+      const params = days ? { days } : {};
+      const response = await api.get<{
+        totalAmount: number;
+        completedCount: number;
+        from: string | null;
+        to: string | null;
+      }>('/payments/revenue', { params });
+      
+      console.log('Revenue API Response:', response.data);
+      
+      // API trả về object với field totalAmount
+      if (response.data && typeof response.data === 'object' && 'totalAmount' in response.data) {
+        return response.data.totalAmount || 0;
+      }
+      return 0;
+    } catch (error) {
+      console.error('Error fetching revenue:', error);
+      throw error;
+    }
+  }
+
   // Lấy danh sách lessons enhanced
   static async getLessonsEnhanced(params?: {
     subjectId?: number;

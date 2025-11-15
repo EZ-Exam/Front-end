@@ -119,6 +119,20 @@ export function AdminDashboardPage() {
     try {
       // Fetch admin stats
       const statsData = await AdminApiService.getAdminStats();
+      console.log('Admin Stats:', statsData);
+      
+      // Fetch revenue (toàn bộ doanh thu - không truyền days)
+      try {
+        const revenue = await AdminApiService.getRevenue();
+        console.log('Fetched Revenue:', revenue);
+        statsData.totalRevenue = revenue;
+      } catch (revenueError) {
+        console.error('Error fetching revenue:', revenueError);
+        // Nếu lỗi khi fetch revenue, vẫn tiếp tục với stats khác
+        statsData.totalRevenue = 0;
+      }
+      
+      console.log('Final Stats with Revenue:', statsData);
       setStats(statsData);
       
       // Fetch all data without loading states for initial load
