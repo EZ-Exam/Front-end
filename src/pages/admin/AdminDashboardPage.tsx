@@ -29,13 +29,15 @@ import {
   Trash2,
   Plus
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 export function AdminDashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [stats, setStats] = useState<AdminStats>(mockAdminStats);
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [payments, setPayments] = useState<AdminPayment[]>([]);
+  const [topupPayments, setTopupPayments] = useState<AdminPayment[]>([]);
+  const [subscriptionPayments, setSubscriptionPayments] = useState<AdminPayment[]>([]);
   const [questions, setQuestions] = useState<AdminQuestion[]>([]);
   const [exams, setExams] = useState<AdminExam[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,6 +55,7 @@ export function AdminDashboardPage() {
   // Separate pagination for each tab
   const [usersCurrentPage, setUsersCurrentPage] = useState(1);
   const [subscriptionsCurrentPage, setSubscriptionsCurrentPage] = useState(1);
+  const [topupPaymentsCurrentPage, setTopupPaymentsCurrentPage] = useState(1);
   const [questionsCurrentPage, setQuestionsCurrentPage] = useState(1);
   const [examsCurrentPage, setExamsCurrentPage] = useState(1);
   
@@ -60,6 +63,8 @@ export function AdminDashboardPage() {
   const [usersTotalPages, setUsersTotalPages] = useState(0);
   const [subscriptionsTotalItems, setSubscriptionsTotalItems] = useState(0);
   const [subscriptionsTotalPages, setSubscriptionsTotalPages] = useState(0);
+  const [topupPaymentsTotalItems, setTopupPaymentsTotalItems] = useState(0);
+  const [topupPaymentsTotalPages, setTopupPaymentsTotalPages] = useState(0);
   const [questionsTotalItems, setQuestionsTotalItems] = useState(0);
   const [questionsTotalPages, setQuestionsTotalPages] = useState(0);
   const [examsTotalItems, setExamsTotalItems] = useState(0);
@@ -67,7 +72,8 @@ export function AdminDashboardPage() {
   
   // Loading states for pagination
   const [usersLoading, setUsersLoading] = useState(false);
-  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [topupPaymentsLoading, setTopupPaymentsLoading] = useState(false);
+  const [subscriptionPaymentsLoading, setSubscriptionPaymentsLoading] = useState(false);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [examsLoading, setExamsLoading] = useState(false);
   
@@ -94,6 +100,7 @@ export function AdminDashboardPage() {
       // Reset to first page when filters change for all tabs
       setUsersCurrentPage(1);
       setSubscriptionsCurrentPage(1);
+      setTopupPaymentsCurrentPage(1);
       setQuestionsCurrentPage(1);
       setExamsCurrentPage(1);
       fetchDashboardData();
@@ -190,15 +197,39 @@ export function AdminDashboardPage() {
 
   const fetchPaymentsData = async () => {
     try {
-      setPaymentsLoading(true);
+      setTopupPaymentsLoading(true);
+      setSubscriptionPaymentsLoading(true);
       
       // Fetch all payments from API
       const paymentsData = await AdminApiService.getPayments();
-      setPayments(paymentsData);
       
-      // Update pagination info
+      // Phân chia payments theo actionType
+      const topupData = paymentsData.filter(p => p.actionType === 'TOPUP_GATEWAY');
+      const subscriptionData = paymentsData.filter(p => p.actionType === 'BUY_SUBSCRIPTION');
+      
+      // Sort by createdAt descending (newest first)
+      const sortedTopup = topupData.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
+      
+      const sortedSubscription = subscriptionData.sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      });
+      
+      setTopupPayments(sortedTopup);
+      setSubscriptionPayments(sortedSubscription);
+      
+      // Update pagination info for subscriptions (old tab)
       setSubscriptionsTotalItems(paymentsData.length);
       setSubscriptionsTotalPages(Math.ceil(paymentsData.length / pageSize));
+      
+      // Update pagination info for new payments tabs
+      setTopupPaymentsTotalItems(sortedTopup.length);
+      setTopupPaymentsTotalPages(Math.ceil(sortedTopup.length / pageSize));
       
     } catch (error) {
       console.error('Error fetching payments:', error);
@@ -208,7 +239,8 @@ export function AdminDashboardPage() {
         variant: "destructive"
       });
     } finally {
-      setPaymentsLoading(false);
+      setTopupPaymentsLoading(false);
+      setSubscriptionPaymentsLoading(false);
     }
   };
 
@@ -322,6 +354,7 @@ export function AdminDashboardPage() {
     // Reset pagination when switching tabs
     setUsersCurrentPage(1);
     setSubscriptionsCurrentPage(1);
+    setTopupPaymentsCurrentPage(1);
     setQuestionsCurrentPage(1);
     setExamsCurrentPage(1);
     // Fetch data for the new tab
@@ -330,35 +363,107 @@ export function AdminDashboardPage() {
     }
   };
 
+  // Export to Excel function
+  const exportToExcel = (data: AdminPayment[], filename: string) => {
+    try {
+      // Prepare data for Excel
+      const excelData = data.map((payment) => ({
+        'ID': payment.id,
+        'User ID': payment.userId,
+        'Subscription Type ID': payment.subscriptionTypeId,
+        'Amount': payment.amount,
+        'Payment Status': payment.paymentStatus,
+        'Payment Gateway Transaction ID': payment.paymentGatewayTransactionId,
+        'Start Date': payment.startDate ? new Date(payment.startDate).toLocaleDateString('vi-VN') : 'N/A',
+        'End Date': payment.endDate ? new Date(payment.endDate).toLocaleDateString('vi-VN') : 'N/A',
+        'Is Active': payment.isActive ? 'Yes' : 'No',
+        'Action Type': payment.actionType,
+        'Created At': new Date(payment.createdAt).toLocaleString('vi-VN'),
+        'Updated At': new Date(payment.updatedAt).toLocaleString('vi-VN')
+      }));
+
+      // Create workbook and worksheet
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Data');
+
+      // Set column widths
+      const colWidths = [
+        { wch: 10 }, // ID
+        { wch: 10 }, // User ID
+        { wch: 20 }, // Subscription Type ID
+        { wch: 15 }, // Amount
+        { wch: 18 }, // Payment Status
+        { wch: 30 }, // Payment Gateway Transaction ID
+        { wch: 15 }, // Start Date
+        { wch: 15 }, // End Date
+        { wch: 12 }, // Is Active
+        { wch: 18 }, // Action Type
+        { wch: 20 }, // Created At
+        { wch: 20 }  // Updated At
+      ];
+      ws['!cols'] = colWidths;
+
+      // Write file
+      XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      toast({
+        title: "Export thành công",
+        description: `Đã xuất ${data.length} bản ghi ra file Excel`,
+      });
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      toast({
+        title: "Lỗi export",
+        description: "Không thể xuất file Excel",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Users are already paginated from API, no need for frontend filtering
   const filteredUsers = users;
 
-  // Filter payments by search term
-  const filteredPayments = payments
+
+  // Filter and paginate topup payments
+  const filteredTopupPayments = topupPayments
     .filter(payment =>
       payment.id.toString().includes(searchTerm) ||
       payment.userId.toString().includes(searchTerm) ||
       payment.paymentStatus.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    // Sort by createdAt descending (newest first)
-    .sort((a, b) => {
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
-      return dateB - dateA; // Descending order (newest first)
-    });
+    );
 
-  // Update pagination when filtered
-  useEffect(() => {
-    setSubscriptionsTotalItems(filteredPayments.length);
-    setSubscriptionsTotalPages(Math.ceil(filteredPayments.length / pageSize));
-  }, [filteredPayments.length, pageSize]);
+  const paginatedTopupPayments = filteredTopupPayments.slice(
+    (topupPaymentsCurrentPage - 1) * pageSize,
+    topupPaymentsCurrentPage * pageSize
+  );
 
-  // Paginate filtered payments
-  const paginatedPayments = filteredPayments.slice(
+  // Filter and paginate subscription payments
+  const filteredSubscriptionPayments = subscriptionPayments
+    .filter(payment =>
+      payment.id.toString().includes(searchTerm) ||
+      payment.userId.toString().includes(searchTerm) ||
+      payment.paymentStatus.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+  const paginatedSubscriptionPayments = filteredSubscriptionPayments.slice(
     (subscriptionsCurrentPage - 1) * pageSize,
     subscriptionsCurrentPage * pageSize
   );
 
+  // Update pagination for topup payments
+  useEffect(() => {
+    setTopupPaymentsTotalItems(filteredTopupPayments.length);
+    setTopupPaymentsTotalPages(Math.ceil(filteredTopupPayments.length / pageSize));
+  }, [filteredTopupPayments.length, pageSize]);
+
+  // Update pagination for subscription payments in subscriptions tab
+  useEffect(() => {
+    if (activeTab === 'subscriptions') {
+      setSubscriptionsTotalItems(filteredSubscriptionPayments.length);
+      setSubscriptionsTotalPages(Math.ceil(filteredSubscriptionPayments.length / pageSize));
+    }
+  }, [filteredSubscriptionPayments.length, pageSize, activeTab]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -565,12 +670,177 @@ export function AdminDashboardPage() {
           </div>
         );
 
+      case 'payments':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold text-white">Payments</h1>
+              <p className="text-gray-400 mt-2">Quản lý các giao dịch nạp tiền qua cổng thanh toán</p>
+            </div>
+
+            {/* Payments Table (TOPUP_GATEWAY) */}
+            <Card className="bg-gray-800 border-gray-700">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-white">List of Payments</CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Danh sách các giao dịch nạp tiền qua cổng thanh toán
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Tìm kiếm payments..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-8 w-64 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                      />
+                    </div>
+                    <Button 
+                      onClick={fetchPaymentsData} 
+                      variant="outline" 
+                      size="sm" 
+                      className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh
+                    </Button>
+                    <Button 
+                      onClick={() => exportToExcel(filteredTopupPayments, 'Payments_TOPUP_GATEWAY')} 
+                      variant="outline" 
+                      size="sm" 
+                      className="bg-green-600 border-green-600 text-white hover:bg-green-700"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Excel
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-gray-700">
+                      <TableHead className="text-gray-300">ID</TableHead>
+                      <TableHead className="text-gray-300">User ID</TableHead>
+                      <TableHead className="text-gray-300">Amount</TableHead>
+                      <TableHead className="text-gray-300">Payment Status</TableHead>
+                      <TableHead className="text-gray-300">Transaction ID</TableHead>
+                      <TableHead className="text-gray-300">Created At</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {topupPaymentsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mr-3"></div>
+                            <span className="text-gray-400">Đang tải dữ liệu...</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : paginatedTopupPayments.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8">
+                          <span className="text-gray-400">Không có dữ liệu</span>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      paginatedTopupPayments.map((payment) => (
+                        <TableRow key={payment.id} className="border-gray-700 hover:bg-gray-700">
+                          <TableCell className="font-medium text-white">{payment.id}</TableCell>
+                          <TableCell className="text-gray-300">{payment.userId}</TableCell>
+                          <TableCell className="text-gray-300">{payment.amount.toLocaleString('vi-VN')} VNĐ</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              payment.paymentStatus.toLowerCase() === 'completed' ? 'default' :
+                              payment.paymentStatus.toLowerCase() === 'pending' ? 'secondary' :
+                              payment.paymentStatus.toLowerCase() === 'failed' ? 'destructive' : 'outline'
+                            }>
+                              {payment.paymentStatus}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-gray-300 text-xs">
+                            {payment.paymentGatewayTransactionId || 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-gray-300">
+                            {new Date(payment.createdAt).toLocaleString('vi-VN')}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+                
+                {/* Pagination */}
+                {topupPaymentsTotalPages > 1 && (
+                  <div className="flex items-center justify-between px-2 py-4">
+                    <div className="text-sm text-gray-400">
+                      Showing {((topupPaymentsCurrentPage - 1) * pageSize) + 1} to {Math.min(topupPaymentsCurrentPage * pageSize, topupPaymentsTotalItems)} of {topupPaymentsTotalItems} results
+                    </div>
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (topupPaymentsCurrentPage > 1) {
+                                setTopupPaymentsCurrentPage(topupPaymentsCurrentPage - 1);
+                              }
+                            }}
+                            className={topupPaymentsCurrentPage <= 1 ? 'pointer-events-none opacity-50' : ''}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: Math.min(5, topupPaymentsTotalPages) }, (_, i) => {
+                          const pageNum = i + 1;
+                          return (
+                            <PaginationItem key={pageNum}>
+                              <PaginationLink
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setTopupPaymentsCurrentPage(pageNum);
+                                }}
+                                isActive={topupPaymentsCurrentPage === pageNum}
+                                className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (topupPaymentsCurrentPage < topupPaymentsTotalPages) {
+                                setTopupPaymentsCurrentPage(topupPaymentsCurrentPage + 1);
+                              }
+                            }}
+                            className={topupPaymentsCurrentPage >= topupPaymentsTotalPages ? 'pointer-events-none opacity-50' : ''}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        );
+
       case 'subscriptions':
         return (
           <div className="space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-white">Subscriptions</h1>
-              <p className="text-gray-400 mt-2">Manage package subscriptions</p>
+              <p className="text-gray-400 mt-2">Quản lý các giao dịch mua gói đăng ký</p>
             </div>
             <Card className="bg-gray-800 border-gray-700">
               <CardHeader>
@@ -578,7 +848,7 @@ export function AdminDashboardPage() {
                   <div>
                     <CardTitle className="text-white">List of Subscriptions</CardTitle>
                     <CardDescription className="text-gray-400">
-                    Track and manage registration packages in the system
+                      Danh sách các giao dịch mua gói đăng ký
                     </CardDescription>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -600,7 +870,12 @@ export function AdminDashboardPage() {
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Refresh
                     </Button>
-                    <Button variant="outline" size="sm" className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">
+                    <Button 
+                      onClick={() => exportToExcel(filteredSubscriptionPayments, 'Subscriptions_BUY_SUBSCRIPTION')} 
+                      variant="outline" 
+                      size="sm" 
+                      className="bg-green-600 border-green-600 text-white hover:bg-green-700"
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Export Excel
                     </Button>
@@ -620,27 +895,26 @@ export function AdminDashboardPage() {
                       <TableHead className="text-gray-300">End Date</TableHead>
                       <TableHead className="text-gray-300">Active</TableHead>
                       <TableHead className="text-gray-300">Created At</TableHead>
-                      <TableHead className="text-gray-300">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paymentsLoading ? (
+                    {subscriptionPaymentsLoading ? (
                       <TableRow>
-                        <TableCell colSpan={10} className="text-center py-8">
+                        <TableCell colSpan={9} className="text-center py-8">
                           <div className="flex items-center justify-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mr-3"></div>
                             <span className="text-gray-400">Đang tải dữ liệu...</span>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ) : paginatedPayments.length === 0 ? (
+                    ) : paginatedSubscriptionPayments.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={10} className="text-center py-8">
+                        <TableCell colSpan={9} className="text-center py-8">
                           <span className="text-gray-400">Không có dữ liệu</span>
                         </TableCell>
                       </TableRow>
                     ) : (
-                      paginatedPayments.map((payment) => (
+                      paginatedSubscriptionPayments.map((payment) => (
                       <TableRow key={payment.id} className="border-gray-700 hover:bg-gray-700">
                         <TableCell className="font-medium text-white">{payment.id}</TableCell>
                         <TableCell className="text-gray-300">{payment.userId}</TableCell>
@@ -671,17 +945,7 @@ export function AdminDashboardPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-gray-300">
-                          {new Date(payment.createdAt).toLocaleDateString('vi-VN')}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm" className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          {new Date(payment.createdAt).toLocaleString('vi-VN')}
                         </TableCell>
                       </TableRow>
                       ))
@@ -690,7 +954,7 @@ export function AdminDashboardPage() {
                 </Table>
                 
                 {/* Pagination */}
-                {subscriptionsTotalPages > 1 && (
+                {subscriptionsTotalPages > 1 && activeTab === 'subscriptions' && (
                   <div className="flex items-center justify-between px-2 py-4">
                     <div className="text-sm text-gray-400">
                       Showing {((subscriptionsCurrentPage - 1) * pageSize) + 1} to {Math.min(subscriptionsCurrentPage * pageSize, subscriptionsTotalItems)} of {subscriptionsTotalItems} results

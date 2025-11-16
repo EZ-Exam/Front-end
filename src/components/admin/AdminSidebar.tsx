@@ -6,7 +6,8 @@ import {
   Users, 
   CreditCard, 
   BarChart3,
-  LogOut
+  LogOut,
+  Wallet
 } from 'lucide-react';
 
 interface AdminHeaderProps {
@@ -30,6 +31,12 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminHeaderProps) {
       label: 'Manage Users',
       icon: Users,
       description: 'User Management'
+    },
+    {
+      id: 'payments',
+      label: 'Payments',
+      icon: Wallet,
+      description: 'Payment Management'
     },
     {
       id: 'subscriptions',

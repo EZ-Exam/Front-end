@@ -238,6 +238,7 @@ export interface AdminPayment {
   paymentGatewayTransactionId: string;
   createdAt: string;
   updatedAt: string;
+  actionType: string;
 }
 
 export interface AdminQuestion {
