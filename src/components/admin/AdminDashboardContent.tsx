@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AdminStats } from '@/types';
-import { AdminCharts, RevenueChart, UserGrowthChart, SubjectDistributionChart, OrderStatusChart } from '@/components/admin/AdminCharts';
+import { AdminCharts } from '@/components/admin/AdminCharts';
 
 interface AdminDashboardContentProps {
   stats: AdminStats;
@@ -17,18 +17,6 @@ export function AdminDashboardContent({ stats }: AdminDashboardContentProps) {
 
       {/* Stats Cards */}
       <AdminCharts stats={stats} />
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RevenueChart stats={stats} />
-        <UserGrowthChart stats={stats} />
-      </div>
-
-      {/* Additional Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SubjectDistributionChart />
-        <OrderStatusChart />
-      </div>
 
       {/* Quick Actions */}
       <Card className="bg-gray-800 border-gray-700">
