@@ -75,7 +75,15 @@ export function MockTestsPage() {
           const items = Array.isArray(response?.data?.items) ? response.data.items : [];
 
           // Update pagination info if available
-          setTotalPages(response?.data?.totalPages || 0);
+          // If totalPages is not provided, calculate it based on items or default to 1
+          const apiTotalPages = response?.data?.totalPages;
+          if (apiTotalPages !== undefined && apiTotalPages !== null) {
+            setTotalPages(apiTotalPages);
+          } else {
+            // If no totalPages from API, calculate based on items length
+            // This is a fallback - ideally API should provide totalPages
+            setTotalPages(items.length > 0 ? Math.ceil(items.length / pageSize) : 1);
+          }
 
           // Map items to shape used by UI
           const mapped = items.map((exam: any) => ({
@@ -128,6 +136,48 @@ export function MockTestsPage() {
       case 'Geography': return 'bg-teal-100 text-teal-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getPaginationRange = () => {
+    const total = totalPages;
+    const current = pageNumber;
+    const delta = 2; // số trang hiển thị xung quanh current page
+  
+    if (total <= 7) {
+      // Nếu tổng số trang <= 7, hiển thị tất cả
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+  
+    const pages: (number | string)[] = [];
+  
+    // Luôn hiển thị trang đầu tiên
+    pages.push(1);
+  
+    // Tính toán các trang cần hiển thị
+    const start = Math.max(2, current - delta);
+    const end = Math.min(total - 1, current + delta);
+  
+    // Nếu có khoảng trống giữa trang 1 và start, thêm ellipsis
+    if (start > 2) {
+      pages.push("...");
+    }
+  
+    // Thêm các trang ở giữa
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+  
+    // Nếu có khoảng trống giữa end và trang cuối, thêm ellipsis
+    if (end < total - 1) {
+      pages.push("...");
+    }
+  
+    // Luôn hiển thị trang cuối cùng (nếu total > 1)
+    if (total > 1) {
+      pages.push(total);
+    }
+  
+    return pages;
   };
 
   if (loading) {
@@ -491,40 +541,54 @@ export function MockTestsPage() {
         </div>
       )}
       
-      {/* Enhanced Pagination */}
-      {totalPages > 1 && (
+      {/* Enhanced Ellipsis Pagination */}
+      {totalPages >= 1 && filteredTests.length > 0 && (
         <div className="mt-12 flex justify-center">
           <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 shadow-lg">
+            {/* Prev button */}
             <Button
               variant="outline"
               size="sm"
               onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
               disabled={pageNumber === 1}
-              className="rounded-lg"
+              className="rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                variant={page === pageNumber ? "default" : "outline"}
-                size="sm"
-                onClick={() => setPageNumber(page)}
-                className={`min-w-[40px] rounded-lg ${
-                  page === pageNumber 
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0' 
-                    : ''
-                }`}
-              >
-                {page}
-              </Button>
-            ))}
+
+            {/* Ellipsis Pagination */}
+            {getPaginationRange().map((p, i) =>
+              p === "..." ? (
+                <div 
+                  key={`ellipsis-${i}`} 
+                  className="px-2 text-gray-500 select-none font-semibold"
+                >
+                  ...
+                </div>
+              ) : (
+                <Button
+                  key={p}
+                  variant={p === pageNumber ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setPageNumber(p as number)}
+                  className={`min-w-[40px] rounded-lg transition-all duration-200 ${
+                    p === pageNumber
+                      ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-md hover:shadow-lg"
+                      : "hover:bg-gray-100 hover:border-blue-300"
+                  }`}
+                >
+                  {p}
+                </Button>
+              )
+            )}
+
+            {/* Next Button */}
             <Button
               variant="outline"
               size="sm"
               onClick={() => setPageNumber(Math.min(totalPages, pageNumber + 1))}
               disabled={pageNumber === totalPages}
-              className="rounded-lg"
+              className="rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
