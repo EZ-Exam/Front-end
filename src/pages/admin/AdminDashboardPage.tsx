@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,7 @@ import {
   Trash2,
   Plus
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import * as XLSX from 'xlsx';
 
 export function AdminDashboardPage() {
@@ -80,8 +81,65 @@ export function AdminDashboardPage() {
   // Filter states
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [showOnlyCompleted, setShowOnlyCompleted] = useState<boolean>(false);
 
-  // Check if user is admin
+  // Track initial mount to avoid unnecessary refetches
+  const isInitialMount = useRef(true);
+  const hasFetchedStats = useRef(false);
+
+  // Fetch stats only (for dashboard tab)
+  const fetchStats = async () => {
+    try {
+      const statsData = await AdminApiService.getAdminStats();
+      console.log('Admin Stats:', statsData);
+      
+      try {
+        const revenue = await AdminApiService.getRevenue();
+        console.log('Fetched Revenue:', revenue);
+        statsData.totalRevenue = revenue;
+      } catch (revenueError) {
+        console.error('Error fetching revenue:', revenueError);
+        statsData.totalRevenue = 0;
+      }
+      
+      console.log('Final Stats with Revenue:', statsData);
+      setStats(statsData);
+      hasFetchedStats.current = true;
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      toast({
+        title: "Lỗi tải dữ liệu",
+        description: "Không thể tải thống kê dashboard",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Fetch data for specific tab
+  const fetchDataForTab = async (tab: string) => {
+    switch (tab) {
+      case 'users':
+        await fetchUsersData();
+        break;
+      case 'payments':
+      case 'subscriptions':
+        await fetchPaymentsData();
+        break;
+      case 'questions':
+        await fetchQuestionsData();
+        break;
+      case 'exams':
+        await fetchExamsData();
+        break;
+      case 'dashboard':
+        if (!hasFetchedStats.current) {
+          await fetchStats();
+        }
+        break;
+    }
+  };
+
+  // Check if user is admin - initial load
   useEffect(() => {
     if (user?.roleId !== '2') {
       toast({
@@ -91,36 +149,51 @@ export function AdminDashboardPage() {
       });
       return;
     }
-    fetchDashboardData();
+    
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      // Initial load: fetch stats and data for current tab
+      fetchStats();
+      fetchDataForTab(activeTab);
+    }
   }, [user]);
 
-  // Refetch data when filters change
+  // Refetch data when filters change - only for active tab
   useEffect(() => {
-    if (user?.roleId === '2') {
-      // Reset to first page when filters change for all tabs
+    if (user?.roleId === '2' && !isInitialMount.current) {
+      // Reset to first page when filters change
       setUsersCurrentPage(1);
       setSubscriptionsCurrentPage(1);
       setTopupPaymentsCurrentPage(1);
       setQuestionsCurrentPage(1);
       setExamsCurrentPage(1);
-      fetchDashboardData();
+      
+      // Only fetch data for the active tab
+      fetchDataForTab(activeTab);
     }
-  }, [searchTerm, selectedSubject, selectedDifficulty]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, selectedSubject, selectedDifficulty, activeTab]);
+
+  // Reset pagination when completed filter changes (frontend filter, no need to refetch)
+  useEffect(() => {
+    setTopupPaymentsCurrentPage(1);
+  }, [showOnlyCompleted]);
 
   // Refetch data when page changes for each tab
   useEffect(() => {
-    if (user?.roleId === '2') {
+    if (user?.roleId === '2' && !isInitialMount.current) {
       if (activeTab === 'users') {
         fetchUsersData();
       } else if (activeTab === 'subscriptions') {
-        // Update pagination when subscriptions page changes
+        // Subscriptions use the same data as payments, no need to refetch
       } else if (activeTab === 'questions') {
         fetchQuestionsData();
       } else if (activeTab === 'exams') {
         fetchExamsData();
       }
     }
-  }, [usersCurrentPage, subscriptionsCurrentPage, questionsCurrentPage, examsCurrentPage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usersCurrentPage, subscriptionsCurrentPage, questionsCurrentPage, examsCurrentPage, activeTab]);
 
   const fetchDashboardData = async () => {
     try {
@@ -357,9 +430,9 @@ export function AdminDashboardPage() {
     setTopupPaymentsCurrentPage(1);
     setQuestionsCurrentPage(1);
     setExamsCurrentPage(1);
-    // Fetch data for the new tab
+    // Fetch data for the new tab only
     if (user?.roleId === '2') {
-      fetchDashboardData();
+      fetchDataForTab(tab);
     }
   };
 
@@ -427,11 +500,19 @@ export function AdminDashboardPage() {
 
   // Filter and paginate topup payments
   const filteredTopupPayments = topupPayments
-    .filter(payment =>
-      payment.id.toString().includes(searchTerm) ||
-      payment.userId.toString().includes(searchTerm) ||
-      payment.paymentStatus.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    .filter(payment => {
+      // Filter by search term
+      const matchesSearch = payment.id.toString().includes(searchTerm) ||
+        payment.userId.toString().includes(searchTerm) ||
+        payment.paymentStatus.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Filter by completed status if toggle is on
+      const matchesStatus = showOnlyCompleted 
+        ? payment.paymentStatus.toLowerCase() === 'completed'
+        : true;
+      
+      return matchesSearch && matchesStatus;
+    });
 
   const paginatedTopupPayments = filteredTopupPayments.slice(
     (topupPaymentsCurrentPage - 1) * pageSize,
@@ -697,6 +778,19 @@ export function AdminDashboardPage() {
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-8 w-64 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                       />
+                    </div>
+                    <div className="flex items-center space-x-2 px-3 py-1.5 bg-gray-700 border border-gray-600 rounded-md">
+                      <Switch
+                        checked={showOnlyCompleted}
+                        onCheckedChange={setShowOnlyCompleted}
+                        id="filter-completed"
+                      />
+                      <label 
+                        htmlFor="filter-completed" 
+                        className="text-sm text-white cursor-pointer whitespace-nowrap"
+                      >
+                        Chỉ hiển thị Completed
+                      </label>
                     </div>
                     <Button 
                       onClick={fetchPaymentsData} 
