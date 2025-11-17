@@ -3,6 +3,10 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { 
   ArrowLeft, 
   AlertCircle,
@@ -154,23 +158,22 @@ export function QuestionBankDetailPage() {
                 <h3 className="text-xl font-semibold">Question Content</h3>
               </div>
               <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
-                <p className="text-gray-900 text-lg leading-relaxed">{question.content}</p>
+                <div className="prose prose-lg max-w-none text-gray-900 [&>*]:my-0 [&>p]:mb-2 [&>p:last-child]:mb-0 [&_.katex]:text-base [&_.katex-display]:my-2">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    components={{
+                      p: ({ children }) => <p className="mb-2 last:mb-0 text-lg leading-relaxed">{children}</p>,
+                    }}
+                  >
+                    {question.content || ''}
+                  </ReactMarkdown>
+                </div>
               </div>
             </div>
             
             {/* Lesson and Chapter Info */}
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <BookOpen className="h-5 w-5 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold">Lesson</h3>
-                </div>
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-gray-700 font-medium">{question.lessonName}</p>
-                </div>
-              </div>
               {question.chapterName && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -215,7 +218,17 @@ export function QuestionBankDetailPage() {
                   <h3 className="text-xl font-semibold">Formula</h3>
                 </div>
                 <div className="p-6 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl">
-                  <p className="text-indigo-800 font-mono text-xl text-center">{question.formula}</p>
+                  <div className="prose prose-lg max-w-none text-indigo-800 [&>*]:my-0 [&>p]:mb-0 [&_.katex]:text-xl [&_.katex-display]:my-2">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={{
+                        p: ({ children }) => <p className="mb-0 text-xl text-center">{children}</p>,
+                      }}
+                    >
+                      {question.formula || ''}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </div>
             )}
@@ -244,11 +257,21 @@ export function QuestionBankDetailPage() {
                         {String.fromCharCode(65 + index)}
                       </div>
                       <div className="flex-1">
-                        <span className={`text-lg ${
-                          SubscriptionUtils.canViewAnswersAndExplanations(user) && option === question.correctAnswer ? 'font-semibold text-green-800' : 'text-gray-700'
-                        }`}>
-                          {option}
-                        </span>
+                        <div className={`prose prose-sm max-w-none ${
+                          SubscriptionUtils.canViewAnswersAndExplanations(user) && option === question.correctAnswer ? 'text-green-800' : 'text-gray-700'
+                        } [&>*]:my-0 [&>p]:mb-0 [&_.katex]:text-sm`}>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                            components={{
+                              p: ({ children }) => <p className={`mb-0 text-lg ${
+                                SubscriptionUtils.canViewAnswersAndExplanations(user) && option === question.correctAnswer ? 'font-semibold' : ''
+                              }`}>{children}</p>,
+                            }}
+                          >
+                            {option}
+                          </ReactMarkdown>
+                        </div>
                       </div>
                       {SubscriptionUtils.canViewAnswersAndExplanations(user) && option === question.correctAnswer && (
                         <div className="flex items-center gap-2">
@@ -272,7 +295,17 @@ export function QuestionBankDetailPage() {
               </div>
               {SubscriptionUtils.canViewAnswersAndExplanations(user) ? (
                 <div className="p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
-                  <p className="text-green-800 font-semibold text-xl text-center">{question.correctAnswer}</p>
+                  <div className="prose prose-lg max-w-none text-green-800 [&>*]:my-0 [&>p]:mb-0 [&_.katex]:text-lg [&_.katex-display]:my-2">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={{
+                        p: ({ children }) => <p className="mb-0 font-semibold text-xl text-center">{children}</p>,
+                      }}
+                    >
+                      {question.correctAnswer || ''}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               ) : (
                 <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl relative">
@@ -301,7 +334,17 @@ export function QuestionBankDetailPage() {
                 </div>
                 {SubscriptionUtils.canViewAnswersAndExplanations(user) ? (
                   <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl">
-                    <p className="text-purple-800 text-lg leading-relaxed">{question.explanation}</p>
+                    <div className="prose prose-lg max-w-none text-purple-800 [&>*]:my-0 [&>p]:mb-3 [&>p:last-child]:mb-0 [&_.katex]:text-base [&_.katex-display]:my-3">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                        components={{
+                          p: ({ children }) => <p className="mb-3 last:mb-0 text-lg leading-relaxed">{children}</p>,
+                        }}
+                      >
+                        {question.explanation || ''}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 ) : (
                   <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-xl relative">

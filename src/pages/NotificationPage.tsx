@@ -4,11 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Bell, Check, Info, AlertTriangle, CheckCircle, XCircle, Clock, Filter} from 'lucide-react';
-import { mockNotifications } from '@/data/mockData';
 import { Notification } from '@/types';
 
 export function NotificationsPage() {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
 
   const unreadCount = notifications.filter(n => !n.read).length;

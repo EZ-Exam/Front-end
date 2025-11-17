@@ -10,11 +10,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Bell, Check, Info, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { mockNotifications } from '@/data/mockData';
 import { Notification } from '@/types';
 
 export function NotificationDropdown() {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;

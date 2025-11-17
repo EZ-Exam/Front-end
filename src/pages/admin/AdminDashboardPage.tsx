@@ -10,9 +10,6 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { AdminStats, AdminUser, AdminPayment, AdminQuestion, AdminExam } from '@/types';
-import { 
-  mockAdminStats
-} from '@/data/adminMockData';
 import { QuestionDetailModal } from '@/components/admin/QuestionDetailModal';
 import { ExamDetailModal } from '@/components/admin/ExamDetailModal';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
@@ -35,7 +32,14 @@ import * as XLSX from 'xlsx';
 export function AdminDashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [stats, setStats] = useState<AdminStats>(mockAdminStats);
+  const [stats, setStats] = useState<AdminStats>({
+    totalUsers: 0,
+    newUsersToday: 0,
+    totalOrders: 0,
+    totalQuestions: 0,
+    totalExams: 0,
+    totalRevenue: 0,
+  });
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [topupPayments, setTopupPayments] = useState<AdminPayment[]>([]);
   const [subscriptionPayments, setSubscriptionPayments] = useState<AdminPayment[]>([]);
@@ -194,47 +198,6 @@ export function AdminDashboardPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usersCurrentPage, subscriptionsCurrentPage, questionsCurrentPage, examsCurrentPage, activeTab]);
-
-  const fetchDashboardData = async () => {
-    try {
-      // Fetch admin stats
-      const statsData = await AdminApiService.getAdminStats();
-      console.log('Admin Stats:', statsData);
-      
-      // Fetch revenue (toàn bộ doanh thu - không truyền days)
-      try {
-        const revenue = await AdminApiService.getRevenue();
-        console.log('Fetched Revenue:', revenue);
-        statsData.totalRevenue = revenue;
-      } catch (revenueError) {
-        console.error('Error fetching revenue:', revenueError);
-        // Nếu lỗi khi fetch revenue, vẫn tiếp tục với stats khác
-        statsData.totalRevenue = 0;
-      }
-      
-      console.log('Final Stats with Revenue:', statsData);
-      setStats(statsData);
-      
-      // Fetch all data without loading states for initial load
-      await fetchUsersData();
-      await fetchPaymentsData();
-      await fetchQuestionsData();
-      await fetchExamsData();
-      
-      toast({
-        title: "Tải dữ liệu thành công",
-        description: "Dữ liệu dashboard đã được cập nhật",
-      });
-      
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      toast({
-        title: "Lỗi tải dữ liệu",
-        description: "Không thể tải dữ liệu dashboard",
-        variant: "destructive"
-      });
-    }
-  };
 
   const fetchUsersData = async () => {
     try {

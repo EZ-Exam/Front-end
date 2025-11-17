@@ -5,6 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { 
   Search, 
   BookOpen, 
@@ -530,38 +534,48 @@ export function QuestionBankPage() {
             {sortedQuestions.map((question, index) => (
               <Card 
                 key={question.id} 
-                className="group hover:shadow-2xl transition-all duration-300 hover:scale-105 border-0 bg-white/90 backdrop-blur-sm shadow-lg cursor-pointer"
+                className="group hover:shadow-2xl transition-all duration-300 hover:scale-105 border-0 bg-white/90 backdrop-blur-sm shadow-lg cursor-pointer overflow-hidden"
                 style={{ animationDelay: `${index * 100}ms` }}
                 onClick={() => window.location.href = `/question-bank/${question.id}`}
               >
-                <CardHeader className="pb-4">
+                <CardHeader className="pb-4 overflow-hidden">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0 overflow-hidden">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                        <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex-shrink-0">
                           <BookOpen className="h-4 w-4 text-white" />
                         </div>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
                           Question #{question.id}
                         </Badge>
                       </div>
                       
-                      <CardTitle className="text-lg mb-3 line-clamp-3 leading-relaxed">
-                        {question.content}
-                      </CardTitle>
+                      <div className="mb-3 line-clamp-3 leading-relaxed break-words overflow-hidden">
+                        <div className="prose prose-sm max-w-none text-gray-800 [&>*]:my-0 [&>p]:mb-1 [&>p:last-child]:mb-0 [&_.katex]:text-sm [&_.katex-display]:my-1">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                            components={{
+                              p: ({ children }) => <p className="mb-1 last:mb-0 text-base leading-relaxed">{children}</p>,
+                            }}
+                          >
+                            {question.content || ''}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
                       
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Users className="h-4 w-4 text-blue-500" />
-                          <span className="font-medium">Lesson:</span>
-                          <span className="truncate">{question.lessonName}</span>
+                        <div className="flex items-center gap-2 text-sm text-gray-600 min-w-0">
+                          <Users className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                          <span className="font-medium flex-shrink-0">Lesson:</span>
+                          <span className="truncate min-w-0">{question.lessonName || 'N/A'}</span>
                         </div>
                         
                         {question.chapterName && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Clock className="h-4 w-4 text-green-500" />
-                            <span className="font-medium">Chapter:</span>
-                            <span className="truncate">{question.chapterName}</span>
+                          <div className="flex items-center gap-2 text-sm text-gray-600 min-w-0">
+                            <Clock className="h-4 w-4 text-green-500 flex-shrink-0" />
+                            <span className="font-medium flex-shrink-0">Chapter:</span>
+                            <span className="truncate min-w-0">{question.chapterName}</span>
                           </div>
                         )}
                       </div>
@@ -570,12 +584,12 @@ export function QuestionBankPage() {
                   
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge 
-                      className={`${getDifficultyDisplay(question.difficultyLevel).color} border-0 font-semibold`}
+                      className={`${getDifficultyDisplay(question.difficultyLevel).color} border-0 font-semibold text-xs`}
                     >
                       {getDifficultyDisplay(question.difficultyLevel).text}
                     </Badge>
-                    <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                      {question.type}
+                    <Badge variant="secondary" className="bg-gray-100 text-gray-700 text-xs">
+                      {question.type || 'multiple-choice'}
                     </Badge>
                   </div>
                 </CardHeader>
