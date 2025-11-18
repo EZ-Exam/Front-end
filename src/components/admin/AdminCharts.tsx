@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, ShoppingCart, FileText, BarChart3, DollarSign, CheckCircle } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { Users, FileText, BarChart3, DollarSign } from 'lucide-react';
 
 interface ChartData {
   name: string;
@@ -33,19 +32,7 @@ export function AdminCharts({ stats }: AdminChartsProps) {
       color: 'from-blue-500 to-blue-600'
     },
     {
-      name: t('stats.subscription'),
-      value: stats.totalSubscriptions || stats.totalOrders || 0,
-      icon: ShoppingCart,
-      color: 'from-green-500 to-green-600'
-    },
-    {
-      name: t('stats.activePaidSubscription'),
-      value: stats.activePaidSubscriptions || 0,
-      icon: CheckCircle,
-      color: 'from-emerald-500 to-emerald-600'
-    },
-    {
-      name: t('stats.question'),
+      name: 'Question',
       value: stats.totalQuestions,
       icon: FileText,
       color: 'from-purple-500 to-purple-600'
@@ -65,7 +52,7 @@ export function AdminCharts({ stats }: AdminChartsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {chartData.map((item) => {
         const Icon = item.icon;
         const isRevenue = item.name === 'Revenue';

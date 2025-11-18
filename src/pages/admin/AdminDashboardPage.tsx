@@ -10,9 +10,6 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { AdminStats, AdminUser, AdminPayment, AdminQuestion, AdminExam } from '@/types';
-import { 
-  mockAdminStats
-} from '@/data/adminMockData';
 import { QuestionDetailModal } from '@/components/admin/QuestionDetailModal';
 import { ExamDetailModal } from '@/components/admin/ExamDetailModal';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
@@ -36,7 +33,14 @@ import * as XLSX from 'xlsx';
 export function AdminDashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [stats, setStats] = useState<AdminStats>(mockAdminStats);
+  const [stats, setStats] = useState<AdminStats>({
+    totalUsers: 0,
+    newUsersToday: 0,
+    totalOrders: 0,
+    totalQuestions: 0,
+    totalExams: 0,
+    totalRevenue: 0,
+  });
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [allUsers, setAllUsers] = useState<AdminUser[]>([]); // Lưu tất cả users để map username
   const [topupPayments, setTopupPayments] = useState<AdminPayment[]>([]);
@@ -311,22 +315,6 @@ export function AdminDashboardPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usersCurrentPage, subscriptionsCurrentPage, questionsCurrentPage, examsCurrentPage, activeTab]);
-
-  // Fetch users for dashboard (không filter bởi searchTerm)
-  const fetchUsersDataForDashboard = async () => {
-    try {
-      const usersData = await AdminApiService.getUsers({
-        pageNumber: 1,
-        pageSize: 10000, // Lấy tất cả users
-        search: undefined // Không filter
-      });
-      
-      // Lưu tất cả users để dùng cho chart
-      setAllUsers(usersData.items);
-    } catch (error) {
-      console.error('Error fetching users for dashboard:', error);
-    }
-  };
 
   const fetchUsersData = async () => {
     try {

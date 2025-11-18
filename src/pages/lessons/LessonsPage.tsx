@@ -96,8 +96,9 @@ export function LessonsPage() {
         
         const data: LessonsResponse = response.data;
         
-        // Update state with API response
+        // Update state with API response - use totalPages directly from API
         setAllLessons(data.items || []);
+        // Use totalPages from API response, not calculated client-side
         setTotalPages(data.totalPages || 1);
         setTotalItems(data.totalItems || 0);
         
@@ -124,8 +125,13 @@ export function LessonsPage() {
     }
   }, [subjectFilter, sortBy, sortOrder]);
 
-  // Client-side filtering for search query
+  // Client-side filtering for search query only (pagination is handled by API)
   const filteredLessons = useMemo(() => {
+    if (!searchQuery.trim()) {
+      // If no search query, use all lessons from API directly
+      return allLessons;
+    }
+    // Only filter by search query on client-side
     return allLessons.filter(lesson => {
       const matchesSearch = lesson.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            lesson.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -133,33 +139,19 @@ export function LessonsPage() {
     });
   }, [allLessons, searchQuery]);
 
-  // Calculate pagination for filtered results
-  const { totalFilteredItems, totalFilteredPages, paginatedLessons } = useMemo(() => {
-    const totalItems = filteredLessons.length;
-    const totalPages = Math.ceil(totalItems / pageSize);
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginated = filteredLessons.slice(startIndex, endIndex);
-    
-    return {
-      totalFilteredItems: totalItems,
-      totalFilteredPages: totalPages,
-      paginatedLessons: paginated
-    };
-  }, [filteredLessons, currentPage, pageSize]);
-
-  // Update lessons state with paginated results
+  // Use lessons directly from API (pagination is server-side)
+  // Only apply client-side search filtering if needed
   useEffect(() => {
-    setLessons(paginatedLessons);
-    setTotalPages(totalFilteredPages);
-  }, [paginatedLessons, totalFilteredPages]);
+    setLessons(filteredLessons);
+    // totalPages is already set from API response, don't override it
+  }, [filteredLessons]);
 
-  // Reset to page 1 if current page is beyond available pages
+  // Reset to page 1 if current page is beyond available pages (from API)
   useEffect(() => {
-    if (currentPage > totalFilteredPages && totalFilteredPages > 0) {
+    if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
-  }, [totalFilteredPages]); // Only depend on totalFilteredPages to avoid infinite loop
+  }, [totalPages, currentPage]);
 
   // Reset to page 1 when search query changes
   useEffect(() => {
@@ -185,6 +177,48 @@ export function LessonsPage() {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
+  };
+
+  const getPaginationRange = () => {
+    const total = totalPages;
+    const current = currentPage;
+    const delta = 2; // số trang hiển thị xung quanh current page
+  
+    if (total <= 7) {
+      // Nếu tổng số trang <= 7, hiển thị tất cả
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+  
+    const pages: (number | string)[] = [];
+  
+    // Luôn hiển thị trang đầu tiên
+    pages.push(1);
+  
+    // Tính toán các trang cần hiển thị
+    const start = Math.max(2, current - delta);
+    const end = Math.min(total - 1, current + delta);
+  
+    // Nếu có khoảng trống giữa trang 1 và start, thêm ellipsis
+    if (start > 2) {
+      pages.push("...");
+    }
+  
+    // Thêm các trang ở giữa
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+  
+    // Nếu có khoảng trống giữa end và trang cuối, thêm ellipsis
+    if (end < total - 1) {
+      pages.push("...");
+    }
+  
+    // Luôn hiển thị trang cuối cùng (nếu total > 1)
+    if (total > 1) {
+      pages.push(total);
+    }
+  
+    return pages;
   };
 
 
@@ -400,7 +434,7 @@ export function LessonsPage() {
             {/* Results count */}
             <div className="mt-4 flex items-center justify-between">
               <p className="text-sm text-gray-600">
-                Showing <span className="font-semibold text-blue-600">{lessons.length}</span> of <span className="font-semibold">{totalFilteredItems}</span> lessons
+                Showing <span className="font-semibold text-blue-600">{lessons.length}</span> of <span className="font-semibold">{totalItems}</span> lessons
                 {totalPages > 1 && (
                   <span className="ml-2">(Page {currentPage} of {totalPages})</span>
                 )}
@@ -445,7 +479,7 @@ export function LessonsPage() {
                     ? 'Lessons will be loaded from the server.' 
                     : 'Try adjusting your search criteria or filters.'}
                 </p>
-                {totalFilteredItems > 0 && (
+                {totalItems > 0 && (
                   <Button 
                     variant="outline" 
                     onClick={() => {
@@ -518,40 +552,54 @@ export function LessonsPage() {
               ))}
             </div>
             
-            {/* Enhanced Pagination */}
-            {totalPages > 1 && (
+            {/* Enhanced Ellipsis Pagination */}
+            {totalPages >= 1 && lessons.length > 0 && (
               <div className="mt-12 flex justify-center">
                 <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 shadow-lg">
+                  {/* Prev button */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="rounded-lg"
+                    className="rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                      key={page}
-                      variant={page === currentPage ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => handlePageChange(page)}
-                      className={`min-w-[40px] rounded-lg ${
-                        page === currentPage 
-                          ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0' 
-                          : ''
-                      }`}
-                    >
-                      {page}
-                    </Button>
-                  ))}
+
+                  {/* Ellipsis Pagination */}
+                  {getPaginationRange().map((p, i) =>
+                    p === "..." ? (
+                      <div 
+                        key={`ellipsis-${i}`} 
+                        className="px-2 text-gray-500 select-none font-semibold"
+                      >
+                        ...
+                      </div>
+                    ) : (
+                      <Button
+                        key={p}
+                        variant={p === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => handlePageChange(p as number)}
+                        className={`min-w-[40px] rounded-lg transition-all duration-200 ${
+                          p === currentPage
+                            ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-md hover:shadow-lg"
+                            : "hover:bg-gray-100 hover:border-blue-300"
+                        }`}
+                      >
+                        {p}
+                      </Button>
+                    )
+                  )}
+
+                  {/* Next Button */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="rounded-lg"
+                    className="rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>

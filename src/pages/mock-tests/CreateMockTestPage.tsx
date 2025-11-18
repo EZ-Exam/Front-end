@@ -11,7 +11,6 @@ import { useGlobalLoading } from '@/contexts/GlobalLoadingContext';
 import { ArrowLeft, Save, Lock } from 'lucide-react';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { SubscriptionUtils } from '@/lib/subscription';
-// import { mockQuestionSets } from '@/data/mockData';
 import api from '@/services/axios';
 import { useToast } from '@/contexts/ToastContext';
 

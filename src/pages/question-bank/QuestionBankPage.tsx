@@ -5,6 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { 
   Search, 
   BookOpen, 
@@ -231,6 +235,48 @@ export function QuestionBankPage() {
     veryHard: difficultyCounts.VeryHard,
   };
 
+  const getPaginationRange = () => {
+    const total = totalPages;
+    const current = pageNumber;
+    const delta = 2; // số trang hiển thị xung quanh current page
+  
+    if (total <= 7) {
+      // Nếu tổng số trang <= 7, hiển thị tất cả
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+  
+    const pages: (number | string)[] = [];
+  
+    // Luôn hiển thị trang đầu tiên
+    pages.push(1);
+  
+    // Tính toán các trang cần hiển thị
+    const start = Math.max(2, current - delta);
+    const end = Math.min(total - 1, current + delta);
+  
+    // Nếu có khoảng trống giữa trang 1 và start, thêm ellipsis
+    if (start > 2) {
+      pages.push("...");
+    }
+  
+    // Thêm các trang ở giữa
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+  
+    // Nếu có khoảng trống giữa end và trang cuối, thêm ellipsis
+    if (end < total - 1) {
+      pages.push("...");
+    }
+  
+    // Luôn hiển thị trang cuối cùng (nếu total > 1)
+    if (total > 1) {
+      pages.push(total);
+    }
+  
+    return pages;
+  };
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
@@ -488,38 +534,48 @@ export function QuestionBankPage() {
             {sortedQuestions.map((question, index) => (
               <Card 
                 key={question.id} 
-                className="group hover:shadow-2xl transition-all duration-300 hover:scale-105 border-0 bg-white/90 backdrop-blur-sm shadow-lg cursor-pointer"
+                className="group hover:shadow-2xl transition-all duration-300 hover:scale-105 border-0 bg-white/90 backdrop-blur-sm shadow-lg cursor-pointer overflow-hidden"
                 style={{ animationDelay: `${index * 100}ms` }}
                 onClick={() => window.location.href = `/question-bank/${question.id}`}
               >
-                <CardHeader className="pb-4">
+                <CardHeader className="pb-4 overflow-hidden">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0 overflow-hidden">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                        <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex-shrink-0">
                           <BookOpen className="h-4 w-4 text-white" />
                         </div>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
                           Question #{question.id}
                         </Badge>
                       </div>
                       
-                      <CardTitle className="text-lg mb-3 line-clamp-3 leading-relaxed">
-                        {question.content}
-                      </CardTitle>
+                      <div className="mb-3 line-clamp-3 leading-relaxed break-words overflow-hidden">
+                        <div className="prose prose-sm max-w-none text-gray-800 [&>*]:my-0 [&>p]:mb-1 [&>p:last-child]:mb-0 [&_.katex]:text-sm [&_.katex-display]:my-1">
+                          <ReactMarkdown
+                            remarkPlugins={[remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                            components={{
+                              p: ({ children }) => <p className="mb-1 last:mb-0 text-base leading-relaxed">{children}</p>,
+                            }}
+                          >
+                            {question.content || ''}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
                       
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Users className="h-4 w-4 text-blue-500" />
-                          <span className="font-medium">Lesson:</span>
-                          <span className="truncate">{question.lessonName}</span>
+                        <div className="flex items-center gap-2 text-sm text-gray-600 min-w-0">
+                          <Users className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                          <span className="font-medium flex-shrink-0">Lesson:</span>
+                          <span className="truncate min-w-0">{question.lessonName || 'N/A'}</span>
                         </div>
                         
                         {question.chapterName && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Clock className="h-4 w-4 text-green-500" />
-                            <span className="font-medium">Chapter:</span>
-                            <span className="truncate">{question.chapterName}</span>
+                          <div className="flex items-center gap-2 text-sm text-gray-600 min-w-0">
+                            <Clock className="h-4 w-4 text-green-500 flex-shrink-0" />
+                            <span className="font-medium flex-shrink-0">Chapter:</span>
+                            <span className="truncate min-w-0">{question.chapterName}</span>
                           </div>
                         )}
                       </div>
@@ -528,12 +584,12 @@ export function QuestionBankPage() {
                   
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge 
-                      className={`${getDifficultyDisplay(question.difficultyLevel).color} border-0 font-semibold`}
+                      className={`${getDifficultyDisplay(question.difficultyLevel).color} border-0 font-semibold text-xs`}
                     >
                       {getDifficultyDisplay(question.difficultyLevel).text}
                     </Badge>
-                    <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-                      {question.type}
+                    <Badge variant="secondary" className="bg-gray-100 text-gray-700 text-xs">
+                      {question.type || 'multiple-choice'}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -542,40 +598,54 @@ export function QuestionBankPage() {
           </div>
         )}
         
-        {/* Enhanced Pagination */}
+        {/* Enhanced Ellipsis Pagination */}
         {totalPages > 1 && (
           <div className="mt-12 flex justify-center">
             <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 shadow-lg">
+              {/* Prev button */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
                 disabled={pageNumber === 1}
-                className="rounded-lg"
+                className="rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <Button
-                  key={page}
-                  variant={page === pageNumber ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setPageNumber(page)}
-                  className={`min-w-[40px] rounded-lg ${
-                    page === pageNumber 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0' 
-                      : ''
-                  }`}
-                >
-                  {page}
-                </Button>
-              ))}
+
+              {/* Ellipsis Pagination */}
+              {getPaginationRange().map((p, i) =>
+                p === "..." ? (
+                  <div 
+                    key={`ellipsis-${i}`} 
+                    className="px-2 text-gray-500 select-none font-semibold"
+                  >
+                    ...
+                  </div>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={p === pageNumber ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPageNumber(p as number)}
+                    className={`min-w-[40px] rounded-lg transition-all duration-200 ${
+                      p === pageNumber
+                        ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-md hover:shadow-lg"
+                        : "hover:bg-gray-100 hover:border-blue-300"
+                    }`}
+                  >
+                    {p}
+                  </Button>
+                )
+              )}
+
+              {/* Next Button */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPageNumber(Math.min(totalPages, pageNumber + 1))}
                 disabled={pageNumber === totalPages}
-                className="rounded-lg"
+                className="rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>

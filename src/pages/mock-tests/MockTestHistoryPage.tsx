@@ -14,7 +14,9 @@ import {
   Calendar,
   ArrowRight,
   History,
-  Lock
+  Lock,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { SubscriptionUtils, SubscriptionLevel } from '@/lib/subscription';
 import { useToast } from '@/contexts/ToastContext';
@@ -53,9 +55,13 @@ export function MockTestHistoryPage() {
   const { showLoading, hideLoading } = useGlobalLoading();
   
   const [examHistories, setExamHistories] = useState<ExamHistory[]>([]);
+  const [allExamHistories, setAllExamHistories] = useState<ExamHistory[]>([]);
   const [examDetails, setExamDetails] = useState<Record<string, ExamDetail>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize] = useState(6);
+  const [totalPages, setTotalPages] = useState(0);
 
   const fetchExamHistory = async () => {
     if (!user?.id) {
@@ -72,7 +78,17 @@ export function MockTestHistoryPage() {
       const response = await api.get(`/exam-history/user/${user.id}`);
       const histories: ExamHistory[] = response.data;
       
-      setExamHistories(histories);
+      setAllExamHistories(histories);
+      
+      // Calculate pagination
+      const total = Math.ceil(histories.length / pageSize);
+      setTotalPages(total);
+      
+      // Get paginated items
+      const startIndex = (pageNumber - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedHistories = histories.slice(startIndex, endIndex);
+      setExamHistories(paginatedHistories);
       
       // Fetch exam details for each unique examId
       const uniqueExamIds = [...new Set(histories.map(h => h.examId))];
@@ -114,6 +130,61 @@ export function MockTestHistoryPage() {
   useEffect(() => {
     fetchExamHistory();
   }, [user?.id]);
+
+  // Update paginated items when pageNumber or allExamHistories change
+  useEffect(() => {
+    if (allExamHistories.length > 0) {
+      const startIndex = (pageNumber - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedHistories = allExamHistories.slice(startIndex, endIndex);
+      setExamHistories(paginatedHistories);
+      
+      const total = Math.ceil(allExamHistories.length / pageSize);
+      setTotalPages(total);
+    }
+  }, [pageNumber, allExamHistories, pageSize]);
+
+  const getPaginationRange = () => {
+    const total = totalPages;
+    const current = pageNumber;
+    const delta = 2; // số trang hiển thị xung quanh current page
+  
+    if (total <= 7) {
+      // Nếu tổng số trang <= 7, hiển thị tất cả
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+  
+    const pages: (number | string)[] = [];
+  
+    // Luôn hiển thị trang đầu tiên
+    pages.push(1);
+  
+    // Tính toán các trang cần hiển thị
+    const start = Math.max(2, current - delta);
+    const end = Math.min(total - 1, current + delta);
+  
+    // Nếu có khoảng trống giữa trang 1 và start, thêm ellipsis
+    if (start > 2) {
+      pages.push("...");
+    }
+  
+    // Thêm các trang ở giữa
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+  
+    // Nếu có khoảng trống giữa end và trang cuối, thêm ellipsis
+    if (end < total - 1) {
+      pages.push("...");
+    }
+  
+    // Luôn hiển thị trang cuối cùng (nếu total > 1)
+    if (total > 1) {
+      pages.push(total);
+    }
+  
+    return pages;
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN', {
@@ -222,7 +293,7 @@ export function MockTestHistoryPage() {
             <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl w-12 h-12 mx-auto mb-4 flex items-center justify-center">
               <Trophy className="h-6 w-6 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-1">{examHistories.length}</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-1">{allExamHistories.length}</h3>
             <p className="text-gray-600 font-semibold">Tests Taken</p>
           </Card>
 
@@ -231,7 +302,7 @@ export function MockTestHistoryPage() {
               <CheckCircle className="h-6 w-6 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-1">
-              {Math.round(examHistories.reduce((sum, h) => sum + h.score, 0) / examHistories.length)}%
+              {allExamHistories.length > 0 ? Math.round(allExamHistories.reduce((sum, h) => sum + h.score, 0) / allExamHistories.length) : 0}%
             </h3>
             <p className="text-gray-600 font-semibold">Average Score</p>
           </Card>
@@ -241,7 +312,7 @@ export function MockTestHistoryPage() {
               <Target className="h-6 w-6 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-1">
-              {examHistories.reduce((sum, h) => sum + h.correctCount, 0)}
+              {allExamHistories.reduce((sum, h) => sum + h.correctCount, 0)}
             </h3>
             <p className="text-gray-600 font-semibold">Total Correct</p>
           </Card>
@@ -251,7 +322,7 @@ export function MockTestHistoryPage() {
               <Clock className="h-6 w-6 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-1">
-              {Math.round(examHistories.reduce((sum, h) => sum + h.timeTaken, 0) / examHistories.length / 60)}m
+              {allExamHistories.length > 0 ? Math.round(allExamHistories.reduce((sum, h) => sum + h.timeTaken, 0) / allExamHistories.length / 60) : 0}m
             </h3>
             <p className="text-gray-600 font-semibold">Avg Time</p>
           </Card>
@@ -348,6 +419,61 @@ export function MockTestHistoryPage() {
             );
           })}
         </div>
+
+        {/* Enhanced Ellipsis Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-12 flex justify-center">
+            <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-xl p-2 shadow-lg">
+              {/* Prev button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPageNumber(Math.max(1, pageNumber - 1))}
+                disabled={pageNumber === 1}
+                className="rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+
+              {/* Ellipsis Pagination */}
+              {getPaginationRange().map((p, i) =>
+                p === "..." ? (
+                  <div 
+                    key={`ellipsis-${i}`} 
+                    className="px-2 text-gray-500 select-none font-semibold"
+                  >
+                    ...
+                  </div>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={p === pageNumber ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPageNumber(p as number)}
+                    className={`min-w-[40px] rounded-lg transition-all duration-200 ${
+                      p === pageNumber
+                        ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-md hover:shadow-lg"
+                        : "hover:bg-gray-100 hover:border-blue-300"
+                    }`}
+                  >
+                    {p}
+                  </Button>
+                )
+              )}
+
+              {/* Next Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPageNumber(Math.min(totalPages, pageNumber + 1))}
+                disabled={pageNumber === totalPages}
+                className="rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
