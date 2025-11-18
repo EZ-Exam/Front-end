@@ -1,0 +1,24 @@
+# Node modules and dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build output
+dist
+
+# Configuration files not needed in the container
+.eslintcache
+*.config.js
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Git files
+.git
+.gitignore
+
+# IDE and editor files
+.vscode
+.idea
+*.swp

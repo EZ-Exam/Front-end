@@ -188,6 +188,8 @@ export interface AdminStats {
   totalExams: number;
   newUsersToday?: number;
   totalOrders?: number;
+  totalSubscriptions?: number;
+  activePaidSubscriptions?: number;
   totalRevenue?: number;
 }
 

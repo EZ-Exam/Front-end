@@ -1,46 +1,53 @@
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/pages/auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   LayoutDashboard, 
   Users, 
   CreditCard, 
   BarChart3,
   LogOut,
-  Wallet
+  Wallet,
+  Languages,
+  RefreshCw
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface AdminHeaderProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
-export function AdminSidebar({ activeTab, onTabChange }: AdminHeaderProps) {
+export function AdminSidebar({ activeTab, onTabChange, onRefresh, isRefreshing = false }: AdminHeaderProps) {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const { language, setLanguage, t } = useLanguage();
 
   const menuItems = [
     {
       id: 'dashboard',
-      label: 'Admin Dashboard',
+      label: t('tabs.dashboard'),
       icon: LayoutDashboard,
       description: 'System Overview'
     },
     {
       id: 'users',
-      label: 'Manage Users',
+      label: t('tabs.users'),
       icon: Users,
       description: 'User Management'
     },
     {
       id: 'payments',
-      label: 'Payments',
+      label: t('tabs.payments'),
       icon: Wallet,
       description: 'Payment Management'
     },
     {
       id: 'subscriptions',
-      label: 'Subscriptions',
+      label: t('tabs.subscriptions'),
       icon: CreditCard,
       description: 'Subscription Management'
     }
@@ -98,8 +105,31 @@ export function AdminSidebar({ activeTab, onTabChange }: AdminHeaderProps) {
         })}
       </nav>
 
-      {/* Logout Button */}
-      <div className="flex items-center">
+      {/* Language Toggle, Refresh and Logout Button */}
+      <div className="flex items-center space-x-2">
+        {onRefresh && (
+          <Button
+            onClick={onRefresh}
+            variant="outline"
+            size="sm"
+            disabled={isRefreshing}
+            className="flex items-center space-x-2 bg-gray-700 border-gray-600 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={language === 'vi' ? 'Làm mới dữ liệu' : 'Refresh data'}
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="font-medium text-sm">{language === 'vi' ? 'Làm mới' : 'Refresh'}</span>
+          </Button>
+        )}
+        <Button
+          onClick={() => setLanguage(language === 'vi' ? 'en' : 'vi')}
+          variant="outline"
+          size="sm"
+          className="flex items-center space-x-2 bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+          title={language === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
+        >
+          <Languages className="w-4 h-4" />
+          <span className="font-medium text-sm">{language === 'vi' ? 'EN' : 'VI'}</span>
+        </Button>
         <button
           onClick={handleLogout}
           className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 text-red-400 hover:bg-red-900/20 hover:text-red-300 relative group"

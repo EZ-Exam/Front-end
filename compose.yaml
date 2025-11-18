@@ -1,0 +1,41 @@
+services:
+  typescript-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    # env_file: ./.env  # Uncomment if .env file exists
+    # Only expose ports if specified in documentation or Dockerfile
+    # Add ports below if your app serves HTTP (e.g., 3000, 8080)
+    # ports:
+    #   - "3000:3000"
+    # networks:
+    #   - appnet
+    # depends_on:
+    #   - db  # Uncomment if you add a database service
+
+# networks:
+#   appnet:
+#     driver: bridge
+
+# If you need to add a database or other external service, add it below:
+# db:
+#   image: postgres:latest
+#   restart: unless-stopped
+#   environment:
+#     POSTGRES_USER: user
+#     POSTGRES_PASSWORD: password
+#     POSTGRES_DB: appdb
+#   volumes:
+#     - db_data:/var/lib/postgresql/data
+#   networks:
+#     - appnet
+#   healthcheck:
+#     test: ["CMD-SHELL", "pg_isready -U user"]
+#     interval: 10s
+#     timeout: 5s
+#     retries: 5
+
+# volumes:
+#   db_data:
